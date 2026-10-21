@@ -1,14 +1,13 @@
 -- Casa · Phase 1 · Startdaten
 -- Haushalt, Max und Anna, Annas Normalwoche.
 --
--- >>> WICHTIG: Die beiden E-Mail-Adressen unten vor dem Ausführen eintragen. <<<
 -- Nur diese zwei Adressen können sich einloggen.
 
 do $$
 declare
   h uuid;
-  max_email  text := 'max@beispiel.de';    -- <<< Max' Adresse
-  anna_email text := 'anna@beispiel.de';   -- <<< Annas Adresse
+  max_email  text := 'maxarmborst@gmail.com';
+  anna_email text := 'anna.f.erlacher@gmail.com';
 begin
   insert into public.households (name) values ('Casa') returning id into h;
 

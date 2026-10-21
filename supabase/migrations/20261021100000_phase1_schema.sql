@@ -212,6 +212,25 @@ create policy "settings: eigene" on public.settings
   with check (member_id = public.my_member_id());
 
 -- ---------------------------------------------------------------------------
+-- Rechte für die API-Rollen
+-- Im Projekt ist "Automatically expose new tables" aus, darum ausdrücklich.
+-- Nur eingeloggte Nutzer (authenticated) dürfen auf die Tabellen; anon bekommt nichts.
+-- ---------------------------------------------------------------------------
+
+grant usage on schema public to authenticated, service_role;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant all on all tables in schema public to service_role;
+grant usage on type public.task_status to authenticated, service_role;
+
+revoke all on function public.my_household_ids() from public;
+revoke all on function public.my_member_id() from public;
+revoke all on function public.handle_new_auth_user() from public;
+revoke all on function public.touch_updated_at() from public;
+grant execute on function public.my_household_ids() to authenticated, service_role;
+grant execute on function public.my_member_id() to authenticated, service_role;
+grant execute on function public.handle_new_auth_user() to supabase_auth_admin;
+
+-- ---------------------------------------------------------------------------
 -- Realtime: Änderungen sofort beim anderen sichtbar
 -- ---------------------------------------------------------------------------
 
