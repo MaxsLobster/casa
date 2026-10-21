@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – Heute</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#1F2A44}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background-color: #F4F1EA; background-image: radial-gradient(circle at 1px 1px, rgba(29,29,27,0.16) 1px, transparent 1.4px); background-size: 19px 19px; background-position: 6px 8px; color: #1D1D1B; font-family: 'Newsreader', Georgia, serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="position: absolute; left: 22px; top: 0; bottom: 80px; border-left: 1.5px dashed rgba(29,29,27,0.2)"></div>
+  
+  <main style="flex: 1; overflow-y: auto; padding: 38px 26px 24px 40px; display: flex; flex-direction: column; gap: 22px">
+
+    <header>
+      <h1 style="margin: 0; font-family: 'Caveat', cursive; font-weight: 600; font-size: 40px; line-height: 1.05; color: #1F2A44">Montag, 19. Oktober</h1>
+    </header>
+
+    <a href="Anfrage.dc.html" style="position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #EFE4C8; padding: 16px 16px 14px; transform: rotate(-1deg); box-shadow: 0 3px 8px rgba(31,42,68,0.10)">
+      <span style="position: absolute; top: -9px; left: 50%; width: 64px; height: 18px; margin-left: -32px; background: rgba(176,138,69,0.32); transform: rotate(2deg)"></span>
+      <span style="font-family: 'Caveat', cursive; font-size: 24px; line-height: 1.1; color: #1D1D1B">Anna hat dir eine Frage gestellt</span>
+      <span style="font-family: 'Caveat', cursive; font-size: 24px; color: #1F2A44">→</span>
+    </a>
+
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <div style="display: flex; align-items: baseline; gap: 10px">
+        <span style="width: 8px; height: 8px; border-radius: 4px; background: #B08A45; flex: none; transform: translateY(-3px)"></span>
+        <span style="font-family: 'Caveat', cursive; font-size: 23px; color: #1D1D1B">Valerie: du bringst, Oma holt um 14 Uhr</span>
+      </div>
+      <div style="display: flex; align-items: baseline; gap: 10px">
+        <span style="width: 8px; height: 8px; border-radius: 4px; border: 1.5px solid #B08A45; box-sizing: border-box; flex: none; transform: translateY(-3px)"></span>
+        <span style="font-family: 'Caveat', cursive; font-size: 23px; color: #1D1D1B">Abend: du kochst, Anna bringt ins Bett</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column">
+      <sc-for list="{{sections}}" as="s" hint-placeholder-count="4">
+        <div style="border-top: 1px solid rgba(29,29,27,0.14)">
+          <button type="button" onClick="{{s.toggle}}" style="width: 100%; display: flex; align-items: center; gap: 10px; background: transparent; border: none; padding: 14px 0; cursor: pointer; text-align: left; font-family: 'Newsreader', Georgia, serif; color: #1D1D1B">
+            <span style="flex: 1; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600">{{s.title}}</span>
+            <span style="font-family: 'Caveat', cursive; font-size: 22px; color: #6B5222">{{s.count}}</span>
+            <span style="{{s.chevStyle}}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+            </span>
+          </button>
+          <sc-if value="{{s.open}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 0 0 16px 2px">
+              <sc-for list="{{s.items}}" as="i" hint-placeholder-count="3">
+                <div style="display: flex; align-items: baseline; gap: 10px">
+                  <span style="font-family: 'Caveat', cursive; font-size: 20px; color: #6E6A60; width: 18px; flex: none">{{i.mark}}</span>
+                  <span style="{{i.textStyle}}">{{i.text}}</span>
+                  <span style="flex: none; white-space: nowrap; font-family: 'Caveat', cursive; font-size: 19px; color: #6E6A60">{{i.meta}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+      <div style="border-top: 1px solid rgba(29,29,27,0.14)"></div>
+    </div>
+  </main>
+
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.12); background: #F4F1EA; display: flex; align-items: center; justify-content: space-around; padding: 0 10px 14px; box-sizing: border-box">
+    <a href="Main.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: #1F2A44; padding: 12px 4px; border-bottom: 2px solid #B08A45">Heute</a>
+    <a href="Woche.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Woche</a>
+    <a href="Neu.dc.html" aria-label="Neu eintragen" style="width: 52px; height: 52px; border-radius: 26px; background: #1F2A44; color: #F4F1EA; display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+    <a href="Offen.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Offen</a>
+    <a href="Montag.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Montag</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { open: 'dich' };
+  }
+  renderVals() {
+    var self = this;
+    var hand = "font-family:'Caveat',cursive;font-size:23px;line-height:1.15;flex:1;min-width:0;";
+    var defs = [
+      { id: 'heute', title: 'Termine heute', items: [
+        { mark: '·', text: 'Anna arbeitet, 8 Std.', meta: 'Anna' },
+        { mark: '·', text: '20:30 Montagsrunde', meta: 'ihr beide' }
+      ] },
+      { id: 'dich', title: 'Für dich', items: [
+        { mark: '○', text: 'Rasenmäher zur Reparatur', meta: 'heute' },
+        { mark: '○', text: 'Kfz-Versicherung prüfen', meta: 'bis Fr' },
+        { mark: '○', text: 'Kita-Formular unterschreiben', meta: 'bis Do' }
+      ] },
+      { id: 'anna', title: 'Bei Anna', items: [
+        { mark: '○', text: 'Geburtstagsgeschenk', meta: 'bis Sa' },
+        { mark: '○', text: 'Nebenkosten prüfen', meta: 'bis 15.10.' }
+      ] },
+      { id: 'geschafft', title: 'Geschafft diese Woche', done: true, items: [
+        { mark: '✓', text: 'Altglas weggebracht', meta: 'Max' },
+        { mark: '✓', text: 'Arzttermin Valerie', meta: 'Anna' },
+        { mark: '✓', text: 'Steuerberater erledigt', meta: 'Anna' },
+        { mark: '✓', text: '+ 3 weitere', meta: '' }
+      ] }
+    ];
+    var counts = { heute: '2', dich: '3', anna: '2', geschafft: '6 ✓' };
+    var sections = defs.map(function (d) {
+      var isOpen = self.state.open === d.id;
+      return {
+        title: d.title,
+        count: counts[d.id],
+        open: isOpen,
+        chevStyle: 'display:flex;transition:transform .2s;transform:rotate(' + (isOpen ? '180' : '0') + 'deg);',
+        toggle: function () { self.setState({ open: isOpen ? null : d.id }); },
+        items: d.items.map(function (i) {
+          return { mark: i.mark, text: i.text, meta: i.meta, textStyle: hand + (d.done ? 'color:#3F3C36;' : 'color:#1F2A44;') };
+        })
+      };
+    });
+    return { sections: sections };
+  }
+}
+</script>
+</body>
+</html>

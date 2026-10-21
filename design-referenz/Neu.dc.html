@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – Neu eintragen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#1F2A44}
+input::placeholder{color:#8A857A}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background-color: #F4F1EA; background-image: radial-gradient(circle at 1px 1px, rgba(29,29,27,0.16) 1px, transparent 1.4px); background-size: 19px 19px; background-position: 6px 8px; color: #1D1D1B; font-family: 'Newsreader', Georgia, serif; display: flex; flex-direction: column; padding: 26px 26px 28px 40px; gap: 22px; overflow: hidden">
+
+  <div style="position: absolute; left: 22px; top: 0; bottom: 0; border-left: 1.5px dashed rgba(29,29,27,0.2)"></div>
+
+  <div style="display: flex; justify-content: space-between; align-items: center">
+    <span style="font-family: 'Caveat', cursive; font-size: 40px; color: #1F2A44">Neu notieren</span>
+    <a href="Main.dc.html" style="font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #6E6A60; padding: 10px 0">Abbrechen</a>
+  </div>
+
+  <div style="display: flex; gap: 18px; border-bottom: 1px solid rgba(29,29,27,0.14)">
+    <sc-for list="{{kinds}}" as="k" hint-placeholder-count="4">
+      <button type="button" onClick="{{k.pick}}" style="{{k.style}}">{{k.label}}</button>
+    </sc-for>
+  </div>
+
+  <div style="display: flex; align-items: flex-end; gap: 10px">
+    <label for="was" style="position: absolute; width: 1px; height: 1px; overflow: hidden">Was?</label>
+    <input id="was" type="text" placeholder="{{placeholder}}" style="flex: 1; border: none; border-bottom: 1.5px solid rgba(31,42,68,0.45); background: transparent; font-family: 'Caveat', cursive; font-size: 28px; color: #1F2A44; padding: 4px 0; outline: none">
+    <button type="button" aria-label="Reinsprechen" style="width: 46px; height: 46px; border-radius: 23px; border: none; background: #1F2A44; color: #F4F1EA; display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>
+    </button>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px">
+    <span style="font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #6E6A60">{{whoLabel}}</span>
+    <div style="display: flex; gap: 8px">
+      <sc-for list="{{people}}" as="p" hint-placeholder-count="2">
+        <button type="button" onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px">
+    <span style="font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #6E6A60">{{whenLabel}}</span>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+      <sc-for list="{{dates}}" as="d" hint-placeholder-count="5">
+        <button type="button" onClick="{{d.pick}}" style="{{d.style}}">{{d.label}}</button>
+      </sc-for>
+    </div>
+  </div>
+
+  <sc-if value="{{hint}}" hint-placeholder-val="{{false}}">
+    <p style="margin: 0; font-style: italic; font-size: 16px; line-height: 1.4; color: #3F3C36">{{hint}}</p>
+  </sc-if>
+
+  <div style="flex: 1"></div>
+
+  <a href="Main.dc.html" style="{{saveStyle}}">{{saveLabel}}</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { kind: 'Aufgabe', who: null, when: null };
+  }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var chip = "font-family:'Caveat',cursive;font-size:21px;border-radius:999px;padding:6px 14px;min-height:44px;cursor:pointer;color:#1D1D1B;";
+    var kinds = ['Aufgabe', 'Termin', 'Frage', 'Idee'].map(function (k) {
+      var on = s.kind === k;
+      return {
+        label: k,
+        style: "font-family:'Newsreader',Georgia,serif;font-size:15px;background:transparent;border:none;padding:10px 0;margin-bottom:-1px;min-height:44px;cursor:pointer;" + (on ? 'color:#1F2A44;font-weight:600;border-bottom:2px solid #B08A45;' : 'color:#6E6A60;border-bottom:2px solid transparent;'),
+        pick: function () { self.setState({ kind: k, who: null, when: null }); }
+      };
+    });
+    var peopleDefs = s.kind === 'Termin' ? ['Max', 'Anna', 'Beide'] : ['Max', 'Anna'];
+    var people = peopleDefs.map(function (p) {
+      var on = s.who === p;
+      return {
+        label: p,
+        style: chip + (on ? 'background:#1F2A44;color:#F4F1EA;border:1.5px solid #1F2A44;' : 'background:#FBF9F4;border:1.5px solid rgba(31,42,68,0.25);'),
+        pick: function () { self.setState({ who: p }); }
+      };
+    });
+    var dateDefs = s.kind === 'Idee' ? ['Montag 12.10.', 'Montag 19.10.'] : s.kind === 'Termin' ? ['Heute', 'Morgen', 'Sa', 'So', 'Datum …'] : ['Heute', 'Morgen', 'Freitag', 'Nächste Woche', 'Datum …'];
+    var dates = dateDefs.map(function (l) {
+      var on = s.when === l;
+      return {
+        label: l,
+        style: chip + (on ? 'background:#EFE4C8;border:1.5px solid #6B5222;' : 'background:transparent;border:1.5px solid rgba(31,42,68,0.25);'),
+        pick: function () { self.setState({ when: l }); }
+      };
+    });
+    var ph = { Aufgabe: 'Was ist zu tun?', Termin: 'Was steht an?', Frage: 'Was willst du fragen?', Idee: 'Deine Idee …' }[s.kind];
+    var hints = {
+      Aufgabe: '',
+      Termin: '',
+      Frage: 'Der andere bekommt eine Nachricht und kann mit Ja, Nein oder Später antworten – gern mit Notiz.',
+      Idee: 'Kommt auf den Parkplatz. Keine Antwort vorher nötig – ihr sprecht in der Montagsrunde drüber.'
+    };
+    var ready = s.who && s.when;
+    var save = 'display:flex;align-items:center;justify-content:center;height:54px;border-radius:999px;font-size:16px;font-weight:500;letter-spacing:0.04em;';
+    return {
+      kinds: kinds,
+      people: people,
+      dates: dates,
+      placeholder: ph,
+      whoLabel: s.kind === 'Frage' ? 'An wen?' : s.kind === 'Idee' ? 'Von wem?' : s.kind === 'Termin' ? 'Wer?' : 'Wer kümmert sich?',
+      whenLabel: s.kind === 'Idee' ? 'Besprechen am' : s.kind === 'Frage' ? 'Antwort bis' : s.kind === 'Termin' ? 'Wann?' : 'Bis wann?',
+      hint: hints[s.kind],
+      saveLabel: ready ? 'Notieren' : 'Wer und wann fehlen noch',
+      saveStyle: save + (ready ? 'background:#1F2A44;color:#F4F1EA;' : 'background:#E6E1D5;color:#6E6A60;')
+    };
+  }
+}
+</script>
+</body>
+</html>

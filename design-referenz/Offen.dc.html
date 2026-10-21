@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – Offen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#1F2A44}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background-color: #F4F1EA; background-image: radial-gradient(circle at 1px 1px, rgba(29,29,27,0.16) 1px, transparent 1.4px); background-size: 19px 19px; background-position: 6px 8px; color: #1D1D1B; font-family: 'Newsreader', Georgia, serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="position: absolute; left: 22px; top: 0; bottom: 80px; border-left: 1.5px dashed rgba(29,29,27,0.2)"></div>
+  
+  <main style="flex: 1; overflow-y: auto; padding: 34px 26px 24px 40px; display: flex; flex-direction: column; gap: 14px">
+    <header style="display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: #6E6A60">Was gerade läuft</span>
+      <span style="font-family: 'Caveat', cursive; font-size: 40px; line-height: 1.05; color: #1F2A44">Offen</span>
+    </header>
+
+    <div style="display: flex; gap: 22px; border-bottom: 1px solid rgba(29,29,27,0.14)">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+        <button type="button" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; flex-direction: column">
+      <sc-for list="{{items}}" as="i" hint-placeholder-count="5">
+        <div style="display: flex; gap: 6px; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(29,29,27,0.10)">
+          <button type="button" onClick="{{i.toggle}}" aria-label="Erledigt umschalten" style="width: 44px; height: 44px; margin-left: -12px; flex: none; display: flex; align-items: center; justify-content: center; background: transparent; border: none; cursor: pointer; padding: 0">
+            <span style="{{i.circleStyle}}">
+              <sc-if value="{{i.done}}" hint-placeholder-val="{{false}}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>
+              </sc-if>
+            </span>
+          </button>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 6px 0">
+            <span style="{{i.titleStyle}}">{{i.title}}</span>
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span style="{{i.stampStyle}}">{{i.stamp}}</span>
+              <sc-if value="{{i.showOwner}}" hint-placeholder-val="{{false}}">
+                <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #6E6A60">{{i.owner}}</span>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </main>
+
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.12); background: #F4F1EA; display: flex; align-items: center; justify-content: space-around; padding: 0 10px 14px; box-sizing: border-box">
+    <a href="Main.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Heute</a>
+    <a href="Woche.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Woche</a>
+    <a href="Neu.dc.html" aria-label="Neu eintragen" style="width: 52px; height: 52px; border-radius: 26px; background: #1F2A44; color: #F4F1EA; display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+    <a href="Offen.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: #1F2A44; padding: 12px 4px; border-bottom: 2px solid #B08A45">Offen</a>
+    <a href="Montag.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Montag</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'Max', done: { altglas: true, arzt: true } };
+  }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var all = [
+      { id: 'maeher', owner: 'Max', title: 'Rasenmäher zur Reparatur', kind: 'offen', label: 'Heute' },
+      { id: 'kfz', owner: 'Max', title: 'Kfz-Versicherung prüfen', kind: 'zugesagt', label: 'Zugesagt · Fr' },
+      { id: 'kita', owner: 'Max', title: 'Kita-Formular unterschreiben', kind: 'zugesagt', label: 'Zugesagt · Do' },
+      { id: 'dach', owner: 'Max', title: 'Dachrinne reinigen lassen', kind: 'geparkt', label: 'Geparkt · Mo' },
+      { id: 'altglas', owner: 'Max', title: 'Altglas wegbringen', kind: 'zugesagt', label: 'Zugesagt · Di' },
+      { id: 'geschenk', owner: 'Anna', title: 'Geburtstagsgeschenk besorgen', kind: 'zugesagt', label: 'Zugesagt · Sa' },
+      { id: 'nk', owner: 'Anna', title: 'Nebenkostenabrechnung prüfen', kind: 'zugesagt', label: 'Zugesagt · 15.10.' },
+      { id: 'hausrat', owner: 'Anna', title: 'Hausrat-Angebote vergleichen', kind: 'offen', label: 'Bis 20.10.' },
+      { id: 'arzt', owner: 'Anna', title: 'Arzttermin Valerie vereinbaren', kind: 'zugesagt', label: 'Zugesagt · Mo' }
+    ];
+    var tabs = ['Max', 'Anna', 'Alle'].map(function (t) {
+      var on = s.tab === t;
+      return {
+        label: t,
+        style: "font-family:'Newsreader',Georgia,serif;font-size:15px;background:transparent;border:none;padding:10px 0;margin-bottom:-1px;min-height:44px;cursor:pointer;" + (on ? 'color:#1F2A44;font-weight:600;border-bottom:2px solid #B08A45;' : 'color:#6E6A60;border-bottom:2px solid transparent;'),
+        pick: function () { self.setState({ tab: t }); }
+      };
+    });
+    var colors = { offen: '#1D1D1B', zugesagt: '#1F2A44', geparkt: '#6B5222', erledigt: '#2F5D3A' };
+    var rot = [-2, 1.5, -1, 2, -1.5, 1, -2, 1.5, -1];
+    var list = all.filter(function (i) { return s.tab === 'Alle' || i.owner === s.tab; });
+    list.sort(function (a, b) { return (s.done[a.id] ? 1 : 0) - (s.done[b.id] ? 1 : 0); });
+    var items = list.map(function (i, n) {
+      var isDone = !!s.done[i.id];
+      var c = colors[isDone ? 'erledigt' : i.kind];
+      return {
+        title: i.title,
+        owner: i.owner,
+        showOwner: s.tab === 'Alle',
+        done: isDone,
+        stamp: isDone ? 'Erledigt' : i.label,
+        stampStyle: 'flex:none;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:' + c + ';border:1.2px solid ' + c + ';border-radius:3px;padding:1px 6px;opacity:0.85;',
+        titleStyle: "font-family:'Caveat',cursive;font-size:23px;line-height:1.15;" + (isDone ? 'color:#6E6A60;text-decoration:line-through;text-decoration-thickness:1.5px;' : 'color:#1F2A44;'),
+        circleStyle: 'width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;' + (isDone ? 'background:#1F2A44;border:1.5px solid #1F2A44;color:#F4F1EA;' : 'background:transparent;border:1.5px solid #1F2A44;color:#1F2A44;'),
+        toggle: function () {
+          var d = Object.assign({}, s.done);
+          d[i.id] = !d[i.id];
+          self.setState({ done: d });
+        }
+      };
+    });
+    return { tabs: tabs, items: items };
+  }
+}
+</script>
+</body>
+</html>

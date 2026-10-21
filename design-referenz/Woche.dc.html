@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – Woche</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#1F2A44}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background-color: #F4F1EA; background-image: radial-gradient(circle at 1px 1px, rgba(29,29,27,0.16) 1px, transparent 1.4px); background-size: 19px 19px; background-position: 6px 8px; color: #1D1D1B; font-family: 'Newsreader', Georgia, serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="position: absolute; left: 22px; top: 0; bottom: 80px; border-left: 1.5px dashed rgba(29,29,27,0.2)"></div>
+  
+  <main style="flex: 1; overflow-y: auto; padding: 34px 26px 24px 40px; display: flex; flex-direction: column">
+    <header style="display: flex; flex-direction: column; gap: 2px; padding-bottom: 8px">
+      <span style="font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: #6E6A60">{{kicker}}</span>
+      <span style="font-family: 'Caveat', cursive; font-size: 40px; line-height: 1.05; color: #1F2A44">{{title}}</span>
+    </header>
+
+    <div style="display: flex; gap: 24px; border-bottom: 1px solid rgba(29,29,27,0.14); margin-bottom: 6px">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="2">
+        <button type="button" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-for list="{{days}}" as="d" hint-placeholder-count="6">
+      <div style="border-bottom: 1px solid rgba(29,29,27,0.12)">
+        <button type="button" onClick="{{d.toggle}}" style="width: 100%; display: flex; align-items: center; gap: 14px; background: transparent; border: none; padding: 12px 0; min-height: 52px; cursor: pointer; text-align: left; font-family: 'Newsreader', Georgia, serif; color: #1D1D1B">
+          <span style="{{d.wdStyle}}">{{d.wd}}</span>
+          <span style="flex: 1; min-width: 0; font-family: 'Caveat', cursive; font-size: 21px; line-height: 1.15; color: #1F2A44">{{d.summary}}</span>
+          <sc-if value="{{d.hasNote}}" hint-placeholder-val="{{false}}">
+            <span style="{{d.dotStyle}}"></span>
+          </sc-if>
+        </button>
+        <sc-if value="{{d.open}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 0 0 14px 52px">
+            <sc-for list="{{d.lines}}" as="l" hint-placeholder-count="3">
+              <div style="display: flex; flex-direction: column; gap: 0">
+                <span style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #6E6A60">{{l.label}}</span>
+                <span style="font-family: 'Caveat', cursive; font-size: 20px; line-height: 1.15; color: #1D1D1B">{{l.text}}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{d.note}}" hint-placeholder-val="{{false}}">
+              <span style="{{d.noteStyle}}">{{d.note}}</span>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+    </sc-for>
+
+    <sc-if value="{{isNormal}}" hint-placeholder-val="{{false}}">
+      <p style="margin: 14px 0 0; font-style: italic; font-size: 14px; line-height: 1.45; color: #3F3C36">Orientierung, kein starres Regelwerk. Offenes klären wir in der Montagsrunde.</p>
+    </sc-if>
+  </main>
+
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.12); background: #F4F1EA; display: flex; align-items: center; justify-content: space-around; padding: 0 10px 14px; box-sizing: border-box">
+    <a href="Main.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Heute</a>
+    <a href="Woche.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: #1F2A44; padding: 12px 4px; border-bottom: 2px solid #B08A45">Woche</a>
+    <a href="Neu.dc.html" aria-label="Neu eintragen" style="width: 52px; height: 52px; border-radius: 26px; background: #1F2A44; color: #F4F1EA; display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+    <a href="Offen.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Offen</a>
+    <a href="Montag.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Montag</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { view: 'diese', open: 'Mo' };
+  }
+  renderVals() {
+    var self = this;
+    var normal = this.state.view === 'normal';
+
+    var base = [
+      { wd: 'Mo', summary: 'Oma holt · du kochst', lines: [
+        ['Valerie', 'Du bringst, Oma holt um 14 Uhr'],
+        ['Anna', 'Arbeit, 8 Stunden'],
+        ['Abend', 'Du kochst, Anna bringt ins Bett']
+      ] },
+      { wd: 'Di', summary: 'Anna holt · Anna kocht', lines: [
+        ['Valerie', 'Du bringst, Anna holt um 14 Uhr'],
+        ['Anna', 'Arbeit, 4 Stunden'],
+        ['Abend', 'Anna kocht und bringt ins Bett']
+      ] },
+      { wd: 'Mi', summary: 'Theresa holt · Essen offen', note: 'Offen: wer kocht? Klären wir Montag.', lines: [
+        ['Valerie', 'Du bringst, Theresa holt um 14 Uhr. Kann sie nicht, übernimmst du.'],
+        ['Anna', 'Arbeit, 8 Stunden'],
+        ['Abend', 'Anna bringt ins Bett']
+      ] },
+      { wd: 'Do', summary: 'Anna holt · Turnen · Freunde', lines: [
+        ['Valerie', 'Du bringst, Anna holt um 13 Uhr'],
+        ['Nachmittag', 'Turnen 15–16 Uhr, danach Freunde'],
+        ['Abend', 'Essen bei Freunden, Anna bringt ins Bett']
+      ] },
+      { wd: 'Fr', summary: 'Annas freier Tag · Abend offen', note: 'Offen: Essen und Bettgehen. Klären wir Montag.', lines: [
+        ['Valerie', 'Du bringst, Anna holt um 14 Uhr'],
+        ['Anna', 'Freier Tag']
+      ] },
+      { wd: 'Sa So', summary: 'Familientag + ein Tag geteilt', note: 'Offen: welcher Tag ist Familientag?', lines: [
+        ['Wochenende', 'Ein Familientag, ein Tag mit geteilter Betreuung']
+      ] }
+    ];
+
+    if (!normal) {
+      base[0].summary = 'Oma holt · du kochst · Runde';
+      base[0].lines[2] = ['Abend', 'Du kochst, um 20:30 Montagsrunde'];
+      base[2].summary = 'Theresa kann nicht';
+      base[2].ask = true;
+      base[2].note = 'Anna fragt: Holst du Valerie? Antwort auf der Startseite.';
+    }
+
+    var dates = { Mo: '19.', Di: '20.', Mi: '21.', Do: '22.', Fr: '23.', 'Sa So': '24.' };
+    var days = base.map(function (d) {
+      var isOpen = self.state.open === d.wd;
+      var isToday = d.wd === 'Mo' && !normal;
+      return {
+        wd: d.wd,
+        summary: d.summary,
+        open: isOpen,
+        hasNote: !!d.note,
+        note: d.note || '',
+        noteStyle: d.ask
+          ? "font-family:'Caveat',cursive;font-size:19px;line-height:1.2;color:#1F2A44;background:#EFE4C8;padding:6px 10px;align-self:flex-start;"
+          : "font-style:italic;font-size:14px;line-height:1.4;color:#6B5222;",
+        dotStyle: 'flex:none;width:9px;height:9px;border-radius:5px;' + (d.ask ? 'background:#1F2A44;' : 'border:1.5px solid #B08A45;box-sizing:border-box;'),
+        wdStyle: "flex:none;width:38px;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:2px 0;" + (isToday ? 'color:#1D1D1B;background:rgba(176,138,69,0.30);text-align:center;' : 'color:#1F2A44;'),
+        lines: d.lines.map(function (l) { return { label: l[0], text: l[1] }; }),
+        toggle: function () { self.setState({ open: isOpen ? null : d.wd }); }
+      };
+    });
+
+    var tabs = [
+      { id: 'diese', label: 'Diese Woche' },
+      { id: 'normal', label: 'Normalwoche' }
+    ].map(function (t) {
+      var on = self.state.view === t.id;
+      return {
+        label: t.label,
+        style: "font-family:'Newsreader',Georgia,serif;font-size:15px;background:transparent;border:none;padding:8px 0;margin-bottom:-1px;min-height:44px;cursor:pointer;" + (on ? 'color:#1F2A44;font-weight:600;border-bottom:2px solid #B08A45;' : 'color:#6E6A60;border-bottom:2px solid transparent;'),
+        pick: function () { self.setState({ view: t.id }); }
+      };
+    });
+
+    return {
+      tabs: tabs,
+      days: days,
+      isNormal: normal,
+      kicker: normal ? 'Unser Wochenplan · A & M' : 'Woche 43 · 19. – 25. Oktober',
+      title: normal ? 'Eine normale Woche' : 'Eure Woche'
+    };
+  }
+}
+</script>
+</body>
+</html>
