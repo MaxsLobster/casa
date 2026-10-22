@@ -5,128 +5,54 @@ Alles, was du selbst machen musst, ist mit **[Du]** markiert.
 
 Die App läuft am Ende hier: **https://maxslobster.github.io/casa/**
 
-Solange Supabase noch nicht verbunden ist, läuft die App im **Demo-Modus**
-(Daten nur im eigenen Browser, Login mit `max@beispiel.de` oder `anna@beispiel.de`).
-Damit kannst du schon mal alles anschauen.
+Lokal ohne `.env.local` läuft die App im **Demo-Modus** (Daten nur im eigenen Browser, Login mit `max@beispiel.de` oder `anna@beispiel.de`).
 
 ---
 
-## Teil A – Supabase (Datenbank und Login)
+## Stand (22.10.2026)
 
-### A1 · Projekt anlegen  [Du]
+Erledigt per CLI: Projekt verknüpft, Schema und Startdaten eingespielt (mit euren Adressen), Site-URL und Redirect-URLs gesetzt, GitHub-Secrets gesetzt, Deploy läuft mit Supabase.
 
-1. Auf https://supabase.com einloggen (oder Account anlegen).
-2. **New project** → Name `casa`, Region **Frankfurt (eu-central-1)**, ein Datenbank-Passwort vergeben (irgendwo sicher notieren, du brauchst es selten).
-3. Warten, bis das Projekt fertig ist (ca. 1–2 Minuten).
+**Noch offen: der Mail-Versand (Teil A5).** Ohne eigenen SMTP-Versand erlaubt Supabase im Free-Tarif keine eigenen Mail-Vorlagen, also auch keinen Code in der Mail. Dann kommt nur der Link, und der öffnet auf dem iPhone Safari statt der Casa-App. Am Mac und im Safari auf dem iPhone funktioniert der Link-Login trotzdem.
 
-### A2 · E-Mail-Adressen eintragen  [Du]
+---
 
-Öffne die Datei `supabase/migrations/20261021100100_phase1_seed.sql` und trage ganz oben die beiden Adressen ein:
+## Teil A – Supabase
 
-```sql
-  max_email  text := 'max@beispiel.de';    -- <<< Max' Adresse
-  anna_email text := 'anna@beispiel.de';   -- <<< Annas Adresse
-```
+### A1–A4 · erledigt
 
-Nur diese zwei Adressen können sich später einloggen. Andere werden abgelehnt.
+Projekt `casa` (Frankfurt), Datenbank, Adressen, URL-Konfiguration: alles eingespielt. Zum Nachsehen: **SQL Editor** oder **Table Editor** im Dashboard, dort stehen `households`, `members`, `tasks`, `events`, `normal_week`, `week_overrides`, `settings`.
 
-### A3 · Datenbank einrichten  [Du]
+### A5 · Eigener Mail-Versand über dein Gmail  [Du]
 
-**Weg 1 – im Browser (einfachster Weg):**
+Damit die Login-Mail einen Code enthält (und zuverlässig auch bei Anna ankommt), schickt Supabase die Mails über dein Gmail-Konto. Dafür brauchst du ein **App-Passwort** von Google:
 
-1. Im Supabase-Dashboard links **SQL Editor** → **New query**.
-2. Den kompletten Inhalt von `supabase/migrations/20261021100000_phase1_schema.sql` einfügen → **Run**. Es sollte „Success“ stehen.
-3. Neue Query: den Inhalt von `supabase/migrations/20261021100100_phase1_seed.sql` einfügen (mit euren Adressen) → **Run**.
+1. https://myaccount.google.com/apppasswords öffnen (falls es sagt, du brauchst die Bestätigung in zwei Schritten: unter **Sicherheit** erst „Bestätigung in zwei Schritten“ einschalten, dann nochmal).
+2. Name eingeben, z. B. `Casa Supabase` → **Erstellen**. Google zeigt ein 16-stelliges Passwort.
+3. Dieses Passwort (ohne Leerzeichen) in die Datei `supabase/.env` im Projektordner eintragen, hinter `SMTP_PASS=`. Die Datei wird nicht ins Repo geladen.
+4. Mir Bescheid geben. Ich schalte dann SMTP und die Mail-Vorlagen per CLI ein (`supabase config push`).
 
-**Weg 2 – per Terminal (Supabase CLI ist schon installiert):**
-
-```bash
-cd /Users/maximilianarmborst/Desktop/casa-start && supabase login
-```
-
-(öffnet den Browser, dort bestätigen)
-
-```bash
-cd /Users/maximilianarmborst/Desktop/casa-start && supabase link --project-ref DEINE-PROJEKT-REF
-```
-
-Die Projekt-Ref findest du im Dashboard unter **Project Settings → General** (so was wie `abcdefghijklmnop`). Es fragt nach dem Datenbank-Passwort von A1.
-
-```bash
-cd /Users/maximilianarmborst/Desktop/casa-start && supabase db push
-```
-
-Damit werden beide SQL-Dateien eingespielt.
-
-### A4 · Login-Adressen für die App freigeben  [Du]
-
-Im Dashboard: **Authentication → URL Configuration**
-
-- **Site URL:** `https://maxslobster.github.io/casa/`
-- **Redirect URLs** (beide hinzufügen):
-  - `https://maxslobster.github.io/casa/**`
-  - `http://localhost:5173/casa/**`
-
-### A5 · E-Mail-Vorlage mit Code  [Du]
-
-Wichtig fürs iPhone: Wenn man in der Mail auf den Link tippt, öffnet sich Safari – nicht die Casa-App vom Home-Bildschirm. Deshalb steht in der Mail zusätzlich ein **6-stelliger Code**, den man in der App eintippt.
-
-Im Dashboard: **Authentication → Email Templates**. Bitte **beide** Vorlagen **Confirm signup** und **Magic Link** so setzen:
-
-Betreff: `Dein Casa-Code: {{ .Token }}`
-
-Inhalt:
-
-```html
-<h2>Casa</h2>
-<p>Dein Code zum Anmelden:</p>
-<p style="font-size:28px;letter-spacing:6px"><strong>{{ .Token }}</strong></p>
-<p>Gib ihn in der Casa-App ein. Oder tipp hier, wenn du am Mac bist: <a href="{{ .ConfirmationURL }}">Anmelden</a></p>
-<p>Der Code gilt eine Stunde.</p>
-```
+Wenn du dein Gmail dafür nicht nutzen willst: Ein kostenloses Brevo-Konto (brevo.com, Absender verifizieren, SMTP-Schlüssel erzeugen) geht genauso; dann trage ich die Brevo-Daten statt Gmail ein.
 
 ### A6 · Falls Annas Mail nicht ankommt  [Du]
 
-Supabase verschickt ohne eigenen Mail-Server nur wenige Mails pro Stunde und je nach Einstellung nur an Mitglieder deiner Supabase-Organisation. Darum:
+Bis A5 erledigt ist, verschickt Supabase nur wenige Mails pro Stunde und je nach Einstellung nur an Mitglieder deiner Supabase-Organisation. Notlösung: Im Dashboard oben links auf die Organisation → **Team** → **Invite** → Annas Adresse (Rolle „Read-only“). Mit A5 entfällt das.
 
-- Im Dashboard oben links auf die Organisation → **Team** → **Invite** → Annas Adresse (Rolle „Read-only“ reicht).
-- Alternative für später: eigenen SMTP-Versand eintragen (**Project Settings → Auth → SMTP**), z. B. mit einem kostenlosen Resend-Konto.
+### A7 · Schlüssel  · erledigt
 
-### A7 · Schlüssel holen  [Du]
-
-**Project Settings → API** (bzw. **API Keys**):
-
-- **Project URL** – so was wie `https://abcdefgh.supabase.co`
-- **anon public** Key (bei neueren Projekten heißt er „publishable key“ und beginnt mit `sb_publishable_…`; beide funktionieren)
-
-Den **service_role** Key brauchst du nicht. Der kommt nirgends hin.
-
-Für die lokale Entwicklung: Datei `.env.local` im Projektordner anlegen (Vorlage: `.env.example`) und beide Werte eintragen. Diese Datei wird nicht ins Repo geladen.
+Project-URL und anon-Key stehen in `.env.local` (lokal) und als GitHub-Secrets. Der `service_role`-Key wird nirgends verwendet.
 
 ---
 
-## Teil B – GitHub (Veröffentlichen)
+## Teil B – GitHub  · erledigt
 
-Das Repo `MaxsLobster/casa` existiert schon, der Deploy läuft automatisch bei jedem Push auf `main`.
-Damit die veröffentlichte App Supabase kennt, brauchen die GitHub Actions die zwei Werte aus A7 als Secrets:
-
-```bash
-cd /Users/maximilianarmborst/Desktop/casa-start && gh secret set VITE_SUPABASE_URL
-```
-
-(fragt den Wert ab, einfügen, Enter)
-
-```bash
-cd /Users/maximilianarmborst/Desktop/casa-start && gh secret set VITE_SUPABASE_ANON_KEY
-```
-
-Danach den Deploy einmal neu anstoßen:
+Secrets gesetzt, Deploy angestoßen. Für später:
 
 ```bash
 cd /Users/maximilianarmborst/Desktop/casa-start && gh workflow run "Deploy auf GitHub Pages"
 ```
 
-Nach 1–2 Minuten ist https://maxslobster.github.io/casa/ aktuell. Status: https://github.com/MaxsLobster/casa/actions
+Status: https://github.com/MaxsLobster/casa/actions
 
 ---
 
@@ -136,7 +62,7 @@ Nach 1–2 Minuten ist https://maxslobster.github.io/casa/ aktuell. Status: http
 2. **Teilen-Knopf** (Viereck mit Pfeil) → **Zum Home-Bildschirm** → **Hinzufügen**.
 3. Die App vom Home-Bildschirm öffnen (startet ohne Browserleiste, mit eigenem Icon).
 4. Deine E-Mail-Adresse eintippen → **Link schicken**.
-5. Mail öffnen, den **Code** merken, zurück in die Casa-App, Code eintippen → **Anmelden**.
+5. Mail öffnen, den **Code** merken, zurück in die Casa-App, Code eintippen → **Anmelden**. (Code gibt es erst nach A5; bis dahin öffnet der Link die App in Safari.)
 6. Du bleibst eingeloggt, auch nach Neustart.
 
 Was Anna bekommt: den Link https://maxslobster.github.io/casa/ und die drei Sätze „Safari → Teilen → Zum Home-Bildschirm. Dann mit deiner Mail-Adresse anmelden, Code aus der Mail eintippen.“
