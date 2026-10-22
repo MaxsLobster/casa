@@ -11,42 +11,42 @@ Lokal ohne `.env.local` läuft die App im **Demo-Modus** (Daten nur im eigenen B
 
 ## Stand (22.10.2026)
 
-Erledigt per CLI: Projekt verknüpft, Schema und Startdaten eingespielt (mit euren Adressen), Site-URL und Redirect-URLs gesetzt, GitHub-Secrets gesetzt, Deploy läuft mit Supabase.
+Alles per CLI erledigt: Projekt verknüpft, Schema und Startdaten eingespielt, eure zwei Konten angelegt (bestätigt, ohne Mail), Registrierung für andere gesperrt, Site-URL gesetzt, GitHub-Secrets gesetzt, Deploy läuft mit Supabase.
 
-**Noch offen: der Mail-Versand (Teil A5).** Ohne eigenen SMTP-Versand erlaubt Supabase im Free-Tarif keine eigenen Mail-Vorlagen, also auch keinen Code in der Mail. Dann kommt nur der Link, und der öffnet auf dem iPhone Safari statt der Casa-App. Am Mac und im Safari auf dem iPhone funktioniert der Link-Login trotzdem.
+**Login = E-Mail + Passwort.** Kein Mail-Versand, keine Codes.
 
 ---
 
-## Teil A – Supabase
+## Teil A – Supabase  · erledigt
 
-### A1–A4 · erledigt
+Zum Nachsehen im Dashboard: **Authentication → Users** zeigt die zwei Konten, **Table Editor** die Tabellen `households`, `members`, `tasks`, `events`, `normal_week`, `week_overrides`, `settings`.
 
-Projekt `casa` (Frankfurt), Datenbank, Adressen, URL-Konfiguration: alles eingespielt. Zum Nachsehen: **SQL Editor** oder **Table Editor** im Dashboard, dort stehen `households`, `members`, `tasks`, `events`, `normal_week`, `week_overrides`, `settings`.
+### Passwort festlegen (einmalig)  [Du und Anna]
 
-### A5 · Eigener Mail-Versand über dein Gmail  [Du]
+Jeder legt sein Passwort selbst fest, über einen **Einmal-Link**, den die CLI ohne Mail erzeugt:
 
-Damit die Login-Mail einen Code enthält (und zuverlässig auch bei Anna ankommt), schickt Supabase die Mails über dein Gmail-Konto. Dafür brauchst du ein **App-Passwort** von Google:
+```bash
+cd /Users/maximilianarmborst/Desktop/casa-start && supabase --help >/dev/null && echo "Link bitte von Claude erzeugen lassen (siehe unten)"
+```
 
-1. https://myaccount.google.com/apppasswords öffnen (falls es sagt, du brauchst die Bestätigung in zwei Schritten: unter **Sicherheit** erst „Bestätigung in zwei Schritten“ einschalten, dann nochmal).
-2. Name eingeben, z. B. `Casa Supabase` → **Erstellen**. Google zeigt ein 16-stelliges Passwort.
-3. Dieses Passwort (ohne Leerzeichen) in die Datei `supabase/.env` im Projektordner eintragen, hinter `SMTP_PASS=`. Die Datei wird nicht ins Repo geladen.
-4. Mir Bescheid geben. Ich schalte dann SMTP und die Mail-Vorlagen per CLI ein (`supabase config push`).
+Der Link öffnet die App mit dem Screen „Leg dein Passwort fest“. Er gilt **eine Stunde** und nur einmal. Abgelaufen? Einfach neu erzeugen lassen. Danach: in der App (auch vom Home-Bildschirm) mit E-Mail + Passwort anmelden, man bleibt eingeloggt.
 
-Wenn du dein Gmail dafür nicht nutzen willst: Ein kostenloses Brevo-Konto (brevo.com, Absender verifizieren, SMTP-Schlüssel erzeugen) geht genauso; dann trage ich die Brevo-Daten statt Gmail ein.
+Technisch: `POST /auth/v1/admin/generate_link` mit `type: "recovery"` und dem `service_role`-Key, der nur lokal in der CLI verwendet wird und nie ins Repo kommt.
 
-### A6 · Falls Annas Mail nicht ankommt  [Du]
+### Passwort ändern oder vergessen
 
-Bis A5 erledigt ist, verschickt Supabase nur wenige Mails pro Stunde und je nach Einstellung nur an Mitglieder deiner Supabase-Organisation. Notlösung: Im Dashboard oben links auf die Organisation → **Team** → **Invite** → Annas Adresse (Rolle „Read-only“). Mit A5 entfällt das.
+- Ändern: in der App unter **Einstellungen → Passwort ändern**.
+- Vergessen: neuen Einmal-Link erzeugen lassen (wie oben), oder im Dashboard unter **Authentication → Users** beim Konto ein neues Passwort setzen.
 
-### A7 · Schlüssel  · erledigt
+### Schlüssel  · erledigt
 
-Project-URL und anon-Key stehen in `.env.local` (lokal) und als GitHub-Secrets. Der `service_role`-Key wird nirgends verwendet.
+Project-URL und anon-Key stehen in `.env.local` (lokal) und als GitHub-Secrets. Der `service_role`-Key wird nur lokal für Admin-Aufgaben benutzt.
 
 ---
 
 ## Teil B – GitHub  · erledigt
 
-Secrets gesetzt, Deploy angestoßen. Für später:
+Secrets gesetzt, Deploy läuft bei jedem Push auf `main`. Manuell anstoßen:
 
 ```bash
 cd /Users/maximilianarmborst/Desktop/casa-start && gh workflow run "Deploy auf GitHub Pages"
@@ -61,11 +61,9 @@ Status: https://github.com/MaxsLobster/casa/actions
 1. In **Safari** https://maxslobster.github.io/casa/ öffnen.
 2. **Teilen-Knopf** (Viereck mit Pfeil) → **Zum Home-Bildschirm** → **Hinzufügen**.
 3. Die App vom Home-Bildschirm öffnen (startet ohne Browserleiste, mit eigenem Icon).
-4. Deine E-Mail-Adresse eintippen → **Link schicken**.
-5. Mail öffnen, den **Code** merken, zurück in die Casa-App, Code eintippen → **Anmelden**. (Code gibt es erst nach A5; bis dahin öffnet der Link die App in Safari.)
-6. Du bleibst eingeloggt, auch nach Neustart.
+4. E-Mail-Adresse und Passwort eintippen → **Anmelden**. Du bleibst eingeloggt, auch nach Neustart.
 
-Was Anna bekommt: den Link https://maxslobster.github.io/casa/ und die drei Sätze „Safari → Teilen → Zum Home-Bildschirm. Dann mit deiner Mail-Adresse anmelden, Code aus der Mail eintippen.“
+Was Anna bekommt: ihren Einmal-Link zum Passwort-Festlegen (am Mac oder iPhone öffnen, Passwort setzen), dann den Link https://maxslobster.github.io/casa/ mit „Safari → Teilen → Zum Home-Bildschirm, dann mit E-Mail und Passwort anmelden.“
 
 ---
 

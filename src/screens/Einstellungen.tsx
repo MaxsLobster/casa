@@ -1,10 +1,14 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCasa } from '../state/HouseholdContext'
 import { Toggle } from '../components/ui'
+import { SetPassword } from './SetPassword'
 
 export function Einstellungen() {
   const { me, user, settings, updateSettings, signOut, isDemo, household } = useCasa()
   const darkAuto = settings?.dark_mode_auto ?? true
+  const [pwOpen, setPwOpen] = useState(false)
+  const [pwDone, setPwDone] = useState(false)
   return (
     <div className="page" style={{ gap: 18 }}>
       <div className="between">
@@ -33,6 +37,16 @@ export function Einstellungen() {
       <div className="stack stack--tight" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
         <span className="label">Ruhezeiten</span>
         <span className="hint">Mitteilungen kommen in Phase 3. Standard: nachts still, 21 bis 7 Uhr.</span>
+      </div>
+
+      <div className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+        <span className="label">Passwort</span>
+        {pwDone && <p className="hand hand--navy" style={{ fontSize: 20 }}>Passwort geändert.</p>}
+        {!pwOpen ? (
+          <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => { setPwOpen(true); setPwDone(false) }}>Passwort ändern</button>
+        ) : (
+          <SetPassword mode="change" onDone={() => { setPwOpen(false); setPwDone(true) }} />
+        )}
       </div>
 
       <div className="spacer" />

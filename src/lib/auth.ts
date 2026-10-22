@@ -1,4 +1,4 @@
-// Anmeldung: echt über Supabase (Magic Link + Code) oder Demo (Max/Anna auswählen)
+// Anmeldung mit E-Mail + Passwort: echt über Supabase oder Demo (Max/Anna, beliebiges Passwort)
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 
@@ -10,10 +10,36 @@ export interface AuthUser {
 export interface Auth {
   current(): Promise<AuthUser | null>
   onChange(cb: (u: AuthUser | null) => void): () => void
-  /** Schickt den Link/Code. Wirft bei nicht freigeschalteter Adresse. */
-  sendCode(email: string): Promise<void>
-  verifyCode(email: string, code: string): Promise<void>
+  signIn(email: string, password: string): Promise<void>
+  /** Neues Passwort für den eingeloggten Nutzer (erstes Festlegen oder Ändern) */
+  setPassword(password: string): Promise<void>
   signOut(): Promise<void>
+}
+
+/** Von index.html gesetzt, wenn die App über einen „Passwort festlegen"-Link geöffnet wurde. */
+export function pendingRecovery(): boolean {
+  try {
+    return sessionStorage.getItem('casa.recovery') === '1'
+  } catch {
+    return false
+  }
+}
+export function clearRecovery() {
+  try {
+    sessionStorage.removeItem('casa.recovery')
+  } catch {
+    /* egal */
+  }
+}
+/** Fehlermeldung aus einem abgelaufenen Link (von index.html gesichert) */
+export function takeAuthError(): string | null {
+  try {
+    const e = sessionStorage.getItem('casa.authError')
+    sessionStorage.removeItem('casa.authError')
+    return e
+  } catch {
+    return null
+  }
 }
 
 function fromSession(s: Session | null): AuthUser | null {
@@ -29,32 +55,32 @@ export class SupabaseAuth implements Auth {
   onChange(cb: (u: AuthUser | null) => void) {
     const { data } = supabase!.auth.onAuthStateChange((_event, session) => {
       cb(fromSession(session))
-      // Nach einem Magic-Link-Login steht das Token in der URL – aufräumen.
+      // Nach einem Link-Login steht das Token in der URL – aufräumen.
       if (session && window.location.hash.includes('access_token=')) {
         window.history.replaceState(null, '', window.location.pathname + '#/heute')
       }
     })
     return () => data.subscription.unsubscribe()
   }
-  async sendCode(email: string) {
-    const { error } = await supabase!.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin + import.meta.env.BASE_URL },
-    })
+  async signIn(email: string, password: string) {
+    const { error } = await supabase!.auth.signInWithPassword({ email: email.trim(), password })
     if (error) {
-      // „Database error saving new user" = unser Trigger hat die Adresse abgelehnt
-      if (/database error|not allowed|freigeschaltet/i.test(error.message)) {
-        throw new Error('Diese Adresse ist für Casa nicht freigeschaltet.')
+      if (/invalid login credentials|invalid_credentials/i.test(error.message)) {
+        throw new Error('E-Mail oder Passwort stimmt nicht.')
       }
-      if (/rate limit|security purposes/i.test(error.message)) {
-        throw new Error('Bitte kurz warten, bevor du einen neuen Link anforderst.')
+      if (/rate limit|too many/i.test(error.message)) {
+        throw new Error('Zu viele Versuche. Bitte kurz warten.')
       }
       throw new Error('Das hat nicht geklappt: ' + error.message)
     }
   }
-  async verifyCode(email: string, code: string) {
-    const { error } = await supabase!.auth.verifyOtp({ email, token: code.trim(), type: 'email' })
-    if (error) throw new Error('Der Code stimmt nicht oder ist abgelaufen.')
+  async setPassword(password: string) {
+    const { error } = await supabase!.auth.updateUser({ password })
+    if (error) {
+      if (/same password|different from the old/i.test(error.message)) throw new Error('Das ist schon dein aktuelles Passwort.')
+      if (/weak|at least|should contain/i.test(error.message)) throw new Error('Bitte mindestens 8 Zeichen.')
+      throw new Error('Das hat nicht geklappt: ' + error.message)
+    }
   }
   async signOut() {
     await supabase!.auth.signOut()
@@ -83,15 +109,15 @@ export class DemoAuth implements Auth {
     this.listeners.add(cb)
     return () => this.listeners.delete(cb)
   }
-  async sendCode(email: string) {
+  async signIn(email: string) {
     const e = email.trim().toLowerCase()
     if (e !== 'max@beispiel.de' && e !== 'anna@beispiel.de') {
-      throw new Error('Diese Adresse ist für Casa nicht freigeschaltet.')
+      throw new Error('E-Mail oder Passwort stimmt nicht.')
     }
-  }
-  async verifyCode(email: string) {
-    const e = email.trim().toLowerCase()
     this.set({ id: e.startsWith('max') ? 'demo-max' : 'demo-anna', email: e })
+  }
+  async setPassword() {
+    /* Demo: nichts zu tun */
   }
   async signOut() {
     this.set(null)

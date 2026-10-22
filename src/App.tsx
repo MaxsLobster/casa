@@ -10,6 +10,8 @@ import { Offen } from './screens/Offen'
 import { Neu } from './screens/Neu'
 import { Sonntag } from './screens/Sonntag'
 import { Einstellungen } from './screens/Einstellungen'
+import { SetPassword } from './screens/SetPassword'
+import { clearRecovery, pendingRecovery } from './lib/auth'
 
 export default function App() {
   return (
@@ -35,9 +37,31 @@ function Shell() {
   useTheme(casa.settings ? casa.settings.dark_mode_auto : null)
   const wide = useWide()
   const loc = useLocation()
+  const [recovery, setRecovery] = useState(pendingRecovery)
 
   if (!casa.authReady) return <Blank />
   if (!casa.user) return <Login />
+  if (recovery) {
+    return (
+      <div className="app">
+        <div className="pane">
+          <div className="page" style={{ gap: 24, maxWidth: 480, margin: '0 auto', paddingTop: 'calc(72px + env(safe-area-inset-top))' }}>
+            <header className="stack stack--tight">
+              <h1 className="h1" style={{ fontSize: 56 }}>Casa</h1>
+              <span className="kicker">Willkommen</span>
+            </header>
+            <SetPassword
+              mode="first"
+              onDone={() => {
+                clearRecovery()
+                setRecovery(false)
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
   if (!casa.dataReady) return <Blank text="Einen Moment …" />
 
   if (!casa.me) {

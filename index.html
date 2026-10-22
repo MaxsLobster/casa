@@ -16,6 +16,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
     <script>
+      // Kam die App über einen „Passwort festlegen"-Link? Merken, bevor die URL aufgeräumt wird.
+      (function () {
+        try {
+          var h = location.hash || '';
+          if (h.indexOf('type=recovery') >= 0) sessionStorage.setItem('casa.recovery', '1');
+          var m = h.match(/error_description=([^&]*)/);
+          if (m) sessionStorage.setItem('casa.authError', decodeURIComponent(m[1].replace(/\+/g, ' ')));
+        } catch (e) {}
+      })();
       // Dunkelmodus schon vor dem ersten Render setzen (kein Aufblitzen).
       (function () {
         try {

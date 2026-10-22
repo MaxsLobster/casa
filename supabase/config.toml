@@ -3,26 +3,8 @@
 project_id = "casa-start"
 
 [auth]
+# Login nur mit E-Mail + Passwort. Die zwei Konten wurden per Admin-API angelegt, neue Registrierungen sind gesperrt.
+enable_signup = false
+minimum_password_length = 8
 site_url = "https://maxslobster.github.io/casa/"
 additional_redirect_urls = ["https://maxslobster.github.io/casa/**", "http://localhost:5173/casa/**"]
-
-# Login-Mails mit Code: Link öffnet auf dem iPhone Safari statt der App, darum zusätzlich der Code.
-# Achtung: Vorlagen lassen sich im Free-Tarif nur mit eigenem SMTP-Versand ändern (siehe SETUP.md A5).
-# Bis dahin bleiben die beiden Template-Blöcke auskommentiert.
-#[auth.email.template.magic_link]
-#subject = "Dein Casa-Code: {{ .Token }}"
-#content_path = "./supabase/templates/magic_link.html"
-
-#[auth.email.template.confirmation]
-#subject = "Dein Casa-Code: {{ .Token }}"
-#content_path = "./supabase/templates/confirmation.html"
-
-# Eigener Mail-Versand über Max' Gmail (App-Passwort). Erst aktivieren, wenn SMTP_PASS in supabase/.env steht.
-#[auth.email.smtp]
-#enabled = true
-#host = "smtp.gmail.com"
-#port = 465
-#user = "maxarmborst@gmail.com"
-#pass = "env(SMTP_PASS)"
-#admin_email = "maxarmborst@gmail.com"
-#sender_name = "Casa"
