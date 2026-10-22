@@ -1,31 +1,55 @@
 import { useMemo, useState } from 'react'
-import { useCasa, useToday } from '../state/HouseholdContext'
-import { addDays, stampDate } from '../lib/dates'
+import { useCasa, useNow, useToday } from '../state/HouseholdContext'
+import { addDays, isoWeek, lastSundayCutoff, shortDate, stampDate, startOfWeek, toISO, weekRange } from '../lib/dates'
 import type { Task, TaskStatus } from '../lib/types'
-import { Check, Stamp, Tabs } from '../components/ui'
+import { Check, Chevron, Collapse, Stamp, Tabs } from '../components/ui'
 import { TaskEditor } from './TaskEditor'
 
 export function Offen() {
   const { me, members, tasks, setTaskDone } = useCasa()
   const today = useToday()
+  const now = useNow()
   const partners = members.filter((m) => m.role === 'partner')
   const tabs = [...partners.map((m) => ({ value: m.id, label: m.display_name })), { value: 'alle', label: 'Alle' }]
   const [tab, setTab] = useState<string>(me?.id ?? 'alle')
   const [editing, setEditing] = useState<Task | null>(null)
+  const [archiveOpen, setArchiveOpen] = useState(false)
 
-  const list = useMemo(() => {
-    const cutoff = addDays(today, -14)
-    return tasks
-      .filter((t) => tab === 'alle' || t.owner_member_id === tab)
-      .filter((t) => t.status !== 'erledigt' || (t.done_at ?? '').slice(0, 10) >= cutoff)
-      .sort((a, b) => {
-        const da = a.status === 'erledigt' ? 1 : 0
-        const db = b.status === 'erledigt' ? 1 : 0
-        if (da !== db) return da - db
-        if (da) return (b.done_at ?? '').localeCompare(a.done_at ?? '')
-        return a.due_date.localeCompare(b.due_date) || a.created_at.localeCompare(b.created_at)
-      })
-  }, [tasks, tab, today])
+  // Erledigtes bleibt bis Sonntag 20 Uhr sichtbar, danach nur noch im Archiv.
+  const cutoff = useMemo(() => lastSundayCutoff(now).toISOString(), [now])
+
+  const inTab = (t: Task) => tab === 'alle' || t.owner_member_id === tab
+
+  const list = useMemo(
+    () =>
+      tasks
+        .filter(inTab)
+        .filter((t) => t.status !== 'erledigt' || (t.done_at ?? '') >= cutoff)
+        .sort((a, b) => {
+          const da = a.status === 'erledigt' ? 1 : 0
+          const db = b.status === 'erledigt' ? 1 : 0
+          if (da !== db) return da - db
+          if (da) return (b.done_at ?? '').localeCompare(a.done_at ?? '')
+          return a.due_date.localeCompare(b.due_date) || a.created_at.localeCompare(b.created_at)
+        }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tasks, tab, cutoff],
+  )
+
+  // Archiv: früher Erledigtes, nach Woche gruppiert (neueste zuerst)
+  const archive = useMemo(() => {
+    const old = tasks.filter(inTab).filter((t) => t.status === 'erledigt' && t.done_at && t.done_at < cutoff)
+    const groups = new Map<string, Task[]>()
+    for (const t of old) {
+      const monday = startOfWeek(toISO(new Date(t.done_at!)))
+      groups.set(monday, [...(groups.get(monday) ?? []), t])
+    }
+    return [...groups.entries()]
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([monday, items]) => ({ monday, items: items.sort((a, b) => (b.done_at ?? '').localeCompare(a.done_at ?? '')) }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, tab, cutoff])
+  const archiveCount = archive.reduce((n, g) => n + g.items.length, 0)
 
   return (
     <div className="page" style={{ gap: 14 }}>
@@ -54,6 +78,38 @@ export function Offen() {
           )
         })}
       </div>
+
+      <div className="spacer" />
+
+      {archiveCount > 0 && (
+        <div className="stack stack--tight">
+          <button type="button" className="link" style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => setArchiveOpen((o) => !o)} aria-expanded={archiveOpen}>
+            {archiveOpen ? 'Erledigt ausblenden' : 'Erledigt ansehen'}
+            <Chevron open={archiveOpen} />
+          </button>
+          <Collapse open={archiveOpen}>
+            <div className="stack" style={{ gap: 14, paddingBottom: 8 }}>
+              {archive.map((g) => (
+                <div key={g.monday} className="stack" style={{ gap: 4 }}>
+                  <span className="label label--small">KW {isoWeek(g.monday)} · {weekRange(g.monday)}</span>
+                  {g.items.map((t) => (
+                    <div className="row" key={t.id}>
+                      <span className="row__mark" style={{ color: 'var(--green)' }}>✓</span>
+                      <button type="button" className="row__text hand" style={{ background: 'transparent', border: 'none', padding: 0, textAlign: 'left', color: 'var(--ink-soft)', fontSize: 21, cursor: 'pointer' }} onClick={() => setEditing(t)}>
+                        {t.title}
+                      </button>
+                      <span className="hand hand--meta">
+                        {tab === 'alle' ? `${members.find((m) => m.id === t.owner_member_id)?.display_name ?? ''} · ` : ''}
+                        {shortDate(toISO(new Date(t.done_at!)))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </Collapse>
+        </div>
+      )}
 
       {editing && <TaskEditor task={editing} onClose={() => setEditing(null)} />}
     </div>

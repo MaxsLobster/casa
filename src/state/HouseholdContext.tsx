@@ -267,3 +267,13 @@ export function useToday(): string {
   }, [])
   return d
 }
+
+/** Aktuelle Zeit, minütlich aktualisiert (für „vorbei"-Prüfungen) */
+export function useNow(): Date {
+  const [n, setN] = useState(() => new Date())
+  useEffect(() => {
+    const t = setInterval(() => setN(new Date()), 60_000)
+    return () => clearInterval(t)
+  }, [])
+  return n
+}

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useCasa, useToday } from '../state/HouseholdContext'
-import { addDays, hhmm, isoWeek, startOfWeek, weekDates, weekRange, weekday, weekdayShort, weekdayShortByIndex } from '../lib/dates'
+import { useCasa, useNow, useToday } from '../state/HouseholdContext'
+import { addDays, eventEnd, hhmm, isoWeek, startOfWeek, weekDates, weekRange, weekday, weekdayShort, weekdayShortByIndex } from '../lib/dates'
 import { dayLines, daySummary, dayState, hasOpen, hasOverride, openHints, templateState, type DayState, type Voice } from '../lib/week'
 import type { Event, Slot } from '../lib/types'
 import { Chevron, Collapse, Tabs } from '../components/ui'
@@ -13,6 +13,7 @@ type View = 'diese' | 'normal'
 export function Woche() {
   const { me, members, normalWeek, overrides, events } = useCasa()
   const today = useToday()
+  const now = useNow()
   const nav = useNavigate()
   const [view, setView] = useState<View>('diese')
   const [openKey, setOpenKey] = useState<string | null>(today)
@@ -107,7 +108,7 @@ export function Woche() {
                   <div className="stack stack--tight">
                     <span className="label label--small">Termine</span>
                     {r.events.map((e) => (
-                      <button type="button" key={e.id} className="day__line" style={{ minHeight: 36, padding: '2px 0' }} onClick={() => setEditEvent(e)}>
+                      <button type="button" key={e.id} className={'day__line' + (eventEnd(e) <= now ? ' day__line--past' : '')} style={{ minHeight: 36, padding: '2px 0' }} onClick={() => setEditEvent(e)}>
                         <span className="hand" style={{ fontSize: 20 }}>
                           {[hhmm(e.start_time), e.title].filter(Boolean).join(' ')}
                           <span className="hand hand--meta" style={{ marginLeft: 8 }}>{whoLabel(e.member_id, voice)}</span>

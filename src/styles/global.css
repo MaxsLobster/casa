@@ -603,6 +603,7 @@ a { color: inherit; text-decoration: none; }
 }
 .day__line .hand { font-size: 20px; }
 .day__line--changed .hand { color: var(--navy); }
+.day__line--past { opacity: 0.4; }
 .day__line--changed .label::after { content: ' · Abweichung'; color: var(--gold); letter-spacing: 0.08em; }
 
 /* ---------- Offen ---------- */

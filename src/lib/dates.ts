@@ -130,3 +130,34 @@ export function nextWeekdayOnOrAfter(wd: number, ref: ISODate = today()): ISODat
   const diff = (wd - weekday(ref) + 7) % 7
   return addDays(ref, diff)
 }
+
+/**
+ * Wochenschluss ist Sonntag 20:00 (Sonntagsrunde). Liefert den letzten
+ * Sonntag 20:00, der vor `now` liegt. Erledigtes bleibt bis dahin sichtbar.
+ */
+export function lastSundayCutoff(now: Date = new Date()): Date {
+  const d = new Date(now)
+  d.setHours(20, 0, 0, 0)
+  const back = d.getDay() // 0 = Sonntag
+  d.setDate(d.getDate() - back)
+  if (d > now) d.setDate(d.getDate() - 7)
+  return d
+}
+
+/** Ende eines Termins: end_time, sonst Beginn + 1 Stunde, ohne Uhrzeit Mitternacht. */
+export function eventEnd(e: { date: ISODate; start_time: string | null; end_time: string | null }): Date {
+  const d = fromISO(e.date)
+  if (e.end_time) {
+    const [h, m] = e.end_time.split(':').map(Number)
+    d.setHours(h, m, 0, 0)
+    return d
+  }
+  if (e.start_time) {
+    const [h, m] = e.start_time.split(':').map(Number)
+    d.setHours(h + 1, m, 0, 0)
+    return d
+  }
+  d.setDate(d.getDate() + 1)
+  d.setHours(0, 0, 0, 0)
+  return d
+}

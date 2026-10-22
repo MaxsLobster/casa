@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useCasa, useToday } from '../state/HouseholdContext'
-import { addDays, headline, hhmm, relativeLabel, startOfWeek } from '../lib/dates'
+import { useCasa, useNow, useToday } from '../state/HouseholdContext'
+import { eventEnd, headline, hhmm, lastSundayCutoff, relativeLabel } from '../lib/dates'
 import { abendLine, dayState, openHints, valerieLine, type Voice } from '../lib/week'
 import { Check, Chevron, Collapse } from '../components/ui'
 import type { Task } from '../lib/types'
@@ -11,6 +11,7 @@ type SectionId = 'termine' | 'dich' | 'partner' | 'geschafft'
 export function Heute() {
   const casa = useCasa()
   const today = useToday()
+  const now = useNow()
   const { me, partner, members, tasks, events, normalWeek, overrides } = casa
   const [open, setOpen] = useState<SectionId | null>('dich')
 
@@ -23,14 +24,17 @@ export function Heute() {
   const title = headline(today)
   const hints = openHints(day)
 
-  const monday = startOfWeek(today)
-  const sunday = addDays(monday, 6)
+  // Erledigtes zählt bis zur Sonntagsrunde (Sonntag 20 Uhr) zur laufenden Woche
+  const cutoff = lastSundayCutoff(now).toISOString()
 
-  const todaysEvents = events.filter((e) => e.date === today).sort((a, b) => (a.start_time ?? '99').localeCompare(b.start_time ?? '99'))
+  // Vergangene Termine verschwinden, sobald ihre Endzeit vorbei ist
+  const todaysEvents = events
+    .filter((e) => e.date === today && eventEnd(e) > now)
+    .sort((a, b) => (a.start_time ?? '99').localeCompare(b.start_time ?? '99'))
   const mine = tasks.filter((t) => t.owner_member_id === me?.id && t.status !== 'erledigt').sort(byDue)
   const theirs = tasks.filter((t) => partner && t.owner_member_id === partner.id && t.status !== 'erledigt').sort(byDue)
   const done = tasks
-    .filter((t) => t.status === 'erledigt' && t.done_at && t.done_at.slice(0, 10) >= monday && t.done_at.slice(0, 10) <= sunday)
+    .filter((t) => t.status === 'erledigt' && t.done_at && t.done_at >= cutoff)
     .sort((a, b) => (b.done_at ?? '').localeCompare(a.done_at ?? ''))
 
   const nameOf = (id: string | null) => {
@@ -55,7 +59,7 @@ export function Heute() {
           </div>
         ))
       ) : (
-        <p className="hint">Heute steht nichts an.</p>
+        <p className="hint">Heute steht nichts (mehr) an.</p>
       ),
     },
     {
