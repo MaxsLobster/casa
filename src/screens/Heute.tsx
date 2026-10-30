@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
-import { addDays, eventEnd, fromISO, hhmm, isoWeek, relativeLabel, uhr, weekdayLong, weekdayShort, type ISODate } from '../lib/dates'
+import { addDays, dayLabel, eventEnd, fromISO, hhmm, isoWeek, uhr, weekdayLong, weekdayShort, type ISODate } from '../lib/dates'
 import { dayState, name as whoName, verb, type Voice } from '../lib/week'
 import { dailyText, moonPhase, readDailyChoice, sunTimes, writeDailyChoice, type DailyKind } from '../lib/daily'
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
@@ -35,7 +35,7 @@ export function Heute() {
   const today = useToday()
   const now = useNow()
   const nav = useNavigate()
-  const { me, partner, members, people, tasks, events, normalWeek, overrides, setTaskDone, isNew } = casa
+  const { me, partner, members, people, tasks, events, normalWeek, overrides, setTaskDone, isNew, markSeen } = casa
   const voice: Voice = { me, members }
 
   // ---------- Kopf ----------
@@ -101,11 +101,10 @@ export function Heute() {
   if (bt?.value && !bt.is_open && nowH < 20.5) rows.push({ key: 'bt', sort: 19.5, time: null, kind: 'plan', title: cap(verb(bt.value, voice, 'bringst ins Bett', 'bringt ins Bett')), sub: 'Abend' })
   const we = day.wochenende
   if (we?.value && !we.is_open && nowH < 20) rows.push({ key: 'we', sort: 9, time: null, kind: 'plan', title: we.value, sub: 'Wochenende' })
-  // Heute fällige Aufgaben (auch überfällige)
+  // Nur meine Aufgaben, nur genau heute fällig (Überfälliges steht unter To-Dos bei „Liegt noch")
   for (const t of tasks) {
-    if (t.status === 'erledigt' || t.due_date > today) continue
-    const owner = t.owner_member_id === me?.id ? 'du' : (members.find((m) => m.id === t.owner_member_id)?.display_name ?? '')
-    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: `${owner} · ${t.due_date === today ? 'heute fällig' : relativeLabel(t.due_date, today)}`, task: t, isNew: isNew('task', t) })
+    if (t.status === 'erledigt' || t.due_date !== today || t.owner_member_id !== me?.id) continue
+    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: 'heute fällig', task: t, isNew: isNew('task', t) })
   }
   rows.sort((a, c) => a.sort - c.sort)
 
@@ -118,8 +117,19 @@ export function Heute() {
   // ---------- Neu von … ----------
   const newTasks = tasks.filter((t) => t.owner_member_id === me?.id && t.status !== 'erledigt' && isNew('task', t))
   const newEvents = events.filter((e) => (e.member_id === null || e.member_id === me?.id) && isNew('event', e))
-  const newCount = newTasks.length + newEvents.length
-  const firstNew = newTasks[0] ? `${newTasks[0].title} · ${relativeLabel(newTasks[0].due_date, today)}` : newEvents[0] ? `${relativeLabel(newEvents[0].date, today)} ${newEvents[0].title}` : ''
+  const newItems = [
+    ...newTasks.map((t) => ({ kind: 'task' as const, date: t.due_date, title: t.title })),
+    ...newEvents.map((e) => ({ kind: 'event' as const, date: e.date, title: e.title })),
+  ].sort((a, c) => a.date.localeCompare(c.date))
+  const newCount = newItems.length
+  const firstNew = newItems[0] ? `${newItems[0].title} · ${dayLabel(newItems[0].date)}` : ''
+  function openNew() {
+    const first = newItems[0]
+    void markSeen('task', newTasks.map((t) => t.id))
+    void markSeen('event', newEvents.map((e) => e.id))
+    if (first?.kind === 'event') nav('/woche', { state: { date: first.date } })
+    else nav('/todos')
+  }
 
   // ---------- Zeitstrahl ----------
   const gold: { from: number; to: number }[] = []
@@ -188,13 +198,13 @@ export function Heute() {
       <div className="heute__body">
         <div className="heute__left">
           {newCount > 0 && (
-            <Link to="/todos" className="note heute__note">
+            <button type="button" className="note heute__note" onClick={openNew} style={{ textAlign: 'left', width: '100%', cursor: 'pointer' }}>
               <span className="label label--small" style={{ color: 'var(--brown)' }}>Neu von {partner?.display_name ?? 'Anna'}</span>
               <span className="hand" style={{ fontSize: 22, lineHeight: 1.15 }}>
                 {firstNew}
-                {newCount > 1 && <span className="hand hand--meta" style={{ marginLeft: 8 }}>+{newCount - 1}</span>}
+                {newCount > 1 && <span className="hand hand--meta" style={{ marginLeft: 8 }}>+{newCount - 1} weitere</span>}
               </span>
-            </Link>
+            </button>
           )}
 
           <section className="stack" style={{ gap: 12 }}>

@@ -5,8 +5,9 @@ import type { Task } from '../lib/types'
 import { Check, Chevron, Collapse, Tabs } from '../components/ui'
 import { TaskEditor } from './TaskEditor'
 
-type GroupId = 'neu' | 'heute' | 'woche' | 'spaeter' | 'geschafft'
-const GROUP_TITLE: Record<GroupId, string> = { neu: 'Neu', heute: 'Heute fällig', woche: 'Diese Woche', spaeter: 'Später', geschafft: 'Geschafft diese Woche' }
+type GroupId = 'liegt' | 'neu' | 'heute' | 'woche' | 'spaeter' | 'geschafft'
+const GROUP_ORDER: GroupId[] = ['liegt', 'neu', 'heute', 'woche', 'spaeter', 'geschafft']
+const GROUP_TITLE: Record<GroupId, string> = { liegt: 'Liegt noch', neu: 'Neu', heute: 'Heute fällig', woche: 'Diese Woche', spaeter: 'Später', geschafft: 'Geschafft diese Woche' }
 
 export function ToDos() {
   const { me, members, tasks, setTaskDone, isNew, markSeen } = useCasa()
@@ -35,19 +36,21 @@ export function ToDos() {
   }, [tasks, tab])
 
   const groups = useMemo(() => {
-    const g: Record<GroupId, Task[]> = { neu: [], heute: [], woche: [], spaeter: [], geschafft: [] }
+    const g: Record<GroupId, Task[]> = { liegt: [], neu: [], heute: [], woche: [], spaeter: [], geschafft: [] }
     for (const t of tasks) {
       if (!inTab(t)) continue
       if (t.status === 'erledigt') {
         if ((t.done_at ?? '') >= cutoff) g.geschafft.push(t)
         continue
       }
-      if (newIds.has(t.id)) g.neu.push(t)
-      else if (t.due_date <= today) g.heute.push(t)
+      if (t.due_date < today) g.liegt.push(t)
+      else if (newIds.has(t.id)) g.neu.push(t)
+      else if (t.due_date === today) g.heute.push(t)
       else if (t.due_date <= sunday) g.woche.push(t)
       else g.spaeter.push(t)
     }
     const byDue = (a: Task, b: Task) => a.due_date.localeCompare(b.due_date) || a.created_at.localeCompare(b.created_at)
+    g.liegt.sort(byDue)
     g.neu.sort(byDue)
     g.heute.sort(byDue)
     g.woche.sort(byDue)
@@ -81,7 +84,7 @@ export function ToDos() {
     return parts.join(' · ')
   }
 
-  const total = (['neu', 'heute', 'woche', 'spaeter', 'geschafft'] as GroupId[]).reduce((n, k) => n + groups[k].length, 0)
+  const total = GROUP_ORDER.reduce((n, k) => n + groups[k].length, 0)
 
   return (
     <div className="page" style={{ gap: 14 }}>
@@ -90,7 +93,7 @@ export function ToDos() {
 
       {total === 0 && <p className="hint" style={{ paddingTop: 8 }}>Nichts offen. Schön.</p>}
 
-      {(['neu', 'heute', 'woche', 'spaeter', 'geschafft'] as GroupId[]).map((k) =>
+      {GROUP_ORDER.map((k) =>
         groups[k].length === 0 ? null : (
           <section key={k} className="stack" style={{ gap: 0 }}>
             <h2 className="heute__h2" style={{ margin: '6px 0 2px' }}>{GROUP_TITLE[k]}</h2>

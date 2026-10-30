@@ -689,6 +689,7 @@ a { color: inherit; text-decoration: none; }
 .heute__body { flex: 1; min-height: 420px; display: flex; gap: 14px; align-items: stretch; }
 .heute__left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
 .heute__note { display: block; padding: 14px 14px 10px; }
+button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearance: none; appearance: none; }
 .heute__note > .label { display: block; margin-bottom: 2px; }
 .heute__note::before { width: 54px; height: 16px; margin-left: -27px; top: -8px; }
 .heute__h2 { margin: 0; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: var(--grey); }

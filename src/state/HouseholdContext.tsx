@@ -28,7 +28,7 @@ export interface Casa {
   error: string | null
 
   /** NEU: vom anderen für mich eingetragen oder geändert und noch nicht angesehen */
-  isNew(type: SeenType, item: { id: string; updated_at: string; created_by: string | null; updated_by: string | null }): boolean
+  isNew(type: SeenType, item: { id: string; updated_at: string; created_by: string | null; updated_by: string | null; date?: string; end_date?: string | null; occ_end?: string }): boolean
   markSeen(type: SeenType, ids: string[]): Promise<void>
 
   addTask(input: { title: string; owner_member_id: string; due_date: string; note?: string | null; repeat?: Repeat | null; repeat_until?: string | null }): Promise<void>
@@ -271,6 +271,9 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       if (!me) return false
       const actor = item.updated_by ?? item.created_by
       if (!actor || actor === me.id) return false
+      // Vergangene Termine nie als NEU
+      const last = item.occ_end ?? item.end_date ?? item.date
+      if (type === 'event' && last && last < today()) return false
       const s = seenMap.get(type + ':' + item.id)
       return !s || s < item.updated_at
     },

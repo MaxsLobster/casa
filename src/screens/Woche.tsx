@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
-import { addDays, eventEnd, hhmm, isoWeek, shortDate, startOfWeek, weekDates, weekRange, weekday, weekdayLongByIndex, weekdayShort, weekdayShortByIndex, type ISODate } from '../lib/dates'
+import { addDays, eventEnd, fromISO, hhmm, isoWeek, shortDate, startOfWeek, weekDates, weekRange, weekday, weekdayLongByIndex, weekdayShort, weekdayShortByIndex, type ISODate } from '../lib/dates'
 import { dayLines, daySummary, dayState, hasOverride, openHints, templateState, type DayState, type Voice } from '../lib/week'
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import type { Event, Slot } from '../lib/types'
@@ -28,9 +28,19 @@ export function Woche() {
   const today = useToday()
   const now = useNow()
   const nav = useNavigate()
+  const location = useLocation()
+  // Vom NEU-Zettel aus: direkt die Woche mit diesem Tag öffnen
+  const jumpTo = (location.state as { date?: ISODate } | null)?.date
   const [view, setView] = useState<View>('week')
-  const [offset, setOffset] = useState(0)
-  const [openKey, setOpenKey] = useState<string | null>(today)
+  const [offset, setOffset] = useState(() => (jumpTo ? Math.round((fromISO(startOfWeek(jumpTo)).getTime() - fromISO(startOfWeek(today)).getTime()) / 604_800_000) : 0))
+  const [openKey, setOpenKey] = useState<string | null>(jumpTo ?? today)
+  useEffect(() => {
+    if (!jumpTo) return
+    setView('week')
+    setOffset(Math.round((fromISO(startOfWeek(jumpTo)).getTime() - fromISO(startOfWeek(today)).getTime()) / 604_800_000))
+    setOpenKey(jumpTo)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpTo])
   const [editSlots, setEditSlots] = useState<{ slots: Slot[]; date?: string; weekday?: number; state: DayState } | null>(null)
   const [editEvent, setEditEvent] = useState<Event | null>(null)
   const [takeover, setTakeover] = useState<{ date: ISODate; state: DayState } | null>(null)

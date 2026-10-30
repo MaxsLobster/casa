@@ -113,6 +113,11 @@ export function stampDate(s: ISODate, ref: ISODate = today()): string {
   return shortDate(s)
 }
 
+/** „Do 22.10." */
+export function dayLabel(s: ISODate): string {
+  return `${weekdayShort(s)} ${shortDate(s)}`
+}
+
 /** „14:00" aus „14:00:00" */
 export function hhmm(t: string | null | undefined): string {
   if (!t) return ''
