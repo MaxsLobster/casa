@@ -3,6 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useCasa, useToday } from '../state/HouseholdContext'
 import { Chips, HandInput, MicButton, Tabs } from '../components/ui'
 import { WhenPicker } from './WhenPicker'
+import { RepeatPicker } from './RepeatPicker'
+import type { Repeat } from '../lib/types'
+import { addDays } from '../lib/dates'
 
 type Kind = 'aufgabe' | 'termin'
 
@@ -15,22 +18,29 @@ export function Neu() {
 
   const [kind, setKind] = useState<Kind>(preset.kind ?? 'aufgabe')
   const [title, setTitle] = useState('')
-  const [who, setWho] = useState<string | null>(null) // member id oder 'beide'
+  const [who, setWho] = useState<string | null>(null) // member id | 'beide' | 'p:<person id>'
   const [when, setWhen] = useState<string | null>(preset.date ?? null)
   const [time, setTime] = useState('')
+  const [multi, setMulti] = useState(false)
+  const [until, setUntil] = useState('')
+  const [repeat, setRepeat] = useState<Repeat | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
 
   const partners = casa.members.filter((m) => m.role === 'partner')
-  const people = [...partners.map((m) => ({ value: m.id, label: m.display_name })), ...(kind === 'termin' ? [{ value: 'beide', label: 'Beide' }] : [])]
+  const people =
+    kind === 'termin'
+      ? [...partners.map((m) => ({ value: m.id, label: m.display_name })), { value: 'beide', label: 'Beide' }, ...casa.people.map((p) => ({ value: 'p:' + p.id, label: p.name }))]
+      : partners.map((m) => ({ value: m.id, label: m.display_name }))
 
-  const ready = title.trim().length > 0 && !!who && !!when
-  const missing = !who && !when ? 'Wer und wann fehlen noch' : !who ? 'Wer fehlt noch' : !when ? 'Wann fehlt noch' : 'Was fehlt noch'
+  const ready = title.trim().length > 0 && !!who && !!when && (!multi || (!!until && until >= when))
+  const missing = !who && !when ? 'Wer und wann fehlen noch' : !who ? 'Wer fehlt noch' : !when ? 'Wann fehlt noch' : multi && (!until || until < (when ?? '')) ? 'Bis wann fehlt noch' : 'Was fehlt noch'
 
   function pickKind(k: Kind) {
     setKind(k)
-    if (k === 'aufgabe' && who === 'beide') setWho(null)
+    if (k === 'aufgabe' && (who === 'beide' || who?.startsWith('p:'))) setWho(null)
+    if (k === 'aufgabe') setMulti(false)
   }
 
   function back() {
@@ -44,9 +54,17 @@ export function Neu() {
     setError(null)
     try {
       if (kind === 'aufgabe') {
-        await casa.addTask({ title: title.trim(), owner_member_id: who, due_date: when })
+        await casa.addTask({ title: title.trim(), owner_member_id: who, due_date: when, repeat })
       } else {
-        await casa.addEvent({ title: title.trim(), date: when, member_id: who === 'beide' ? null : who, start_time: time || null })
+        await casa.addEvent({
+          title: title.trim(),
+          date: when,
+          end_date: multi && until > when ? until : null,
+          member_id: who === 'beide' || who.startsWith('p:') ? null : who,
+          person_id: who.startsWith('p:') ? who.slice(2) : null,
+          start_time: multi ? null : time || null,
+          repeat,
+        })
       }
       back()
     } catch (err) {
@@ -86,14 +104,36 @@ export function Neu() {
         </div>
 
         <div className="stack">
-          <span className="label">{kind === 'aufgabe' ? 'Bis wann?' : 'Wann?'}</span>
+          <span className="label">{kind === 'aufgabe' ? 'Bis wann?' : multi ? 'Von wann?' : 'Wann?'}</span>
           <WhenPicker kind={kind} value={when} onChange={setWhen} today={today} />
-          {kind === 'termin' && (
+          {kind === 'termin' && !multi && (
             <div className="stack stack--tight" style={{ marginTop: 6 }}>
               <label className="label label--small" htmlFor="neu-time">Uhrzeit (optional)</label>
               <input id="neu-time" className="input-ui" type="time" value={time} onChange={(e) => setTime(e.target.value)} style={{ alignSelf: 'flex-start', minWidth: 140 }} />
             </div>
           )}
+          {kind === 'termin' && (
+            <div className="stack stack--tight" style={{ marginTop: 6 }}>
+              {!multi ? (
+                <button type="button" className="link link--hand" style={{ alignSelf: 'flex-start', padding: '2px 0' }} onClick={() => { setMulti(true); setUntil(when ? addDays(when, 1) : '') }}>
+                  + mehrere Tage (z. B. Valerie bei Oma So–Di)
+                </button>
+              ) : (
+                <>
+                  <label className="label label--small" htmlFor="neu-until">Bis wann?</label>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <input id="neu-until" className="input-ui" type="date" value={until} min={when ?? undefined} onChange={(e) => setUntil(e.target.value)} style={{ minWidth: 180 }} />
+                    <button type="button" className="link" onClick={() => setMulti(false)}>nur ein Tag</button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="stack">
+          <span className="label">Wiederholen?</span>
+          <RepeatPicker value={repeat} onChange={setRepeat} />
         </div>
 
         {error && <p className="hint hint--brown">{error}</p>}

@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react'
 import { useCasa, useToday } from '../state/HouseholdContext'
-import type { Task, TaskStatus } from '../lib/types'
+import type { Repeat, Task, TaskStatus } from '../lib/types'
 import { Chips, HandInput, Sheet } from '../components/ui'
 import { WhenPicker } from './WhenPicker'
+import { RepeatPicker } from './RepeatPicker'
 
 const STATUS: { value: TaskStatus; label: string }[] = [
   { value: 'offen', label: 'offen' },
@@ -19,6 +20,7 @@ export function TaskEditor({ task, onClose }: { task: Task; onClose: () => void 
   const [due, setDue] = useState<string | null>(task.due_date)
   const [status, setStatus] = useState<TaskStatus>(task.status)
   const [note, setNote] = useState(task.note ?? '')
+  const [repeat, setRepeat] = useState<Repeat | null>(task.repeat)
   const [busy, setBusy] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
   const close = useCallback(() => onClose(), [onClose])
@@ -30,7 +32,7 @@ export function TaskEditor({ task, onClose }: { task: Task; onClose: () => void 
     if (!ready || !due) return
     setBusy(true)
     try {
-      await updateTask(task.id, { title: title.trim(), owner_member_id: owner, due_date: due, status, note: note.trim() || null })
+      await updateTask(task.id, { title: title.trim(), owner_member_id: owner, due_date: due, status, note: note.trim() || null, repeat })
       onClose()
     } finally {
       setBusy(false)
@@ -59,6 +61,11 @@ export function TaskEditor({ task, onClose }: { task: Task; onClose: () => void 
       <div className="stack">
         <span className="label">Stand</span>
         <Chips options={STATUS} value={status} onChange={setStatus} variant="date" />
+      </div>
+
+      <div className="stack">
+        <span className="label">Wiederholen?</span>
+        <RepeatPicker value={repeat} onChange={setRepeat} />
       </div>
 
       <div className="stack">

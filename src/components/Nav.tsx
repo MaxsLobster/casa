@@ -6,7 +6,7 @@ const items = [
 ] as const
 
 const items2 = [
-  { to: '/offen', label: 'Offen' },
+  { to: '/todos', label: 'To-Dos' },
   { to: '/sonntag', label: 'Sonntag' },
 ] as const
 

@@ -6,7 +6,7 @@ import { Nav } from './components/Nav'
 import { Login } from './screens/Login'
 import { Heute } from './screens/Heute'
 import { Woche } from './screens/Woche'
-import { Offen } from './screens/Offen'
+import { ToDos } from './screens/ToDos'
 import { Neu } from './screens/Neu'
 import { Sonntag } from './screens/Sonntag'
 import { Einstellungen } from './screens/Einstellungen'
@@ -94,7 +94,8 @@ function Shell() {
           <Routes>
             <Route path="/heute" element={wide ? <Woche /> : <Heute />} />
             <Route path="/woche" element={<Woche />} />
-            <Route path="/offen" element={<Offen />} />
+            <Route path="/todos" element={<ToDos />} />
+            <Route path="/offen" element={<Navigate to="/todos" replace />} />
             <Route path="/sonntag" element={<Sonntag />} />
             <Route path="/einstellungen" element={<Einstellungen />} />
             <Route path="/neu" element={wide ? <Woche /> : <Heute />} />

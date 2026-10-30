@@ -78,11 +78,13 @@ export function shortDate(s: ISODate): string {
 }
 
 /** „19. – 25. Oktober" bzw. „28. Oktober – 3. November" */
+const MONTHS_SHORT = ['Jan.', 'Feb.', 'März', 'Apr.', 'Mai', 'Juni', 'Juli', 'Aug.', 'Sept.', 'Okt.', 'Nov.', 'Dez.']
+
 export function weekRange(monday: ISODate): string {
   const a = fromISO(monday)
   const b = fromISO(addDays(monday, 6))
   if (a.getMonth() === b.getMonth()) return `${a.getDate()}. – ${b.getDate()}. ${MONTHS[a.getMonth()]}`
-  return `${a.getDate()}. ${MONTHS[a.getMonth()]} – ${b.getDate()}. ${MONTHS[b.getMonth()]}`
+  return `${a.getDate()}. ${MONTHS_SHORT[a.getMonth()]} – ${b.getDate()}. ${MONTHS_SHORT[b.getMonth()]}`
 }
 
 /**
