@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-// Service Worker: Offline-Start der App + Vorbereitung für Web Push (Phase 3)
+// Service Worker: Offline-Start der App + Web Push
 import { clientsClaim } from 'workbox-core'
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
@@ -29,9 +29,17 @@ registerRoute(
 // Supabase nie cachen
 registerRoute(({ url }) => url.hostname.endsWith('.supabase.co'), new NetworkOnly())
 
-// --- Phase 3: Web Push -----------------------------------------------------
+// --- Web Push -------------------------------------------------------------
+
+interface PushPayload {
+  title?: string
+  body?: string
+  url?: string
+  tag?: string
+}
+
 self.addEventListener('push', (event: PushEvent) => {
-  let data: { title?: string; body?: string; url?: string } = {}
+  let data: PushPayload = {}
   try {
     data = event.data?.json() ?? {}
   } catch {
@@ -42,20 +50,30 @@ self.addEventListener('push', (event: PushEvent) => {
       body: data.body ?? '',
       icon: 'icons/icon-192.png',
       badge: 'icons/icon-192.png',
-      data: { url: data.url ?? './' },
+      tag: data.tag,
+      data: { url: data.url ?? '#/heute' },
     }),
   )
 })
 
 self.addEventListener('notificationclick', (event: NotificationEvent) => {
   event.notification.close()
-  const url = (event.notification.data as { url?: string } | undefined)?.url ?? './'
+  const target = (event.notification.data as { url?: string } | undefined)?.url ?? '#/heute'
+  // scope endet mit "/casa/" → volle Adresse der passenden Stelle in der App
+  const full = new URL(target, self.registration.scope).href
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (list) => {
       for (const c of list) {
-        if ('focus' in c) return c.focus()
+        if (c.url.startsWith(self.registration.scope)) {
+          try {
+            if ('navigate' in c) await (c as WindowClient).navigate(full)
+          } catch {
+            /* dann wenigstens in den Vordergrund */
+          }
+          return c.focus()
+        }
       }
-      return self.clients.openWindow(url)
+      return self.clients.openWindow(full)
     }),
   )
 })

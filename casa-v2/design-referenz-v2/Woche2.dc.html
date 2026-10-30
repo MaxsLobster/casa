@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – Woche mit Zeitstreifen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#1F2A44}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background-color: #F4F1EA; background-image: radial-gradient(circle at 1px 1px, rgba(29,29,27,0.16) 1px, transparent 1.4px); background-size: 19px 19px; background-position: 6px 8px; color: #1D1D1B; font-family: 'Newsreader', Georgia, serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="position: absolute; left: 22px; top: 0; bottom: 80px; border-left: 1.5px dashed rgba(29,29,27,0.2)"></div>
+
+  <main style="flex: 1; overflow-y: auto; padding: 30px 18px 24px 40px; display: flex; flex-direction: column; gap: 12px">
+
+    <header style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+      <button type="button" aria-label="Vorige Woche" style="width: 44px; height: 44px; border: none; background: transparent; font-family: 'Caveat', cursive; font-size: 30px; color: #1F2A44; cursor: pointer">‹</button>
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <span style="font-family: 'Caveat', cursive; font-size: 34px; line-height: 1; color: #1F2A44">2. – 8. November</span>
+        <span style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #6E6A60">KW 45</span>
+      </div>
+      <button type="button" aria-label="Nächste Woche" style="width: 44px; height: 44px; border: none; background: transparent; font-family: 'Caveat', cursive; font-size: 30px; color: #1F2A44; cursor: pointer">›</button>
+    </header>
+
+    <div style="display: flex; justify-content: center; gap: 18px; border-bottom: 1px solid rgba(29,29,27,0.14)">
+      <button type="button" style="font-family: 'Newsreader', Georgia, serif; font-size: 14px; background: transparent; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 8px 0; min-height: 44px; color: #6E6A60; cursor: pointer">Diese Woche</button>
+      <button type="button" style="font-family: 'Newsreader', Georgia, serif; font-size: 14px; font-weight: 600; background: transparent; border: none; border-bottom: 2px solid #B08A45; margin-bottom: -1px; padding: 8px 0; min-height: 44px; color: #1F2A44; cursor: pointer">Nächste Woche</button>
+      <button type="button" style="font-family: 'Newsreader', Georgia, serif; font-size: 14px; background: transparent; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 8px 0; min-height: 44px; color: #6E6A60; cursor: pointer">Normalwoche</button>
+    </div>
+
+    <div style="position: relative; padding-right: 40px; margin-top: 6px">
+
+      <div style="position: absolute; right: 0; top: -18px; width: 36px; height: 132px" aria-label="Valerie bei Oma, Sonntag bis Dienstag">
+        <span style="position: absolute; right: 22px; top: 18px; writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Caveat', cursive; font-size: 17px; line-height: 1; color: #6B5222; white-space: nowrap">Valerie bei Oma</span>
+        <div style="position: absolute; right: 4px; top: 0; width: 12px; height: 132px; background: #B08A45; border-radius: 0 0 6px 6px; opacity: 0.85"></div>
+        <div style="position: absolute; right: 4px; top: 0; width: 12px; height: 10px; background: repeating-linear-gradient(to bottom, #F4F1EA 0, #F4F1EA 2px, transparent 2px, transparent 4px)"></div>
+      </div>
+
+
+      <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+        <div style="{{d.rowStyle}}">
+          <div style="width: 38px; flex: none; display: flex; flex-direction: column; padding-top: 2px">
+            <span style="{{d.wdStyle}}">{{d.wd}}</span>
+            <span style="font-size: 11px; color: #6E6A60">{{d.date}}</span>
+          </div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-family: 'Caveat', cursive; font-size: 21px; line-height: 1.1; color: #1F2A44">{{d.main}}</span>
+            <sc-if value="{{d.sub}}" hint-placeholder-val="{{false}}">
+              <span style="font-size: 12px; color: #6E6A60">{{d.sub}}</span>
+            </sc-if>
+            <sc-if value="{{d.chip}}" hint-placeholder-val="{{false}}">
+              <button type="button" style="align-self: flex-start; font-family: 'Caveat', cursive; font-size: 17px; color: #6B5222; background: transparent; border: 1.2px dashed rgba(107,82,34,0.6); border-radius: 999px; padding: 1px 10px; cursor: pointer">{{d.chip}}</button>
+            </sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <p style="margin: 6px 0 0; font-style: italic; font-size: 13px; line-height: 1.45; color: #3F3C36">Streifen rechts: was über mehrere Tage geht. ↻ wiederholt sich. Gestrichelt: noch offen, antippen zum Übernehmen.</p>
+  </main>
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.12); background: #F4F1EA; display: flex; align-items: center; justify-content: space-around; padding: 0 10px 14px; box-sizing: border-box">
+    <a href="StartB1.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Heute</a>
+    <a href="Woche2.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: #1F2A44; padding: 12px 4px; border-bottom: 2px solid #B08A45">Woche</a>
+    <a href="Neu.dc.html" aria-label="Neu eintragen" style="width: 52px; height: 52px; border-radius: 26px; background: #1F2A44; color: #F4F1EA; display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+    <a href="ToDos.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">To-Dos</a>
+    <a href="Montag.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Sonntag</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var days = [
+      { wd: 'Mo', date: '2.11.', main: 'Valerie bei Oma', sub: 'Anna arbeitet 8 Std.' },
+      { wd: 'Di', date: '3.11.', main: 'Valerie bei Oma, kommt abends', sub: 'Anna kocht' },
+      { wd: 'Mi', date: '4.11.', main: 'Theresa holt', chip: 'Abend offen · übernehmen' },
+      { wd: 'Do', date: '5.11.', main: 'Anna holt · Turnen ↻', sub: 'Essen bei Freunden' },
+      { wd: 'Fr', date: '6.11.', main: 'Anna holt · Annas freier Tag', chip: 'Abend offen · übernehmen' },
+      { wd: 'Sa', date: '7.11.', main: 'Wochenende', chip: 'Familientag? · festlegen' },
+      { wd: 'So', date: '8.11.', main: '20:00 Sonntagsrunde ↻' }
+    ];
+    days.forEach(function (d) {
+      d.sub = d.sub || '';
+      d.chip = d.chip || '';
+      d.rowStyle = 'display:flex;gap:12px;align-items:flex-start;height:62px;box-sizing:border-box;padding:8px 0;border-top:1px solid rgba(29,29,27,0.12);';
+      d.wdStyle = "font-family:'Newsreader',Georgia,serif;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#1F2A44;";
+    });
+    return { days: days };
+  }
+}
+</script>
+</body>
+</html>

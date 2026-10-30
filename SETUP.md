@@ -56,6 +56,28 @@ Status: https://github.com/MaxsLobster/casa/actions
 
 ---
 
+## Mitteilungen (v2, Schritt 1)  [Du und Anna]
+
+Casa schickt Push-Mitteilungen, wenn der andere etwas für einen einträgt, plus ein Morgenbriefing. Damit sie ankommen, muss **jedes Gerät einmal angemeldet** werden:
+
+1. **Casa vom Home-Bildschirm starten** (nicht in Safari). Falls das Icon noch fehlt: Safari → https://maxslobster.github.io/casa/ → Teilen → „Zum Home-Bildschirm“.
+2. Einmal ganz schließen und neu öffnen, damit die aktuelle Version geladen ist.
+3. Unten auf **Heute**, ganz unten **Einstellungen** → **Mitteilungen aktivieren** → im iPhone-Dialog **Erlauben**.
+4. **Test-Mitteilung senden** antippen. Nach ein paar Sekunden kommt „Casa – Test geglückt“.
+5. Optional: Uhrzeit fürs **Morgenbriefing** (Standard 7:00) und **Ruhezeit** (Standard aus) einstellen.
+
+Voraussetzung: iOS 16.4 oder neuer. Steht in den iPhone-Einstellungen unter Mitteilungen → Casa alles auf „Erlauben“, kommen sie auch bei gesperrtem Bildschirm.
+
+Technik dahinter: Datenbank-Trigger legen Mitteilungen in `notifications` ab, pg_cron prüft minütlich (Briefing, Versand), die Edge Function `send-push` verschickt per Web Push (VAPID-Schlüssel als Supabase-Secrets, öffentlicher Teil als `VITE_VAPID_PUBLIC_KEY`). Nach eigenen Einträgen stößt die App den Versand sofort an.
+
+Nachsehen, was verschickt wurde:
+
+```bash
+cd /Users/maximilianarmborst/Desktop/casa-start && supabase db query --linked "select created_at, kind, title, body, sent_at, error from public.notifications order by created_at desc limit 10"
+```
+
+---
+
 ## Teil C – Auf dem iPhone testen  [Du]
 
 1. In **Safari** https://maxslobster.github.io/casa/ öffnen.

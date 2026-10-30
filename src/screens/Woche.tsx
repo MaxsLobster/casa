@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import { addDays, eventEnd, hhmm, isoWeek, startOfWeek, weekDates, weekRange, weekday, weekdayShort, weekdayShortByIndex } from '../lib/dates'
@@ -11,7 +11,7 @@ import { EventEditor } from './EventEditor'
 type View = 'diese' | 'normal'
 
 export function Woche() {
-  const { me, members, normalWeek, overrides, events } = useCasa()
+  const { me, members, normalWeek, overrides, events, isNew } = useCasa()
   const today = useToday()
   const now = useNow()
   const nav = useNavigate()
@@ -49,6 +49,17 @@ export function Woche() {
   )
 
   const rows = view === 'diese' ? thisWeek : template
+
+  const { markSeen } = useCasa()
+  useEffect(() => {
+    if (view !== 'diese' || !openKey) return
+    const day = thisWeek.find((r) => r.key === openKey)
+    const fresh = day?.events.filter((e) => isNew('event', e)).map((e) => e.id) ?? []
+    if (fresh.length === 0) return
+    const t = setTimeout(() => markSeen('event', fresh), 1500)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openKey, view, thisWeek])
 
   function pick(v: View) {
     setView(v)
@@ -112,6 +123,7 @@ export function Woche() {
                         <span className="hand" style={{ fontSize: 20 }}>
                           {[hhmm(e.start_time), e.title].filter(Boolean).join(' ')}
                           <span className="hand hand--meta" style={{ marginLeft: 8 }}>{whoLabel(e.member_id, voice)}</span>
+                          {isNew('event', e) && <span className="stamp stamp--new" style={{ marginLeft: 8, verticalAlign: 'middle' }}>Neu</span>}
                         </span>
                       </button>
                     ))}

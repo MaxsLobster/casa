@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import { addDays, isoWeek, lastSundayCutoff, shortDate, stampDate, startOfWeek, toISO, weekRange } from '../lib/dates'
 import type { Task, TaskStatus } from '../lib/types'
@@ -6,7 +6,7 @@ import { Check, Chevron, Collapse, Stamp, Tabs } from '../components/ui'
 import { TaskEditor } from './TaskEditor'
 
 export function Offen() {
-  const { me, members, tasks, setTaskDone } = useCasa()
+  const { me, members, tasks, setTaskDone, isNew, markSeen } = useCasa()
   const today = useToday()
   const now = useNow()
   const partners = members.filter((m) => m.role === 'partner')
@@ -51,6 +51,17 @@ export function Offen() {
   }, [tasks, tab, cutoff])
   const archiveCount = archive.reduce((n, g) => n + g.items.length, 0)
 
+  // NEU: bleibt sichtbar, solange die Liste offen ist; nach kurzem Ansehen als gesehen merken
+  const [newIds, setNewIds] = useState<Set<string>>(() => new Set())
+  useEffect(() => {
+    const fresh = list.filter((t) => isNew('task', t)).map((t) => t.id)
+    if (fresh.length === 0) return
+    setNewIds((prev) => new Set([...prev, ...fresh]))
+    const timer = setTimeout(() => markSeen('task', fresh), 1500)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list])
+
   return (
     <div className="page" style={{ gap: 14 }}>
       <header className="stack stack--tight">
@@ -71,6 +82,7 @@ export function Offen() {
                 <span className={'task__title' + (done ? ' task__title--done' : '')}>{t.title}</span>
                 <span className="task__meta">
                   <Stamp status={t.status}>{stampLabel(t, today)}</Stamp>
+                  {newIds.has(t.id) && !done && <span className="stamp stamp--new">Neu</span>}
                   {tab === 'alle' && <span className="task__owner">{members.find((m) => m.id === t.owner_member_id)?.display_name}</span>}
                 </span>
               </button>

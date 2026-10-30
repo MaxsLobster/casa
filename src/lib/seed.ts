@@ -47,8 +47,10 @@ export function seedLocal(store: LocalStore) {
   store.insertSync('households', { id: DEMO_HOUSEHOLD_ID, name: 'Casa' })
   store.insertSync('members', { id: DEMO_MAX_ID, household_id: DEMO_HOUSEHOLD_ID, user_id: 'demo-max', email: 'max@beispiel.de', display_name: 'Max', role: 'partner' })
   store.insertSync('members', { id: DEMO_ANNA_ID, household_id: DEMO_HOUSEHOLD_ID, user_id: 'demo-anna', email: 'anna@beispiel.de', display_name: 'Anna', role: 'partner' })
-  store.insertSync('settings', { member_id: DEMO_MAX_ID, dark_mode_auto: true, quiet_hours_start: '21:00', quiet_hours_end: '07:00' })
-  store.insertSync('settings', { member_id: DEMO_ANNA_ID, dark_mode_auto: true, quiet_hours_start: '21:00', quiet_hours_end: '07:00' })
+  store.insertSync('settings', { member_id: DEMO_MAX_ID, dark_mode_auto: true, quiet_hours_start: '21:00', quiet_hours_end: '07:00', quiet_enabled: false, briefing_time: '07:00', last_opened_at: null })
+  store.insertSync('settings', { member_id: DEMO_ANNA_ID, dark_mode_auto: true, quiet_hours_start: '21:00', quiet_hours_end: '07:00', quiet_enabled: false, briefing_time: '07:00', last_opened_at: null })
+  store.insertSync('people', { household_id: DEMO_HOUSEHOLD_ID, name: 'Oma', kind: 'betreuung', sort: 1 })
+  store.insertSync('people', { household_id: DEMO_HOUSEHOLD_ID, name: 'Theresa', kind: 'betreuung', sort: 2 })
   for (const [weekday, slot, value, at, is_open, note] of NORMAL_WEEK) {
     store.insertSync('normal_week', { household_id: DEMO_HOUSEHOLD_ID, weekday, slot, value, at, is_open, note })
   }

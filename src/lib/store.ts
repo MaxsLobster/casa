@@ -78,9 +78,12 @@ export class LocalStore implements Store {
   private prefix = 'casa.demo.'
 
   constructor() {
-    if (!localStorage.getItem(this.prefix + 'seeded')) {
+    if (localStorage.getItem(this.prefix + 'seeded') !== '2') {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith(this.prefix) && k !== this.prefix + 'user')
+        .forEach((k) => localStorage.removeItem(k))
       seedLocal(this)
-      localStorage.setItem(this.prefix + 'seeded', '1')
+      localStorage.setItem(this.prefix + 'seeded', '2')
     }
     window.addEventListener('storage', (e) => {
       if (e.key?.startsWith(this.prefix)) {

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – To-Dos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#1F2A44}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background-color: #F4F1EA; background-image: radial-gradient(circle at 1px 1px, rgba(29,29,27,0.16) 1px, transparent 1.4px); background-size: 19px 19px; background-position: 6px 8px; color: #1D1D1B; font-family: 'Newsreader', Georgia, serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="position: absolute; left: 22px; top: 0; bottom: 80px; border-left: 1.5px dashed rgba(29,29,27,0.2)"></div>
+
+  <main style="flex: 1; overflow-y: auto; padding: 30px 26px 24px 40px; display: flex; flex-direction: column; gap: 14px">
+    <h1 style="margin: 0; font-family: 'Caveat', cursive; font-weight: 600; font-size: 40px; line-height: 1.05; color: #1F2A44">To-Dos</h1>
+
+    <div style="display: flex; gap: 22px; border-bottom: 1px solid rgba(29,29,27,0.14)">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+        <button type="button" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
+      <section style="display: flex; flex-direction: column">
+        <h2 style="margin: 6px 0 2px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: #6E6A60">{{g.title}}</h2>
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="2">
+          <div style="display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid rgba(29,29,27,0.10)">
+            <span style="{{i.circleStyle}}">
+              <sc-if value="{{i.done}}" hint-placeholder-val="{{false}}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>
+              </sc-if>
+            </span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+              <span style="{{i.titleStyle}}">{{i.title}}</span>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+                <span style="font-size: 12px; color: #6E6A60">{{i.meta}}</span>
+                <sc-if value="{{i.isNew}}" hint-placeholder-val="{{false}}">
+                  <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: #F4F1EA; background: #B08A45; border-radius: 3px; padding: 1px 6px">NEU</span>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+    </sc-for>
+
+    <a href="#" style="align-self: center; margin-top: 6px; font-family: 'Caveat', cursive; font-size: 20px; color: #6B5222; padding: 10px">Erledigt ansehen →</a>
+  </main>
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.12); background: #F4F1EA; display: flex; align-items: center; justify-content: space-around; padding: 0 10px 14px; box-sizing: border-box">
+    <a href="StartB1.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Heute</a>
+    <a href="Woche2.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Woche</a>
+    <a href="Neu.dc.html" aria-label="Neu eintragen" style="width: 52px; height: 52px; border-radius: 26px; background: #1F2A44; color: #F4F1EA; display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+    <a href="ToDos.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: #1F2A44; padding: 12px 4px; border-bottom: 2px solid #B08A45">To-Dos</a>
+    <a href="Montag.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Sonntag</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'Max' };
+  }
+  renderVals() {
+    var self = this;
+    var data = {
+      Max: [
+        { title: 'Neu', items: [
+          { title: 'Gartenlounge abdecken', meta: 'bis Di · von Anna', isNew: true }
+        ] },
+        { title: 'Heute fällig', items: [
+          { title: 'Altpapier rausstellen', meta: 'heute' }
+        ] },
+        { title: 'Diese Woche', items: [
+          { title: 'Kfz-Versicherung prüfen', meta: 'bis Fr' },
+          { title: 'Winterreifen-Termin machen', meta: 'bis Sa' }
+        ] },
+        { title: 'Später', items: [
+          { title: 'Dachrinne reinigen lassen', meta: 'bis 15.11.' }
+        ] },
+        { title: 'Geschafft diese Woche', items: [
+          { title: 'Kita-Formular unterschrieben', meta: 'Mi', done: true },
+          { title: 'Altglas weggebracht', meta: 'Di', done: true }
+        ] }
+      ],
+      Anna: [
+        { title: 'Diese Woche', items: [
+          { title: 'Geschenk für Uschi', meta: 'bis Sa' },
+          { title: 'Nebenkosten prüfen', meta: 'bis So' }
+        ] },
+        { title: 'Geschafft diese Woche', items: [
+          { title: 'Arzttermin Valerie', meta: 'Mo', done: true }
+        ] }
+      ]
+    };
+    data.Alle = data.Max.concat(data.Anna);
+    var tabs = ['Max', 'Anna', 'Alle'].map(function (t) {
+      var on = self.state.tab === t;
+      return {
+        label: t,
+        style: "font-family:'Newsreader',Georgia,serif;font-size:15px;background:transparent;border:none;padding:10px 0;margin-bottom:-1px;min-height:44px;cursor:pointer;" + (on ? 'color:#1F2A44;font-weight:600;border-bottom:2px solid #B08A45;' : 'color:#6E6A60;border-bottom:2px solid transparent;'),
+        pick: function () { self.setState({ tab: t }); }
+      };
+    });
+    var groups = data[this.state.tab].map(function (g) {
+      return {
+        title: g.title,
+        items: g.items.map(function (i) {
+          return {
+            title: i.title,
+            meta: i.meta,
+            isNew: !!i.isNew,
+            done: !!i.done,
+            titleStyle: "font-family:'Caveat',cursive;font-size:23px;line-height:1.1;" + (i.done ? 'color:#6E6A60;text-decoration:line-through;' : 'color:#1F2A44;'),
+            circleStyle: 'flex:none;margin-top:4px;width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;' + (i.done ? 'background:#1F2A44;border:1.5px solid #1F2A44;color:#F4F1EA;' : 'border:1.5px solid #1F2A44;')
+          };
+        })
+      };
+    });
+    return { tabs: tabs, groups: groups };
+  }
+}
+</script>
+</body>
+</html>

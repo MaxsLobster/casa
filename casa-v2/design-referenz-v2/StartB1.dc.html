@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – Heute, Variante B1</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#1F2A44}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background-color: #F4F1EA; background-image: radial-gradient(circle at 1px 1px, rgba(29,29,27,0.16) 1px, transparent 1.4px); background-size: 19px 19px; background-position: 6px 8px; color: #1D1D1B; font-family: 'Newsreader', Georgia, serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="position: absolute; left: 22px; top: 0; bottom: 80px; border-left: 1.5px dashed rgba(29,29,27,0.2)"></div>
+
+  <div style="position: absolute; top: 10px; right: 12px; z-index: 3; display: flex; align-items: center; gap: 2px; border: 1px dashed rgba(31,42,68,0.35); border-radius: 999px; padding: 2px 4px; background: rgba(244,241,234,0.92)">
+    <span style="font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 4px 4px 4px 6px">Röhre</span>
+    <a href="StartB1.dc.html" style="font-size: 12px; font-weight: 600; color: #F4F1EA; background: #1F2A44; border-radius: 999px; min-width: 26px; height: 24px; padding: 0 6px; box-sizing: border-box; display: flex; align-items: center; justify-content: center">B1</a>
+    <a href="StartB2.dc.html" style="font-size: 12px; color: #1F2A44; border-radius: 999px; min-width: 26px; height: 24px; padding: 0 6px; box-sizing: border-box; display: flex; align-items: center; justify-content: center">B2</a>
+    <a href="StartB3.dc.html" style="font-size: 12px; color: #1F2A44; border-radius: 999px; min-width: 26px; height: 24px; padding: 0 6px; box-sizing: border-box; display: flex; align-items: center; justify-content: center">B3</a>
+  </div>
+
+  <main style="flex: 1; overflow-y: auto; padding: 44px 18px 22px 40px; display: flex; flex-direction: column; gap: 22px">
+
+    <div style="display: flex; flex-direction: column; padding-right: 4px">
+      <div style="display: flex; align-items: flex-end; gap: 14px">
+        <span style="font-size: 88px; line-height: 0.85; font-weight: 500; color: #1F2A44; letter-spacing: -0.02em">30</span>
+        <div style="display: flex; flex-direction: column; padding-bottom: 4px">
+          <span style="font-family: 'Caveat', cursive; font-size: 34px; line-height: 1; color: #1F2A44">Freitag</span>
+          <span style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #6E6A60">Oktober · KW 44</span>
+        </div>
+      </div>
+      <div style="margin: 14px 0 8px; border-top: 2px dotted rgba(31,42,68,0.3)"></div>
+      <div style="display: flex; align-items: center; gap: 14px; font-size: 13px; color: #3F3C36">
+        <span style="display: flex; align-items: center; gap: 6px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B08A45" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>6:59–16:49</span>
+        <span style="display: flex; align-items: center; gap: 6px; white-space: nowrap"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="#1F2A44" stroke-width="1.6"></circle><path d="M12 3a9 9 0 0 0 0 18a6.5 9 0 0 1 0-18z" fill="#1F2A44"></path></svg>abnehmend</span>
+        <span style="margin-left: auto; display: flex; gap: 0">
+          <sc-for list="{{cats}}" as="c" hint-placeholder-count="3">
+            <button type="button" onClick="{{c.pick}}" disabled="{{c.locked}}" aria-label="{{c.aria}}" style="{{c.style}}">
+              <sc-if value="{{c.isW}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4c-6 0-11 4-12 11l-2 5"></path><path d="M8 15c4 0 8-2 10-6"></path></svg></sc-if>
+              <sc-if value="{{c.isA}}" hint-placeholder-val="{{false}}"><span style="font-size: 13px; font-weight: 600">Aa</span></sc-if>
+              <sc-if value="{{c.isH}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12M6 21h12M7 3c0 5 10 5 10 9s-10 4-10 9M17 3c0 5-10 5-10 9s10 4 10 9"></path></svg></sc-if>
+            </button>
+          </sc-for>
+        </span>
+      </div>
+      <sc-if value="{{showText}}" hint-placeholder-val="{{false}}">
+        <figure style="margin: 10px 0 0; padding: 12px 14px 8px; background: #FBF9F4; border-radius: 4px; box-shadow: 0 3px 10px rgba(31,42,68,0.08); display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #6E6A60">{{label}}</span>
+          <blockquote style="margin: 0; font-family: 'Caveat', cursive; font-size: 22px; line-height: 1.2; color: #1D1D1B">{{text}}</blockquote>
+          <sc-if value="{{source}}" hint-placeholder-val="{{false}}">
+            <figcaption style="align-self: flex-end; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60">{{source}}</figcaption>
+          </sc-if>
+        </figure>
+      </sc-if>
+    </div>
+
+    <div style="flex: 1; min-height: 420px; display: flex; gap: 14px; align-items: stretch">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 22px">
+        <a href="ToDos.dc.html" style="position: relative; display: block; background: #EFE4C8; padding: 14px 14px 10px; transform: rotate(-1deg); box-shadow: 0 3px 8px rgba(31,42,68,0.10)">
+          <span style="position: absolute; top: -8px; left: 50%; width: 54px; height: 16px; margin-left: -27px; background: rgba(176,138,69,0.32); transform: rotate(2deg)"></span>
+          <span style="display: block; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #6B5222">Neu von Anna</span>
+          <span style="display: block; font-family: 'Caveat', cursive; font-size: 22px; line-height: 1.15; color: #1D1D1B">Gartenlounge abdecken · bis Di</span>
+        </a>
+        <section style="display: flex; flex-direction: column; gap: 12px">
+          <h2 style="margin: 0; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: #6E6A60">Heute noch</h2>
+          <div style="display: flex; gap: 10px; align-items: baseline">
+            <span style="flex: none; width: 40px; font-size: 14px; font-weight: 600; color: #1F2A44">18:00</span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+              <span style="font-family: 'Caveat', cursive; font-size: 23px; line-height: 1.1; color: #1F2A44">Grillen bei Hanna</span>
+              <span style="font-size: 12px; color: #6E6A60">ihr beide · bis 20 Uhr</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: baseline">
+            <span style="flex: none; width: 40px; display: flex; justify-content: center"><span style="width: 16px; height: 16px; border: 1.5px solid #1F2A44; border-radius: 8px; transform: translateY(3px)"></span></span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+              <span style="font-family: 'Caveat', cursive; font-size: 23px; line-height: 1.1; color: #1F2A44">Altpapier rausstellen</span>
+              <span style="font-size: 12px; color: #6E6A60">du · heute fällig</span>
+            </div>
+          </div>
+        </section>
+        <section style="display: flex; flex-direction: column; gap: 8px">
+          <h2 style="margin: 0; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: #6E6A60">Demnächst</h2>
+          <a href="Woche2.dc.html" style="display: flex; gap: 10px; align-items: center">
+            <span style="flex: none; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #4A3815; background: rgba(176,138,69,0.28); border-radius: 999px; padding: 3px 9px">So–Di</span>
+            <span style="font-family: 'Caveat', cursive; font-size: 22px; line-height: 1.1; color: #1F2A44">Valerie bei Oma</span>
+          </a>
+        </section>
+      </div>
+      <div style="position: relative; flex: none; width: 54px" aria-label="Tagesverlauf">
+        <span style="position: absolute; right: 22px; top: 0.0%; transform: translateY(-50%); font-size: 10px; color: #8A857A; font-variant-numeric: tabular-nums">6</span><span style="position: absolute; right: 22px; top: 18.75%; transform: translateY(-50%); font-size: 10px; color: #8A857A; font-variant-numeric: tabular-nums">9</span><span style="position: absolute; right: 22px; top: 37.5%; transform: translateY(-50%); font-size: 10px; color: #8A857A; font-variant-numeric: tabular-nums">12</span><span style="position: absolute; right: 22px; top: 56.25%; transform: translateY(-50%); font-size: 10px; color: #8A857A; font-variant-numeric: tabular-nums">15</span><span style="position: absolute; right: 22px; top: 75.0%; transform: translateY(-50%); font-size: 10px; color: #8A857A; font-variant-numeric: tabular-nums">18</span><span style="position: absolute; right: 22px; top: 93.75%; transform: translateY(-50%); font-size: 10px; color: #8A857A; font-variant-numeric: tabular-nums">21</span>
+        <span style="position: absolute; right: 16px; top: 0.0%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 6.25%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 12.5%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 18.75%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 25.0%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 31.25%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 37.5%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 43.75%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 50.0%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 56.25%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 62.5%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 68.75%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 75.0%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 81.25%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 87.5%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 93.75%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span><span style="position: absolute; right: 16px; top: 100.0%; width: 4px; height: 1px; background: rgba(31,42,68,0.35)"></span>
+        <span style="position: absolute; right: 18px; top: 66.667%; transform: translateY(-50%); font-size: 10px; font-weight: 600; color: #6B5222; background: #F4F1EA; padding: 1px 0; font-variant-numeric: tabular-nums">16:40</span>
+        <div style="position: absolute; right: 2px; top: 0; bottom: 0; width: 12px; border-radius: 6px; border: 1.5px solid rgba(31,42,68,0.4); box-sizing: border-box; overflow: hidden; background: #FBF9F4">
+          <div style="position: absolute; left: 0; right: 0; top: 0; height: 66.667%; background: rgba(31,42,68,0.16); border-bottom: 2px solid #6B5222; box-sizing: border-box"></div>
+          <div style="position: absolute; left: 50%; top: 66.667%; width: 6px; height: 6px; margin: -4px 0 0 -3px; border-radius: 3px; background: #6B5222; box-shadow: 0 0 0 3px rgba(107,82,34,0.18)"></div>
+          <div style="position: absolute; left: 2px; right: 2px; top: 12.5%; height: 37.5%; border-radius: 4px; background: #B08A45; opacity: 0.45"></div>
+          <div style="position: absolute; left: 2px; right: 2px; top: 75.0%; height: 12.5%; border-radius: 4px; background: #1F2A44"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.12); background: #F4F1EA; display: flex; align-items: center; justify-content: space-around; padding: 0 10px 14px; box-sizing: border-box">
+    <a href="StartB1.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: #1F2A44; padding: 12px 4px; border-bottom: 2px solid #B08A45">Heute</a>
+    <a href="Woche2.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Woche</a>
+    <a href="Neu.dc.html" aria-label="Neu eintragen" style="width: 52px; height: 52px; border-radius: 26px; background: #1F2A44; color: #F4F1EA; display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+    <a href="ToDos.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">To-Dos</a>
+    <a href="Montag.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Sonntag</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { chosen: null, open: false };
+  }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var content = {
+      weisheit: { label: 'Weisheit des Tages', text: '„Während man es aufschiebt, eilt das Leben vorbei.“', source: 'Seneca' },
+      wort: { label: 'Wort des Tages', text: 'Fernweh – die Sehnsucht nach Orten, an denen man noch nie war.', source: '' },
+      heute: { label: 'Heute vor 88 Jahren', text: 'Orson Welles’ Hörspiel „Krieg der Welten“ versetzt Amerika in Aufregung.', source: '30.10.1938' }
+    };
+    var defs = [
+      { id: 'weisheit', aria: 'Weisheit des Tages', isW: true },
+      { id: 'wort', aria: 'Wort des Tages', isA: true },
+      { id: 'heute', aria: 'Was geschah heute', isH: true }
+    ];
+    var cats = defs.map(function (d) {
+      var isChosen = s.chosen === d.id;
+      var locked = !!s.chosen && !isChosen;
+      var look;
+      if (isChosen && s.open) look = 'background:rgba(31,42,68,0.12);color:#1F2A44;';
+      else if (isChosen) look = 'background:transparent;color:#1F2A44;box-shadow:inset 0 -2px 0 #B08A45;';
+      else if (locked) look = 'background:transparent;color:#1F2A44;opacity:0.22;cursor:default;';
+      else look = 'background:transparent;color:#6E6A60;';
+      return {
+        aria: d.aria + (locked ? ' (heute schon gewählt)' : ''),
+        isW: !!d.isW, isA: !!d.isA, isH: !!d.isH,
+        locked: locked,
+        style: 'width:32px;height:36px;display:flex;align-items:center;justify-content:center;border:none;border-radius:8px;cursor:pointer;padding:0;font-family:Newsreader,Georgia,serif;' + look,
+        pick: function () {
+          if (locked) return;
+          if (!s.chosen) self.setState({ chosen: d.id, open: true });
+          else self.setState({ open: !s.open });
+        }
+      };
+    });
+    var c = s.chosen ? content[s.chosen] : null;
+    return {
+      cats: cats,
+      showText: !!c && s.open,
+      label: c ? c.label : '',
+      text: c ? c.text : '',
+      source: c ? c.source : ''
+    };
+  }
+}
+</script>
+</body>
+</html>

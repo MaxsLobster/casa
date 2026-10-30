@@ -147,13 +147,16 @@ function byDue(a: Task, b: Task) {
 }
 
 function TaskRow({ task, today }: { task: Task; today: string }) {
-  const { setTaskDone } = useCasa()
+  const { setTaskDone, isNew } = useCasa()
   return (
     <div className="row" style={{ alignItems: 'center' }}>
       <span style={{ marginLeft: -2, transform: 'scale(0.82)', transformOrigin: 'left center', width: 18, flex: 'none' }}>
         <Check done={false} onToggle={() => setTaskDone(task.id, true)} label={`${task.title} abhaken`} />
       </span>
-      <span className="row__text hand hand--navy">{task.title}</span>
+      <span className="row__text hand hand--navy">
+        {task.title}
+        {isNew('task', task) && <span className="stamp stamp--new" style={{ marginLeft: 8, verticalAlign: 'middle' }}>Neu</span>}
+      </span>
       <span className="hand hand--meta">{relativeLabel(task.due_date, today)}</span>
     </div>
   )

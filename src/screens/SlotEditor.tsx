@@ -13,7 +13,6 @@ interface Draft {
   note: string
 }
 
-const EXTRA_PEOPLE = ['Oma', 'Theresa']
 
 /**
  * Bearbeitet einen oder zwei Slots:
@@ -21,10 +20,10 @@ const EXTRA_PEOPLE = ['Oma', 'Theresa']
  *  - mit `weekday`: Vorlage der Normalwoche (normal_week)
  */
 export function SlotEditor({ slots, date, weekday, state, onClose }: { slots: Slot[]; date?: string; weekday?: number; state: DayState; onClose: () => void }) {
-  const { members, setOverride, clearOverride, setTemplate } = useCasa()
+  const { members, people: householdPeople, setOverride, clearOverride, setTemplate } = useCasa()
   const isTemplate = !date
   const close = useCallback(() => onClose(), [onClose])
-  const people = [...members.filter((m) => m.role === 'partner').map((m) => m.display_name), ...EXTRA_PEOPLE]
+  const people = [...members.filter((m) => m.role === 'partner').map((m) => m.display_name), ...householdPeople.map((p) => p.name)]
 
   const [drafts, setDrafts] = useState<Record<string, Draft>>(() => {
     const out: Record<string, Draft> = {}
