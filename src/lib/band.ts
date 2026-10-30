@@ -1,0 +1,69 @@
+// Mini-Band / Zeitstrahl 6–22 Uhr: Gold = Valerie versorgt, Navy = Termine.
+// Wird von „Heute" (Zeitstrahl) und „Woche" (Band pro Tag) gleich berechnet.
+
+import type { Member } from './types'
+import type { DayState } from './week'
+import { isMultiDay, type Occurrence } from './recur'
+
+export const BAND_START = 6
+export const BAND_END = 22
+
+export interface Seg {
+  from: number
+  to: number
+}
+
+/** „14:30" → 14.5 */
+export function toH(t: string | null | undefined, fallback: number): number {
+  if (!t) return fallback
+  const [h, m] = t.split(':').map(Number)
+  return h + (m || 0) / 60
+}
+
+/** Position einer Stunde im Band als Prozent */
+export function pct(h: number): string {
+  return `${((Math.min(Math.max(h, BAND_START), BAND_END) - BAND_START) / (BAND_END - BAND_START)) * 100}%`
+}
+
+/** Breite eines Abschnitts als Prozent */
+export function widthPct(s: Seg): string {
+  const a = Math.min(Math.max(s.from, BAND_START), BAND_END)
+  const b = Math.min(Math.max(s.to, BAND_START), BAND_END)
+  return `${((b - a) / (BAND_END - BAND_START)) * 100}%`
+}
+
+function clip(segs: Seg[]): Seg[] {
+  return segs.filter((s) => s.to > BAND_START && s.from < BAND_END && s.to > s.from)
+}
+
+/**
+ * Gold: Valerie ist versorgt.
+ * Kita ab 8 bis zum Abholen; holt Oma oder Theresa, bleibt es gold bis 18 Uhr.
+ * Mehrtägig bei Oma (Ereignis mit Person): der ganze Tag. Eintägige Ereignisse mit Person: deren Zeit.
+ */
+export function goldSegments(day: DayState, occ: Occurrence[], members: Member[]): Seg[] {
+  const out: Seg[] = []
+  const b = day.valerie_bringen
+  const h = day.valerie_holen
+  if (b?.value || h?.value) {
+    const pickup = toH(h?.at, 14)
+    out.push({ from: 8, to: pickup })
+    const byParent = !!h?.value && members.some((m) => m.display_name.toLowerCase() === h.value!.toLowerCase())
+    if (h?.value && !byParent) out.push({ from: pickup, to: 18 })
+  }
+  for (const o of occ) {
+    if (!o.person_id) continue
+    if (isMultiDay(o) || !o.start_time) out.push({ from: BAND_START, to: BAND_END })
+    else out.push({ from: toH(o.start_time, 0), to: o.end_time ? toH(o.end_time, 0) : toH(o.start_time, 0) + 1 })
+  }
+  return clip(out)
+}
+
+/** Navy: Termine mit Uhrzeit, die mich oder uns beide betreffen (keine mehrtägigen, keine Betreuungs-Ereignisse) */
+export function navySegments(occ: Occurrence[], meId: string | null): Seg[] {
+  return clip(
+    occ
+      .filter((o) => !isMultiDay(o) && !!o.start_time && !o.person_id && (o.member_id === null || o.member_id === meId))
+      .map((o) => ({ from: toH(o.start_time, 0), to: o.end_time ? toH(o.end_time, 0) : toH(o.start_time, 0) + 1 })),
+  )
+}

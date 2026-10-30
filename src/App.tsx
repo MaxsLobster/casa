@@ -108,7 +108,7 @@ function Shell() {
       {casa.error && (
         <div style={{ position: 'fixed', left: 16, right: 16, bottom: 'calc(var(--nav-h) + 12px)', zIndex: 40 }}>
           <div className="note" style={{ transform: 'none' }}>
-            <span className="hand" style={{ fontSize: 20 }}>{casa.error}</span>
+            <span className="hand" style={{ fontSize: 22 }}>{casa.error}</span>
           </div>
         </div>
       )}

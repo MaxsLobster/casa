@@ -98,7 +98,7 @@ export function Einstellungen() {
           <div className="stack">
             {subscribed ? (
               <>
-                <p className="hand hand--navy" style={{ fontSize: 21 }}>Auf diesem Gerät an.</p>
+                <p className="hand hand--navy" style={{ fontSize: 23 }}>Auf diesem Gerät an.</p>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <button type="button" className="btn btn--ghost" style={{ width: 'auto', padding: '0 20px', height: 46 }} disabled={busy} onClick={onTest}>Test-Mitteilung senden</button>
                   <button type="button" className="link" disabled={busy} onClick={onDisable}>Hier abschalten</button>
@@ -165,7 +165,7 @@ export function Einstellungen() {
       {/* ---------- Passwort ---------- */}
       <div className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
         <span className="label">Passwort</span>
-        {pwDone && <p className="hand hand--navy" style={{ fontSize: 20 }}>Passwort geändert.</p>}
+        {pwDone && <p className="hand hand--navy" style={{ fontSize: 22 }}>Passwort geändert.</p>}
         {!pwOpen ? (
           <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => { setPwOpen(true); setPwDone(false) }}>Passwort ändern</button>
         ) : (

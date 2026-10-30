@@ -5,19 +5,12 @@ import { addDays, dayLabel, eventEnd, fromISO, hhmm, isoWeek, uhr, weekdayLong, 
 import { dayState, name as whoName, verb, type Voice } from '../lib/week'
 import { dailyText, moonPhase, readDailyChoice, sunTimes, writeDailyChoice, type DailyKind } from '../lib/daily'
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
+import { BAND_END as T_END, BAND_START as T_START, goldSegments, navySegments, pct, toH } from '../lib/band'
 import { Check } from '../components/ui'
 import type { Task } from '../lib/types'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 
-const T_START = 6
-const T_END = 22
-const pct = (h: number) => `${(Math.min(Math.max(h, T_START), T_END) - T_START) / (T_END - T_START) * 100}%`
-const toH = (t: string | null | undefined, fallback: number) => {
-  if (!t) return fallback
-  const [h, m] = t.split(':').map(Number)
-  return h + m / 60
-}
 
 interface Row {
   key: string
@@ -132,18 +125,9 @@ export function Heute() {
   }
 
   // ---------- Zeitstrahl ----------
-  const gold: { from: number; to: number }[] = []
-  if (b?.value || h?.value) {
-    const from = 8
-    const hh = toH(h?.at, 14)
-    gold.push({ from, to: hh })
-    if (h?.value && !members.some((m) => m.display_name.toLowerCase() === h.value!.toLowerCase())) gold.push({ from: hh, to: 18 })
-  }
-  for (const o of occToday) if (o.person_id && isMultiDay(o)) gold.push({ from: T_START, to: T_END })
-  const navy = occToday
-    .filter((o) => !isMultiDay(o) && o.start_time)
-    .map((o) => ({ from: toH(o.start_time, 0), to: o.end_time ? toH(o.end_time, 0) : toH(o.start_time, 0) + 1 }))
-    .filter((s) => s.to > T_START && s.from < T_END)
+  // Gleiche Rechnung wie das Mini-Band in der Woche
+  const gold = goldSegments(day, occToday, members)
+  const navy = navySegments(occToday, me?.id ?? null)
   const fill = Math.min(Math.max(nowH, T_START), T_END)
   const fillPct = pct(fill)
   const inRange = nowH >= T_START && nowH <= T_END
@@ -156,7 +140,7 @@ export function Heute() {
           <span className="heute__num">{d.getDate()}</span>
           <div className="stack" style={{ gap: 2, paddingBottom: 4 }}>
             <span className="heute__wd">{weekdayLong(today)}</span>
-            <span className="kicker" style={{ fontSize: 11 }}>{MONTHS[d.getMonth()]} · KW {isoWeek(today)}</span>
+            <span className="kicker" style={{ fontSize: 12 }}>{MONTHS[d.getMonth()]} · KW {isoWeek(today)}</span>
           </div>
         </div>
         <div className="heute__tear" />
@@ -178,7 +162,7 @@ export function Heute() {
               return (
                 <button key={k} type="button" className={cls} aria-label={aria} disabled={locked} onClick={() => pick(k)}>
                   {k === 'weisheit' && <FeatherIcon />}
-                  {k === 'wort' && <span style={{ fontSize: 13, fontWeight: 600 }}>Aa</span>}
+                  {k === 'wort' && <span style={{ fontSize: 14, fontWeight: 600 }}>Aa</span>}
                   {k === 'heute' && <HourglassIcon />}
                 </button>
               )
@@ -188,8 +172,8 @@ export function Heute() {
         {shown && (
           <figure className="heute__figure fade-in">
             <span className="label label--small">{shown.label}</span>
-            <blockquote className="hand" style={{ margin: 0, fontSize: 22, lineHeight: 1.2 }}>{shown.text}</blockquote>
-            {shown.source && <figcaption className="label" style={{ alignSelf: 'flex-end', fontSize: 11 }}>{shown.source}</figcaption>}
+            <blockquote className="hand" style={{ margin: 0, fontSize: 24, lineHeight: 1.2 }}>{shown.text}</blockquote>
+            {shown.source && <figcaption className="label" style={{ alignSelf: 'flex-end', fontSize: 12 }}>{shown.source}</figcaption>}
           </figure>
         )}
       </div>
@@ -200,7 +184,7 @@ export function Heute() {
           {newCount > 0 && (
             <button type="button" className="note heute__note" onClick={openNew} style={{ textAlign: 'left', width: '100%', cursor: 'pointer' }}>
               <span className="label label--small" style={{ color: 'var(--brown)' }}>Neu von {partner?.display_name ?? 'Anna'}</span>
-              <span className="hand" style={{ fontSize: 22, lineHeight: 1.15 }}>
+              <span className="hand" style={{ fontSize: 24, lineHeight: 1.15 }}>
                 {firstNew}
                 {newCount > 1 && <span className="hand hand--meta" style={{ marginLeft: 8 }}>+{newCount - 1} weitere</span>}
               </span>
@@ -240,7 +224,7 @@ export function Heute() {
               {soon.map((o) => (
                 <button type="button" key={o.id + o.occ_date} className="heute__soon" onClick={() => nav('/woche')}>
                   <span className="heute__pill">{spanLabel(o.occ_date, o.occ_end)}</span>
-                  <span className="hand hand--navy" style={{ fontSize: 22, lineHeight: 1.1 }}>{o.title}</span>
+                  <span className="hand hand--navy" style={{ fontSize: 24, lineHeight: 1.1 }}>{o.title}</span>
                 </button>
               ))}
             </section>

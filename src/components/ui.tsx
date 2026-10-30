@@ -126,7 +126,7 @@ export function Toggle({ on, onChange, label, hint }: { on: boolean; onChange: (
   return (
     <button type="button" className="toggle" role="switch" aria-checked={on} onClick={() => onChange(!on)}>
       <span className="stack stack--tight">
-        <span className="hand" style={{ fontSize: 22 }}>{label}</span>
+        <span className="hand" style={{ fontSize: 24 }}>{label}</span>
         {hint && <span className="hint">{hint}</span>}
       </span>
       <span className={'toggle__switch' + (on ? ' toggle__switch--on' : '')} aria-hidden />
