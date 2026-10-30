@@ -21,7 +21,7 @@ export function sunTimes(date: ISODate): { sunrise: string; sunset: string } {
 
 export type MoonPhase = 'neumond' | 'zunehmend' | 'vollmond' | 'abnehmend'
 
-export function moonPhase(date: ISODate): { phase: MoonPhase; label: string; fraction: number } {
+export function moonPhase(date: ISODate): { phase: MoonPhase; label: string; fraction: number; waxing: boolean } {
   const d = fromISO(date)
   d.setHours(12, 0, 0, 0)
   const { phase, fraction } = SunCalc.getMoonIllumination(d)
@@ -31,7 +31,7 @@ export function moonPhase(date: ISODate): { phase: MoonPhase; label: string; fra
   else if (phase <= 0.53) p = 'vollmond'
   else p = 'abnehmend'
   const label = { neumond: 'Neumond', zunehmend: 'zunehmend', vollmond: 'Vollmond', abnehmend: 'abnehmend' }[p]
-  return { phase: p, label, fraction }
+  return { phase: p, label, fraction, waxing: phase < 0.5 }
 }
 
 // ---------------------------------------------------------------------------

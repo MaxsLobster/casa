@@ -97,7 +97,7 @@ export function Heute() {
   // Nur meine Aufgaben, nur genau heute fällig (Überfälliges steht unter To-Dos bei „Liegt noch")
   for (const t of tasks) {
     if (t.status === 'erledigt' || t.due_date !== today || t.owner_member_id !== me?.id) continue
-    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: 'heute fällig', task: t, isNew: isNew('task', t) })
+    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: '', task: t, isNew: isNew('task', t) })
   }
   rows.sort((a, c) => a.sort - c.sort)
 
@@ -134,6 +134,9 @@ export function Heute() {
 
   return (
     <div className="page heute">
+      <Link to="/einstellungen" className="heute__gear" aria-label="Einstellungen">
+        <GearIcon />
+      </Link>
       {/* ---------- Kopf ---------- */}
       <div className="heute__head">
         <div className="heute__date">
@@ -150,7 +153,7 @@ export function Heute() {
             {sun.sunrise}–{sun.sunset}
           </span>
           <span className="heute__sun" title="Mondphase">
-            <MoonIcon phase={moon.phase} />
+            <MoonIcon fraction={moon.fraction} waxing={moon.waxing} label={moon.label} />
             {moon.label}
           </span>
           <span className="heute__cats">
@@ -212,7 +215,7 @@ export function Heute() {
                     {r.title}
                     {r.isNew && <span className="stamp stamp--new" style={{ marginLeft: 8, verticalAlign: 'middle' }}>Neu</span>}
                   </span>
-                  <span className="heute__sub">{r.sub}</span>
+                  {r.sub && <span className="heute__sub">{r.sub}</span>}
                 </div>
               </div>
             ))}
@@ -231,7 +234,6 @@ export function Heute() {
           )}
 
           <div className="spacer" />
-          <Link to="/einstellungen" className="link" style={{ alignSelf: 'flex-start' }}>Einstellungen</Link>
         </div>
 
         <div className="tl" aria-label="Tagesverlauf">
@@ -283,14 +285,28 @@ function SunIcon() {
     </svg>
   )
 }
-function MoonIcon({ phase }: { phase: string }) {
-  // Sichel links/rechts je nach Phase, voll oder leer
-  const fill = phase === 'vollmond' ? 'var(--navy)' : 'none'
-  const path = phase === 'zunehmend' ? 'M12 3a9 9 0 0 1 0 18a6.5 9 0 0 0 0-18z' : phase === 'abnehmend' ? 'M12 3a9 9 0 0 0 0 18a6.5 9 0 0 1 0-18z' : ''
+/** Gezeichneter Mond in echter Phase: beleuchteter Anteil und Seite (zunehmend rechts, abnehmend links) */
+function MoonIcon({ fraction, waxing, label }: { fraction: number; waxing: boolean; label: string }) {
+  const r = 10
+  const f = Math.min(Math.max(fraction, 0), 1)
+  const rx = (r * Math.abs(2 * f - 1)).toFixed(2)
+  // Außenbogen auf der beleuchteten Seite, zurück über die Schattengrenze (Ellipse)
+  const outer = waxing ? 1 : 0
+  const back = f >= 0.5 ? outer : 1 - outer
+  const d = `M12 2 A${r} ${r} 0 0 ${outer} 12 22 A${rx} ${r} 0 0 ${back} 12 2 Z`
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
-      <circle cx="12" cy="12" r="9" fill={fill} stroke="var(--navy)" strokeWidth="1.6" />
-      {path && <path d={path} fill="var(--navy)" />}
+    <svg className="moon" width="22" height="22" viewBox="0 0 24 24" role="img" aria-label={`Mond ${label}, ${Math.round(f * 100)} Prozent`}>
+      <circle cx="12" cy="12" r={r} className="moon__dark" />
+      {f > 0.01 && <path d={d} className="moon__lit" />}
+      <circle cx="12" cy="12" r={r} fill="none" className="moon__rim" strokeWidth="0.8" />
+    </svg>
+  )
+}
+function GearIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
     </svg>
   )
 }

@@ -12,7 +12,7 @@ function apply(dark: boolean) {
   if (dark) root.setAttribute('data-theme', 'dark')
   else root.removeAttribute('data-theme')
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', dark ? '#182036' : '#F4F1EA')
+  if (meta) meta.setAttribute('content', dark ? '#1A2340' : '#F2EDE2')
 }
 
 /** Ab 20 Uhr dunkles Notizbuch, wenn in den Einstellungen nicht abgeschaltet. */

@@ -159,11 +159,13 @@ export function abendLine(d: DayState, v: Voice): string | null {
   if (!e && !b) return null
   const eOpen = !!e?.is_open || (!!e && !e.value)
   const bOpen = !!b?.is_open || (!!b && !b.value)
-  if (eOpen && bOpen) return 'Essen und Bettgehen offen'
+  // Offenes steht nur als Chip, nicht als Text
+  if (eOpen && bOpen) return null
   const parts: string[] = []
   if (e) {
-    if (eOpen) parts.push('Essen offen')
-    else if (isPerson(e.value, v)) {
+    if (eOpen) {
+      /* nur Chip */
+    } else if (isPerson(e.value, v)) {
       if (b && !bOpen && b.value === e.value) {
         return `${verb(e.value, v, 'kochst', 'kocht')} und ${isMe(e.value, v) ? 'bringst' : 'bringt'} ins Bett` + (b.note ? ` (${b.note})` : '')
       }
@@ -171,11 +173,12 @@ export function abendLine(d: DayState, v: Voice): string | null {
     } else parts.push(`Essen ${e.value}`)
   }
   if (b) {
-    if (bOpen) parts.push('Bettgehen offen')
-    else if (isPerson(b.value, v)) parts.push(verb(b.value, v, 'bringst ins Bett', 'bringt ins Bett') + (b.note ? ` (${b.note})` : ''))
+    if (bOpen) {
+      /* nur Chip */
+    } else if (isPerson(b.value, v)) parts.push(verb(b.value, v, 'bringst ins Bett', 'bringt ins Bett') + (b.note ? ` (${b.note})` : ''))
     else parts.push(`Bett: ${b.value}`)
   }
-  return parts.join(', ')
+  return parts.length ? parts.join(', ') : null
 }
 
 /** Alle Detailzeilen eines Tages */
@@ -192,7 +195,7 @@ export function dayLines(d: DayState, v: Voice): DayLine[] {
   if (d.nachmittag?.value) lines.push({ label: 'Nachmittag', text: d.nachmittag.value, slots: ['nachmittag'] })
   const ab = abendLine(d, v)
   if (ab) lines.push({ label: 'Abend', text: cap(ab), slots: ['abend_essen', 'abend_bett'] })
-  if (d.wochenende?.value) lines.push({ label: 'Wochenende', text: d.wochenende.value, slots: ['wochenende'] })
+  if (d.wochenende?.value && !d.wochenende.is_open) lines.push({ label: 'Wochenende', text: d.wochenende.value, slots: ['wochenende'] })
   return lines
 }
 

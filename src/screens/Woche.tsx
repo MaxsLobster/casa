@@ -45,7 +45,7 @@ function weekOffset(date: ISODate, today: ISODate): number {
 }
 
 export function Woche() {
-  const { me, members, people, normalWeek, overrides, events, tasks, isNew, markSeen, setOverride, setTaskDone } = useCasa()
+  const { me, members, people, normalWeek, overrides, events, tasks, settings, isNew, markSeen, setOverride, setTaskDone, updateSettings } = useCasa()
   const today = useToday()
   const now = useNow()
   const nav = useNavigate()
@@ -54,7 +54,8 @@ export function Woche() {
   const jumpTo = (location.state as { date?: ISODate } | null)?.date
   const [view, setView] = useState<View>('week')
   const [offset, setOffset] = useState(() => (jumpTo ? weekOffset(jumpTo, today) : 0))
-  const [openKey, setOpenKey] = useState<string | null>(jumpTo ?? today)
+  const [openKey, setOpenKey] = useState<string | null>(jumpTo ?? null)
+  const [askLegend, setAskLegend] = useState(false)
   const [editSlots, setEditSlots] = useState<{ slots: Slot[]; date?: string; weekday?: number; state: DayState } | null>(null)
   const [editEvent, setEditEvent] = useState<Event | null>(null)
   const [takeover, setTakeover] = useState<{ date: ISODate; state: DayState } | null>(null)
@@ -162,7 +163,7 @@ export function Woche() {
   function home() {
     if (offset === 0) return
     setOffset(0)
-    setOpenKey(today)
+    setOpenKey(null)
   }
   function openNormal() {
     setView('normal')
@@ -170,7 +171,7 @@ export function Woche() {
   }
   function closeNormal() {
     setView('week')
-    setOpenKey(offset === 0 ? today : null)
+    setOpenKey(null)
   }
 
   const whoEvent = (o: Occurrence) => {
@@ -381,7 +382,20 @@ export function Woche() {
         })}
       </div>
 
-      <p className="wk__legend">Gold: Valerie versorgt · Navy: Termin · Kreis mit Zahl: deine Aufgaben · gestrichelt: noch offen · Streifen rechts: mehrere Tage</p>
+      {(settings?.show_legend ?? true) && (
+        <div className="wk__legend-row">
+          <p className="wk__legend">Gold: Valerie versorgt · Navy: Termin · Kreis mit Zahl: deine Aufgaben · gestrichelt: noch offen · Streifen rechts: mehrere Tage</p>
+          <button type="button" className="wk__legend-x" aria-label="Legende ausblenden" onClick={() => setAskLegend(true)}>×</button>
+        </div>
+      )}
+      {askLegend && (
+        <Sheet onClose={() => setAskLegend(false)} title="Legende ausblenden">
+          <span className="hand hand--navy" style={{ fontSize: 26 }}>Nicht mehr anzeigen?</span>
+          <span className="hint">Die Legende verschwindet dann dauerhaft, auf allen deinen Geräten. In den Einstellungen kannst du sie wieder einblenden.</span>
+          <button type="button" className="btn" onClick={() => { void updateSettings({ show_legend: false }); setAskLegend(false) }}>Ja, ausblenden</button>
+          <button type="button" className="link" onClick={() => setAskLegend(false)}>Abbrechen</button>
+        </Sheet>
+      )}
 
       {editSlots && <SlotEditor slots={editSlots.slots} date={editSlots.date} weekday={editSlots.weekday} state={editSlots.state} onClose={() => setEditSlots(null)} />}
       {editEvent && <EventEditor event={editEvent} onClose={() => setEditEvent(null)} />}

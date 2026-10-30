@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
     <title>Casa</title>
     <meta name="description" content="Casa – Notizbuch für zwei" />
-    <meta name="theme-color" content="#F4F1EA" />
+    <meta name="theme-color" content="#F2EDE2" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -24,6 +24,14 @@
           var m = h.match(/error_description=([^&]*)/);
           if (m) sessionStorage.setItem('casa.authError', decodeURIComponent(m[1].replace(/\+/g, ' ')));
         } catch (e) {}
+      })();
+      // Papier-Look (Analog) pro Gerät, standardmäßig an.
+      (function () {
+        try {
+          document.documentElement.setAttribute('data-paper', localStorage.getItem('casa.paper') === 'off' ? 'off' : 'on');
+        } catch (e) {
+          document.documentElement.setAttribute('data-paper', 'on');
+        }
       })();
       // Dunkelmodus schon vor dem ersten Render setzen (kein Aufblitzen).
       (function () {

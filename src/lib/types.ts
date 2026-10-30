@@ -137,6 +137,7 @@ export interface Settings {
   quiet_enabled: boolean
   briefing_time: string
   last_opened_at: string | null
+  show_legend: boolean
   updated_at: string
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TaskStatus } from '../lib/types'
+import { usePaper } from '../state/paper'
 
 /* ---------- Pfeil ---------- */
 export function Chevron({ open }: { open: boolean }) {
@@ -38,16 +39,17 @@ export function Stamp({ status, children }: { status: TaskStatus; children: Reac
 }
 
 /* ---------- Abhaken ---------- */
+// Handgezeichneter Kreis, der nicht ganz schließt (Analog) bzw. runder Kreis (glatt)
+const RING_HAND = 'M12.4 3.3 C17.6 3.1 21 7.2 20.7 12.3 C20.4 17.3 16.6 20.9 11.7 20.7 C6.8 20.5 3.2 16.7 3.4 11.7 C3.6 7.3 6.6 3.9 10.6 3.4 L11.6 3.5'
+const RING_ROUND = 'M12 3 A9 9 0 1 1 11.99 3 Z'
 export function Check({ done, onToggle, label }: { done: boolean; onToggle: () => void; label: string }) {
+  const paper = usePaper()
   return (
     <button type="button" className="check" onClick={onToggle} aria-pressed={done} aria-label={label}>
-      <span className={'check__circle' + (done ? ' check__circle--done' : '')}>
-        {done && (
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12l5 5 9-10" />
-          </svg>
-        )}
-      </span>
+      <svg className={'check__ring' + (done ? ' check__ring--done' : '')} width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path className="check__path" d={paper ? RING_HAND : RING_ROUND} strokeWidth="1.6" strokeLinecap="round" />
+        {done && <path className="check__mark" d="M7.5 12.3l3.2 3.2 6-6.6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />}
+      </svg>
     </button>
   )
 }

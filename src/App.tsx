@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { CasaProvider, useCasa } from './state/HouseholdContext'
 import { useTheme } from './state/theme'
 import { Nav } from './components/Nav'
+import { InkFilters } from './components/InkFilters'
 import { Login } from './screens/Login'
 import { Heute } from './screens/Heute'
 import { Woche } from './screens/Woche'
@@ -16,6 +17,7 @@ import { clearRecovery, pendingRecovery } from './lib/auth'
 export default function App() {
   return (
     <CasaProvider>
+      <InkFilters />
       <Shell />
     </CasaProvider>
   )

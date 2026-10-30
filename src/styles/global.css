@@ -1,11 +1,21 @@
 /* Casa · Notizbuch für zwei */
 
 :root {
-  --paper: #F4F1EA;
-  --paper-2: #FBF9F4;        /* Eingabefelder, Chips */
-  --paper-3: #E6E1D5;        /* inaktive Knöpfe */
-  --ink: #1D1D1B;
-  --ink-soft: #3F3C36;
+  --paper: #F2EDE2;
+  --paper-2: #FBF8F1;        /* Eingabefelder, Chips */
+  --paper-3: #E4DDCF;        /* inaktive Knöpfe */
+  --ink: #243150;            /* matte Tinte */
+  --ink-soft: #3F4660;
+  --ink-bleed: rgba(36, 49, 80, 0.55);
+  --hatch: rgba(36, 49, 80, 0.5);
+  --hole: rgba(60, 48, 30, 0.30);
+  --hole-hi: rgba(255, 255, 255, 0.7);
+  --vignette: rgba(110, 86, 50, 0.16);
+  --moon-lit: #EFE7D2;
+  --moon-dark: rgba(36, 49, 80, 0.82);
+  --paper-layers: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.4px);
+  --paper-sizes: 19px 19px;
+  --paper-pos: 6px 8px;
   --navy: #1F2A44;
   --gold: #B08A45;
   --brown: #6B5222;
@@ -36,27 +46,34 @@
 }
 
 :root[data-theme="dark"] {
-  --paper: #182036;
-  --paper-2: #1F2A44;
-  --paper-3: #2A3550;
-  --ink: #ECE7DA;
-  --ink-soft: #CFC9BA;
-  --navy: #E8E2D2;
-  --gold: #C9A35C;
-  --brown: #D2B07A;
-  --grey: #A39E90;
-  --grey-2: #8C877A;
+  --paper: #1A2340;
+  --paper-2: #222D4C;
+  --paper-3: #2D3858;
+  --ink: #E9E1CF;
+  --ink-soft: #CFC7B3;
+  --ink-bleed: rgba(233, 225, 207, 0.55);
+  --hatch: rgba(233, 225, 207, 0.55);
+  --hole: rgba(0, 0, 0, 0.55);
+  --hole-hi: rgba(255, 255, 255, 0.06);
+  --vignette: rgba(0, 0, 0, 0.35);
+  --moon-lit: #E9E1CF;
+  --moon-dark: rgba(233, 225, 207, 0.10);
+  --navy: #E9E1CF;           /* Termine: Creme */
+  --gold: #D9AE62;           /* Bernstein */
+  --brown: #E0B977;
+  --grey: #A39D8C;
+  --grey-2: #8C8778;
   --note: #3B3A2C;
   --green: #8DC79A;
-  --line: rgba(236, 231, 218, 0.16);
-  --line-soft: rgba(236, 231, 218, 0.10);
-  --perf: rgba(236, 231, 218, 0.22);
-  --dot: rgba(236, 231, 218, 0.13);
-  --navy-line: rgba(232, 226, 210, 0.28);
-  --navy-line-strong: rgba(232, 226, 210, 0.5);
+  --line: rgba(233, 225, 207, 0.14);
+  --line-soft: rgba(233, 225, 207, 0.10);
+  --perf: rgba(233, 225, 207, 0.22);
+  --dot: rgba(233, 225, 207, 0.13);
+  --navy-line: rgba(233, 225, 207, 0.28);
+  --navy-line-strong: rgba(233, 225, 207, 0.5);
   --shadow: rgba(0, 0, 0, 0.35);
-  --on-navy: #182036;
-  --gold-wash: rgba(201, 163, 92, 0.32);
+  --on-navy: #1A2340;
+  --gold-wash: rgba(217, 174, 98, 0.30);
   color-scheme: dark;
 }
 
@@ -66,9 +83,9 @@ html, body { margin: 0; padding: 0; height: 100%; }
 
 body {
   background-color: var(--paper);
-  background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.4px);
-  background-size: 19px 19px;
-  background-position: 6px 8px;
+  background-image: var(--paper-layers);
+  background-size: var(--paper-sizes);
+  background-position: var(--paper-pos);
   color: var(--ink);
   font-family: var(--font-ui);
   font-weight: 500; /* Newsreader 500: auf dem gepunkteten Papier klarer als 400 */
@@ -144,7 +161,10 @@ a { color: inherit; text-decoration: none; }
   height: calc(var(--nav-h) + env(safe-area-inset-bottom));
   padding: 0 10px calc(14px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
-  background: var(--paper);
+  background-color: var(--paper);
+  background-image: var(--paper-layers);
+  background-size: var(--paper-sizes);
+  background-position: var(--paper-pos);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -378,13 +398,10 @@ a { color: inherit; text-decoration: none; }
   display: flex; align-items: center; justify-content: center;
   background: transparent; border: none; cursor: pointer; padding: 0;
 }
-.check__circle {
-  width: 22px; height: 22px; border-radius: 11px;
-  display: flex; align-items: center; justify-content: center;
-  border: 1.5px solid var(--navy); color: var(--navy);
-  transition: background 0.18s var(--ease);
-}
-.check__circle--done { background: var(--navy); color: var(--on-navy); }
+.check__ring { display: block; color: var(--navy); }
+.check__path { stroke: currentColor; fill: none; }
+.check__ring--done .check__path { fill: currentColor; }
+.check__mark { stroke: var(--on-navy); fill: none; }
 
 /* ---------- Chips ---------- */
 
@@ -531,9 +548,10 @@ a { color: inherit; text-decoration: none; }
   max-width: 560px;
   max-height: 88dvh;
   overflow-y: auto;
-  background: var(--paper);
-  background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.4px);
-  background-size: 19px 19px;
+  background-color: var(--paper);
+  background-image: var(--paper-layers);
+  background-size: var(--paper-sizes);
+  background-position: var(--paper-pos);
   border-radius: 14px 14px 0 0;
   padding: 18px 22px calc(24px + env(safe-area-inset-bottom));
   display: flex; flex-direction: column; gap: 16px;
@@ -552,9 +570,9 @@ a { color: inherit; text-decoration: none; }
 .overlay {
   position: fixed; inset: 0; z-index: 30;
   background-color: var(--paper);
-  background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.4px);
-  background-size: 19px 19px;
-  background-position: 6px 8px;
+  background-image: var(--paper-layers);
+  background-size: var(--paper-sizes);
+  background-position: var(--paper-pos);
   overflow-y: auto;
   animation: fade-in 0.18s var(--ease);
 }
@@ -576,8 +594,9 @@ a { color: inherit; text-decoration: none; }
   .overlay .page {
     position: relative; min-height: 0; width: 520px; max-height: 88vh; overflow-y: auto;
     background-color: var(--paper);
-    background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.4px);
-    background-size: 19px 19px;
+    background-image: var(--paper-layers);
+    background-size: var(--paper-sizes);
+    background-position: var(--paper-pos);
     border-radius: 14px; box-shadow: 0 8px 30px var(--shadow);
     padding: 26px 26px 28px 40px;
   }
@@ -666,7 +685,12 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- Heute (v2) ---------- */
 
-.heute { gap: 22px; padding-right: 18px; }
+.heute { position: relative; gap: 22px; padding-right: 18px; }
+.heute__gear {
+  position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 2px; width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center; color: var(--grey-2); z-index: 2;
+}
+.heute__gear:active { color: var(--navy); }
 .heute__head { display: flex; flex-direction: column; padding-right: 4px; }
 .heute__date { display: flex; align-items: flex-end; gap: 14px; }
 .heute__num { font-size: 88px; line-height: 0.85; font-weight: 500; color: var(--navy); letter-spacing: -0.02em; }
@@ -707,13 +731,13 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 .tl { position: relative; flex: none; width: 54px; }
 .tl__num { position: absolute; right: 22px; transform: translateY(-50%); font-size: 12px; color: var(--grey-2); font-variant-numeric: tabular-nums; }
 .tl__tick { position: absolute; right: 16px; width: 4px; height: 1px; background: var(--navy-line); }
-.tl__now { position: absolute; right: 18px; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: var(--brown); background: var(--paper); padding: 1px 0; font-variant-numeric: tabular-nums; z-index: 1; }
+.tl__now { position: absolute; right: 18px; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: var(--brown); background-color: var(--paper); padding: 1px 0; font-variant-numeric: tabular-nums; z-index: 1; }
 .tl__tube {
   position: absolute; right: 2px; top: 0; bottom: 0; width: 12px; border-radius: 6px;
   border: 1.5px solid var(--navy-line-strong); overflow: hidden; background: var(--paper-2);
 }
-.tl__fill { position: absolute; left: 0; right: 0; top: 0; background: rgba(31, 42, 68, 0.16); border-bottom: 2px solid var(--brown); transition: height 0.6s var(--ease); }
-:root[data-theme="dark"] .tl__fill { background: rgba(232, 226, 210, 0.16); }
+.tl__fill { position: absolute; left: 0; right: 0; top: 0; background: rgba(36, 49, 80, 0.16); border-bottom: 2px solid var(--brown); transition: height 0.6s var(--ease); }
+:root[data-theme="dark"] .tl__fill { background: rgba(233, 225, 207, 0.16); }
 .tl__knob { position: absolute; left: 50%; width: 6px; height: 6px; margin: -4px 0 0 -3px; border-radius: 3px; background: var(--brown); box-shadow: 0 0 0 3px rgba(107, 82, 34, 0.18); z-index: 2; }
 .tl__seg { position: absolute; left: 2px; right: 2px; border-radius: 4px; }
 .tl__seg--gold { background: var(--gold); opacity: 0.45; }
@@ -764,8 +788,8 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 .wk__seg { position: absolute; top: 2px; bottom: 2px; border-radius: 4px; }
 .wk__seg--gold { background: var(--gold); opacity: 0.55; }
 .wk__seg--navy { background: var(--navy); }
-.wk__fill { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(31, 42, 68, 0.14); border-right: 2px solid var(--brown); }
-:root[data-theme="dark"] .wk__fill { background: rgba(232, 226, 210, 0.16); }
+.wk__fill { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(36, 49, 80, 0.14); border-right: 2px solid var(--brown); }
+:root[data-theme="dark"] .wk__fill { background: rgba(233, 225, 207, 0.16); }
 
 .wk__icons { flex: none; width: var(--wk-icons); display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
 .wk__open { width: 20px; height: 20px; border-radius: 10px; border: 1.5px dashed var(--brown); }
@@ -792,7 +816,12 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 .wk__strip--open-bottom { background: linear-gradient(to bottom, var(--strip) 70%, transparent); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .wk__strip--open-top.wk__strip--open-bottom { background: linear-gradient(to bottom, transparent, var(--strip) 30%, var(--strip) 70%, transparent); }
 
-.wk__legend { margin: 6px 0 0; font-style: italic; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+.wk__legend-row { display: flex; align-items: flex-start; gap: 4px; margin-top: 6px; }
+.wk__legend { flex: 1; margin: 0; font-style: italic; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+.wk__legend-x {
+  flex: none; width: 44px; height: 44px; margin: -12px -14px 0 0; border: none; background: transparent;
+  font-size: 22px; line-height: 1; color: var(--grey); cursor: pointer; padding: 0;
+}
 
 /* Normalwoche (Bearbeiten) */
 .wk__nrow {
@@ -810,3 +839,102 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 .todo-group__title { flex: 1; font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: var(--grey); }
 .todo-group__count { font-family: var(--font-hand); font-size: 22px; line-height: 1; color: var(--brown); }
 .todo-group__head .chev { color: var(--grey); }
+
+/* ---------- Mond ---------- */
+.moon__dark { fill: var(--moon-dark); }
+.moon__lit { fill: var(--moon-lit); }
+.moon__rim { stroke: var(--ink-bleed); }
+:root[data-theme="light"] .moon__lit, :root:not([data-theme="dark"]) .moon__lit { stroke: var(--ink-bleed); stroke-width: 0.4; }
+
+/* =====================================================================
+   Analog-Look (Papier-Look an): Kacheln, gestanzte Löcher, raue Tinte,
+   Bleistift-Röhre, Schraffur, Aquarell. Aus = der glatte Look oben.
+   ===================================================================== */
+
+:root[data-paper="on"] {
+  --paper-layers:
+    url(/paper/grain-light.png),
+    url(/paper/fibers-light.png),
+    radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.4px),
+    url(/paper/mottle-light.png);
+  --paper-sizes: 256px 256px, 512px 512px, 19px 19px, 512px 512px;
+  --paper-pos: 0 0, 0 0, 6px 8px, 0 0;
+}
+:root[data-paper="on"][data-theme="dark"] {
+  --paper-layers:
+    url(/paper/grain-dark.png),
+    url(/paper/fibers-dark.png),
+    radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.4px),
+    url(/paper/mottle-dark.png);
+}
+
+/* Vignette: Ränder minimal dunkler, wie Papier unter einer Lampe */
+:root[data-paper="on"] .app::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 15;
+  background: radial-gradient(120% 90% at 50% 40%, transparent 55%, var(--vignette) 100%);
+}
+
+/* Gestanzte Löcher statt Strichellinie */
+:root[data-paper="on"] .pane::before,
+:root[data-paper="on"] .overlay::before,
+:root[data-paper="on"] .overlay .page::before {
+  left: 19px; width: 6px; border-left: none;
+  background-image: radial-gradient(circle at 3px 3px, var(--hole) 1.7px, var(--hole-hi) 2.3px, transparent 2.8px);
+  background-size: 6px 9px; background-repeat: repeat-y;
+}
+:root[data-paper="on"] .heute__tear {
+  height: 6px; border-top: none;
+  background-image: radial-gradient(circle at 3px 3px, var(--hole) 1.5px, var(--hole-hi) 2px, transparent 2.4px);
+  background-size: 8px 6px; background-repeat: repeat-x;
+}
+
+/* Tinte: leicht raue Ränder und minimales Ausbluten, nur auf Handschrift */
+:root[data-paper="on"] .hand,
+:root[data-paper="on"] .h1,
+:root[data-paper="on"] .task__title,
+:root[data-paper="on"] .heute__wd,
+:root[data-paper="on"] .wk__range,
+:root[data-paper="on"] .wk__nline,
+:root[data-paper="on"] .wk__chip,
+:root[data-paper="on"] .link--hand,
+:root[data-paper="on"] .todo-group__count,
+:root[data-paper="on"] .section__count,
+:root[data-paper="on"] .day__summary {
+  filter: url(#aInk);
+  text-shadow: 0 0 0.6px var(--ink-bleed);
+}
+/* Datumszahl wie eingedrückt im Buchdruck */
+:root[data-paper="on"] .heute__num {
+  filter: url(#aInk); opacity: 0.94;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45), 0 -0.5px 0 rgba(60, 48, 30, 0.15);
+}
+:root[data-paper="on"][data-theme="dark"] .heute__num {
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Handgezeichnete Kreise: Bleistiftrand */
+:root[data-paper="on"] .check__ring { filter: url(#aRough); }
+
+/* Zeitstrahl: Bleistift-Röhre, Schraffur, Aquarell */
+:root[data-paper="on"] .tl__tube { filter: url(#aRough); border-color: var(--ink-bleed); }
+:root[data-paper="on"] .tl__fill {
+  background: repeating-linear-gradient(-48deg, var(--hatch) 0 1px, transparent 1px 4px);
+  opacity: 0.75;
+}
+:root[data-paper="on"] .tl__seg--gold { opacity: 0.62; filter: url(#aWash); box-shadow: inset 0 0 3px var(--brown); }
+:root[data-paper="on"] .tl__now { font-family: var(--font-hand); font-size: 18px; font-weight: 600; filter: url(#aInk); }
+
+/* Woche-Band: zurückhaltender, weil klein */
+:root[data-paper="on"] .wk__band { filter: url(#aRough); border-color: var(--ink-bleed); }
+:root[data-paper="on"] .wk__fill {
+  background: repeating-linear-gradient(-48deg, var(--hatch) 0 1px, transparent 1px 3px);
+  opacity: 0.6;
+}
+:root[data-paper="on"] .wk__seg--gold { opacity: 0.62; filter: url(#aWashSmall); box-shadow: inset 0 0 2px var(--brown); }
+:root[data-paper="on"] .wk__strip--gold { box-shadow: inset 0 0 3px var(--brown); }
+
+/* Mondkrater */
+:root[data-paper="on"] .moon__lit { filter: url(#aMoon); }
+
+/* Plus-Knopf mit etwas Tiefe */
+:root[data-paper="on"] .nav__plus { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 4px rgba(0, 0, 0, 0.15); }

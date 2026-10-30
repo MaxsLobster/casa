@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCasa } from '../state/HouseholdContext'
 import { Toggle } from '../components/ui'
+import { setPaper, usePaper } from '../state/paper'
 import { SetPassword } from './SetPassword'
 import { currentPushSubscription, isIOS, isStandalone, permissionState, pushSupported } from '../lib/push'
 
 export function Einstellungen() {
   const { me, user, settings, updateSettings, signOut, isDemo, household, enablePush, disablePush, sendTestPush } = useCasa()
   const darkAuto = settings?.dark_mode_auto ?? true
+  const paper = usePaper()
   const [pwOpen, setPwOpen] = useState(false)
   const [pwDone, setPwDone] = useState(false)
 
@@ -161,6 +163,24 @@ export function Einstellungen() {
           hint="Abends wird das Papier dunkel, die Tinte hell. Morgens um 6 wieder hell."
         />
       </div>
+
+      {/* ---------- Papier-Look ---------- */}
+      <div>
+        <Toggle
+          on={paper}
+          onChange={setPaper}
+          label="Papier-Look"
+          hint="Körnung, gestanzte Löcher und raue Tinte wie in einem echten Notizbuch. Gilt für dieses Gerät. Aus, falls es hier ruckelt."
+        />
+      </div>
+
+      {/* ---------- Legende ---------- */}
+      {settings && !settings.show_legend && (
+        <div className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+          <span className="label">Woche</span>
+          <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => updateSettings({ show_legend: true })}>Legende wieder anzeigen</button>
+        </div>
+      )}
 
       {/* ---------- Passwort ---------- */}
       <div className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
