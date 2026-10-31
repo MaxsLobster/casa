@@ -4,7 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useCasa } from '../state/HouseholdContext'
 import { LocalStore, SupabaseStore, type Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
-import type { Member, MilaIngredient, MilaRecipe, MilaShoppingItem, MilaStep, MilaTableName, MilaWeekDay, TableName } from '../lib/types'
+import type { Member, MilaIngredient, MilaRecipe, MilaShoppingItem, MilaStep, MilaTableName, MilaWeekDay, ShopCategory, TableName } from '../lib/types'
+import { categorize } from './shopping'
 import { DEMO_MAX_ID } from '../lib/seed'
 
 export interface Mila {
@@ -24,6 +25,20 @@ export interface Mila {
   ingredientsOf(recipeId: string): MilaIngredient[]
   stepsOf(recipeId: string): MilaStep[]
   reload(table?: MilaTableName): Promise<void>
+
+  /** Einkaufsliste */
+  addItems(rows: NewItem[]): Promise<void>
+  setChecked(id: string, checked: boolean): Promise<void>
+  finishShopping(): Promise<void>
+}
+
+export interface NewItem {
+  name: string
+  amount?: string
+  category?: ShopCategory
+  source_label?: string | null
+  source_week?: string | null
+  source_recipe_ids?: string[]
 }
 
 const Ctx = createContext<Mila | null>(null)
@@ -143,6 +158,59 @@ export function MilaProvider({ children }: { children: ReactNode }) {
 
   if (!me || !hid) return null
 
+  // Schreiben: erst lokal zeigen, dann speichern; bei Fehler neu laden
+  const fail = (err: unknown) => {
+    setError((err as Error).message)
+    loadRef.current('mila_shopping_items')
+  }
+  const addItems = async (rows: NewItem[]) => {
+    const now = new Date().toISOString()
+    const full: Partial<MilaShoppingItem>[] = rows
+      .filter((r) => r.name.trim())
+      .map((r) => ({
+        household_id: hid,
+        name: r.name.trim(),
+        amount: (r.amount ?? '').trim(),
+        category: r.category ?? categorize(r.name),
+        source_label: r.source_label ?? null,
+        source_week: r.source_week ?? null,
+        source_recipe_ids: r.source_recipe_ids ?? [],
+        added_by: me.id,
+        checked: false,
+        checked_by: null,
+        checked_at: null,
+      }))
+    if (!full.length) return
+    const temp = full.map((r, i) => ({ ...r, id: 'neu-' + now + '-' + i, created_at: now }) as MilaShoppingItem)
+    setItems((prev) => [...prev, ...temp])
+    try {
+      const saved = await store.insertMany('mila_shopping_items', full)
+      // Platzhalter raus, Gespeichertes rein; nicht doppelt, falls das Nachladen schneller war
+      const ids = new Set(saved.map((x) => x.id))
+      setItems((prev) => [...prev.filter((p) => !temp.some((t) => t.id === p.id) && !ids.has(p.id)), ...saved])
+    } catch (err) {
+      fail(err)
+    }
+  }
+  const setChecked = async (id: string, checked: boolean) => {
+    const patch = { checked, checked_by: checked ? me.id : null, checked_at: checked ? new Date().toISOString() : null }
+    setItems((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
+    try {
+      await store.update('mila_shopping_items', { id }, patch)
+    } catch (err) {
+      fail(err)
+    }
+  }
+  const finishShopping = async () => {
+    const done = items.filter((i) => i.checked)
+    setItems((prev) => prev.filter((p) => !p.checked))
+    try {
+      for (const d of done) await store.remove('mila_shopping_items', { id: d.id })
+    } catch (err) {
+      fail(err)
+    }
+  }
+
   const mila: Mila = {
     ready,
     error,
@@ -160,6 +228,9 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     ingredientsOf: (id) => ingByRecipe.get(id) ?? [],
     stepsOf: (id) => stepsByRecipe.get(id) ?? [],
     reload: load,
+    addItems,
+    setChecked,
+    finishShopping,
   }
   return <Ctx.Provider value={mila}>{children}</Ctx.Provider>
 }
