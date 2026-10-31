@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Mila – Gerichte</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#1F2A44}
+@keyframes milaFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background-color: #F4F1EA; background-image: radial-gradient(circle at 1px 1px, rgba(29,29,27,0.16) 1px, transparent 1.4px); background-size: 19px 19px; background-position: 6px 8px; color: #1D1D1B; font-family: 'Newsreader', Georgia, serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="position: absolute; left: 22px; top: 0; bottom: 80px; border-left: 1.5px dashed rgba(29,29,27,0.2)"></div>
+
+  <main style="flex: 1; overflow-y: auto; padding: 14px 16px 24px 38px; display: flex; flex-direction: column; gap: 14px">
+
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <button type="button" style="display: flex; align-items: center; gap: 4px; min-height: 40px; border: none; background: transparent; padding: 0; font-family: 'Newsreader', Georgia, serif; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; cursor: pointer">‹ Casa</button>
+      <span style="display: flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6B5222">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"></path><path d="M2 10h2M20 10h2M9 6c0-1 1-1 1-2M14 6c0-1 1-1 1-2"></path></svg>
+        Mila
+      </span>
+    </div>
+
+    <header style="display: flex; align-items: flex-end; justify-content: space-between">
+      <div style="display: flex; flex-direction: column">
+        <span style="font-family: 'Caveat', cursive; font-size: 40px; line-height: 0.95; color: #1F2A44">Unsere Gerichte</span>
+        <span style="font-size: 12px; color: #6E6A60">{{count}} von 30</span>
+      </div>
+    </header>
+
+    <div style="display: flex; gap: 6px; flex-wrap: wrap">
+      <sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
+        <button type="button" onClick="{{f.pick}}" aria-pressed="{{f.on}}" style="{{f.style}}">{{f.label}}</button>
+      </sc-for>
+    </div>
+
+    <a href="Gericht.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 14px; border: 1.3px dashed rgba(107,82,34,0.6); border-radius: 12px; color: #6B5222">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="2"></rect><circle cx="12" cy="13" r="3.5"></circle><path d="M8 6l1.5-2h5L16 6"></path></svg>
+      <span style="display: flex; flex-direction: column">
+        <span style="font-family: 'Caveat', cursive; font-size: 22px; line-height: 1">Neues Rezept</span>
+        <span style="font-size: 12px; color: #6E6A60">aus Foto, Link oder einfach erzählt</span>
+      </span>
+    </a>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+      <sc-for list="{{dishes}}" as="d" hint-placeholder-count="6">
+        <a href="Gericht.dc.html" style="display: flex; flex-direction: column; background: #FBF9F4; border-radius: 6px; box-shadow: 0 2px 8px rgba(31,42,68,0.08); overflow: hidden; animation: milaFade 0.3s ease-out">
+          <span style="{{d.tileStyle}}">
+            <sc-if value="{{d.isTm}}" hint-placeholder-val="{{false}}">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h10l-1 13a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2z"></path><path d="M17 8h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-2.3"></path><path d="M6 5h12M10 14l2 2 2-2"></path></svg>
+            </sc-if>
+            <sc-if value="{{d.isGrill}}" hint-placeholder-val="{{false}}">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#4A3815" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="13" rx="7" ry="7.5"></ellipse><path d="M5 11h14M12 3v2.5M9 21l-1.5 1.5M15 21l1.5 1.5"></path></svg>
+            </sc-if>
+            <sc-if value="{{d.isPan}}" hint-placeholder-val="{{false}}">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="13" r="7"></circle><circle cx="10" cy="13" r="3"></circle><path d="M17 13h5"></path></svg>
+            </sc-if>
+            <sc-if value="{{d.isBowl}}" hint-placeholder-val="{{false}}">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 9 0 0 1-18 0z"></path><path d="M14 4l-3 7M18 5l-4 6"></path></svg>
+            </sc-if>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px 10px">
+            <span style="font-family: 'Caveat', cursive; font-size: 21px; line-height: 1.05; color: #1D1D1B">{{d.name}}</span>
+            <span style="font-size: 11px; color: #6E6A60">{{d.meta}}</span>
+          </span>
+        </a>
+      </sc-for>
+    </div>
+  </main>
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.12); background: #F4F1EA; display: flex; align-items: center; justify-content: space-around; padding: 0 10px 14px; box-sizing: border-box">
+    <a href="Main.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Woche</a>
+    <a href="Liste.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Liste</a>
+    <a href="Gerichte.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: #1F2A44; padding: 12px 4px; border-bottom: 2px solid #B08A45">Gerichte</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: 'alle' };
+  }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var all = [
+      { name: 'Bolognese-Basis', time: '75 Min', kind: 'tm', tags: ['tm', 'prep'] },
+      { name: 'Shakshuka', time: '25 Min', kind: 'pan', tags: ['schnell'] },
+      { name: 'Pasta Aglio e Olio', time: '15 Min', kind: 'pan', tags: ['schnell'] },
+      { name: 'Teriyaki-Hähnchen-Bowl', time: '25 Min', kind: 'bowl', tags: ['schnell'] },
+      { name: 'Pulled Pork vom Egg', time: '10 Std', kind: 'grill', tags: ['grill'] },
+      { name: 'Hummus-Bowl mit Falafel', time: '20 Min', kind: 'tm', tags: ['tm', 'schnell'] },
+      { name: 'Linsen-Dal', time: '30 Min', kind: 'bowl', tags: ['prep'] },
+      { name: 'Rotisserie-Hähnchen', time: '90 Min', kind: 'grill', tags: ['grill'] },
+      { name: 'Overnight Oats', time: '10 Min', kind: 'tm', tags: ['tm', 'prep'] },
+      { name: 'Korean Beef Bowl', time: '20 Min', kind: 'bowl', tags: ['schnell'] },
+      { name: 'Rotes Thai Curry', time: '40 Min', kind: 'bowl', tags: ['prep'] },
+      { name: 'Pad Thai', time: '30 Min', kind: 'pan', tags: ['schnell'] }
+    ];
+    var defs = [
+      { id: 'alle', label: 'Alle' },
+      { id: 'schnell', label: 'Schnell' },
+      { id: 'tm', label: 'Thermomix' },
+      { id: 'prep', label: 'Meal-Prep' },
+      { id: 'grill', label: 'Grill' }
+    ];
+    var tiles = {
+      tm: 'rgba(31,42,68,0.09)',
+      pan: 'rgba(176,138,69,0.16)',
+      bowl: 'rgba(110,106,96,0.12)',
+      grill: 'rgba(176,138,69,0.30)'
+    };
+    var filters = defs.map(function (f) {
+      var on = s.filter === f.id;
+      return {
+        label: f.label,
+        on: on,
+        pick: function () { self.setState({ filter: f.id }); },
+        style: 'min-height:36px;padding:0 14px;border-radius:999px;cursor:pointer;font-family:Newsreader,Georgia,serif;font-size:13px;' +
+          (on ? 'background:#1F2A44;color:#F4F1EA;border:1px solid #1F2A44;' : 'background:transparent;color:#1F2A44;border:1px solid rgba(31,42,68,0.3);')
+      };
+    });
+    var list = all.filter(function (d) { return s.filter === 'alle' || d.tags.indexOf(s.filter) >= 0; });
+    var dishes = list.map(function (d) {
+      return {
+        name: d.name,
+        meta: d.time + (d.kind === 'tm' ? ' · Thermomix' : ''),
+        isTm: d.kind === 'tm',
+        isGrill: d.kind === 'grill',
+        isPan: d.kind === 'pan',
+        isBowl: d.kind === 'bowl',
+        tileStyle: 'height:96px;display:flex;align-items:center;justify-content:center;background:' + tiles[d.kind] + ';'
+      };
+    });
+    return { filters: filters, dishes: dishes, count: list.length };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Mila – Gericht</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#1F2A44}
+@keyframes milaNum{0%{opacity:0.2;transform:translateY(-3px)}100%{opacity:1;transform:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background-color: #F4F1EA; background-image: radial-gradient(circle at 1px 1px, rgba(29,29,27,0.16) 1px, transparent 1.4px); background-size: 19px 19px; background-position: 6px 8px; color: #1D1D1B; font-family: 'Newsreader', Georgia, serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="position: absolute; left: 22px; top: 0; bottom: 0; border-left: 1.5px dashed rgba(29,29,27,0.2)"></div>
+
+  <main style="flex: 1; overflow-y: auto; padding: 14px 16px 24px 38px; display: flex; flex-direction: column; gap: 16px">
+
+    <a href="Gerichte.dc.html" style="align-self: flex-start; display: flex; align-items: center; min-height: 40px; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60">‹ Gerichte</a>
+
+    <div style="height: 150px; border-radius: 6px; background: rgba(31,42,68,0.09); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(31,42,68,0.08)">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Platz für ein Foto"><path d="M7 5h10l-1 13a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2z"></path><path d="M17 8h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-2.3"></path><path d="M6 5h12M10 14l2 2 2-2"></path></svg>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <h1 style="margin: 0; font-family: 'Caveat', cursive; font-weight: 600; font-size: 40px; line-height: 0.95; color: #1F2A44">Bolognese-Basis</h1>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: #3F3C36">
+        <span>75 Min</span>
+        <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: #1F2A44; border: 1.3px solid #1F2A44; border-radius: 999px; padding: 1px 7px; align-self: center">TM</span>
+        <span>Meal-Prep</span>
+        <span style="color: #6B5222">Valerie-tauglich</span>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-top: 1px solid rgba(29,29,27,0.14); border-bottom: 1px solid rgba(29,29,27,0.14)">
+      <span style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: #6E6A60">Portionen</span>
+      <span style="display: flex; align-items: center; gap: 4px">
+        <button type="button" onClick="{{less}}" aria-label="Weniger Portionen" style="width: 44px; height: 44px; border-radius: 22px; border: 1px solid rgba(31,42,68,0.3); background: transparent; font-size: 22px; color: #1F2A44; cursor: pointer">−</button>
+        <span style="width: 44px; text-align: center; font-family: 'Caveat', cursive; font-size: 32px; color: #1F2A44; animation: milaNum 0.25s ease-out">{{portions}}</span>
+        <button type="button" onClick="{{more}}" aria-label="Mehr Portionen" style="width: 44px; height: 44px; border-radius: 22px; border: 1px solid rgba(31,42,68,0.3); background: transparent; font-size: 22px; color: #1F2A44; cursor: pointer">+</button>
+      </span>
+    </div>
+
+    <section style="display: flex; flex-direction: column">
+      <h2 style="margin: 0 0 4px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: #6E6A60">Zutaten</h2>
+      <sc-for list="{{ings}}" as="i" hint-placeholder-count="8">
+        <div style="display: flex; align-items: baseline; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(29,29,27,0.08)">
+          <span style="flex: none; width: 74px; text-align: right; font-size: 14px; font-weight: 600; color: #1F2A44; font-variant-numeric: tabular-nums">{{i.amt}}</span>
+          <span style="flex: 1; font-family: 'Caveat', cursive; font-size: 22px; line-height: 1.05; color: #1D1D1B">{{i.name}}</span>
+        </div>
+      </sc-for>
+    </section>
+
+    <div style="position: relative; background: #EFE4C8; padding: 12px 14px 10px; transform: rotate(-0.8deg); box-shadow: 0 3px 8px rgba(31,42,68,0.10)">
+      <span style="display: block; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #4A3815">Für Valerie</span>
+      <span style="display: block; font-family: 'Caveat', cursive; font-size: 21px; line-height: 1.15; color: #1D1D1B">Vor dem Pfeffer einen Schöpfer abnehmen – mild, nur Tomate und Hack, Parmesan drauf.</span>
+    </div>
+  </main>
+
+  <div style="flex: none; display: flex; gap: 10px; padding: 12px 16px 26px 38px; border-top: 1px solid rgba(29,29,27,0.12); background: #F4F1EA">
+    <button type="button" style="flex: none; min-height: 52px; padding: 0 16px; border-radius: 26px; border: 1px solid rgba(31,42,68,0.3); background: transparent; color: #1F2A44; font-family: 'Newsreader', Georgia, serif; font-size: 14px; cursor: pointer">In die Woche</button>
+    <a href="Thermomix.dc.html" style="flex: 1; min-height: 52px; border-radius: 26px; background: #1F2A44; color: #F4F1EA; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; box-shadow: 0 4px 14px rgba(31,42,68,0.22)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"></path></svg>
+      Kochen
+    </a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { portions: 8 };
+  }
+  renderVals() {
+    var self = this;
+    var p = this.state.portions;
+    var base = 8;
+    var ings = [
+      { a: 500, u: 'g', n: 'Rinderhack (Bio)' },
+      { a: 200, u: 'g', n: 'Schweinehack' },
+      { a: 1, u: '', n: 'Karotte' },
+      { a: 1, u: 'Stange', n: 'Staudensellerie' },
+      { a: 1, u: '', n: 'Zwiebel' },
+      { a: 3, u: 'Zehen', n: 'Knoblauch' },
+      { a: 800, u: 'g', n: 'Dosentomaten, gehackt' },
+      { a: 200, u: 'ml', n: 'Rotwein' },
+      { a: 1, u: 'EL', n: 'Tomatenmark' },
+      { a: 50, u: 'ml', n: 'Milch' }
+    ];
+    function fmt(x, u) {
+      var v;
+      if (u === 'g' || u === 'ml') {
+        v = x >= 100 ? Math.round(x / 10) * 10 : Math.round(x);
+      } else {
+        v = Math.round(x * 2) / 2;
+        if (v === 0) v = 0.5;
+      }
+      var s = String(v).replace('.5', '½').replace(/^0½$/, '½');
+      if (s.indexOf('.') >= 0) s = s.replace('.', ',');
+      return s + (u ? ' ' + u : '');
+    }
+    return {
+      portions: p,
+      ings: ings.map(function (i) { return { amt: fmt(i.a * p / base, i.u), name: i.n }; }),
+      less: function () { if (p > 1) self.setState({ portions: p - 1 }); },
+      more: function () { if (p < 16) self.setState({ portions: p + 1 }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

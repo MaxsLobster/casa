@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Mila – Kochmodus</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#F4F1EA}
+@keyframes milaInA{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+@keyframes milaInB{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+@keyframes milaBackA{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}}
+@keyframes milaBackB{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}}
+@keyframes milaPulse{0%,100%{opacity:1}50%{opacity:0.55}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #1F2A44; color: #F4F1EA; font-family: 'Newsreader', Georgia, serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <header style="flex: none; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px 0">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <a href="Gerichte.dc.html" aria-label="Kochmodus schließen" style="width: 44px; height: 44px; margin-left: -10px; display: flex; align-items: center; justify-content: center; color: rgba(244,241,234,0.75)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </a>
+      <span style="font-family: 'Caveat', cursive; font-size: 26px; color: #F4F1EA">Shakshuka</span>
+      <span style="display: flex; align-items: center; gap: 5px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(244,241,234,0.6)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2"></path></svg>
+        bleibt an
+      </span>
+    </div>
+    <div style="display: flex; gap: 5px">
+      <sc-for list="{{bars}}" as="b" hint-placeholder-count="6">
+        <span style="{{b.style}}"></span>
+      </sc-for>
+    </div>
+  </header>
+
+  <main style="flex: 1; display: flex; flex-direction: column; padding: 26px 26px 0; overflow: hidden">
+    <div style="{{anim}}">
+      <div style="display: flex; flex-direction: column; gap: 22px">
+        <div style="display: flex; align-items: baseline; gap: 10px">
+          <span style="font-family: 'Caveat', cursive; font-size: 64px; line-height: 0.8; color: #D9B877">{{num}}</span>
+          <span style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(244,241,234,0.6)">von {{total}}</span>
+        </div>
+        <p style="margin: 0; font-size: 27px; line-height: 1.32; color: #F4F1EA">{{text}}</p>
+
+        <sc-if value="{{hasIngs}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(244,241,234,0.6)">Brauchst du jetzt</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+              <sc-for list="{{ings}}" as="i" hint-placeholder-count="3">
+                <span style="font-family: 'Caveat', cursive; font-size: 21px; color: #F4F1EA; background: rgba(244,241,234,0.08); border: 1px solid rgba(244,241,234,0.18); border-radius: 999px; padding: 2px 12px">{{i}}</span>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{hasTimer}}" hint-placeholder-val="{{true}}">
+          <button type="button" onClick="{{toggleTimer}}" style="align-self: flex-start; display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 6px 20px 6px 6px; border-radius: 40px; border: 1px solid rgba(217,184,119,0.5); background: rgba(217,184,119,0.10); color: #F4F1EA; cursor: pointer; font-family: 'Newsreader', Georgia, serif">
+            <svg width="56" height="56" viewBox="0 0 60 60" aria-hidden="true">
+              <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(244,241,234,0.15)" stroke-width="4"></circle>
+              <circle cx="30" cy="30" r="26" fill="none" stroke="#D9B877" stroke-width="4" stroke-linecap="round" stroke-dasharray="163.4" stroke-dashoffset="{{ringOffset}}" transform="rotate(-90 30 30)"></circle>
+            </svg>
+            <span style="display: flex; flex-direction: column; align-items: flex-start">
+              <span style="{{clockStyle}}">{{clock}}</span>
+              <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(244,241,234,0.6)">{{timerLabel}}</span>
+            </span>
+          </button>
+        </sc-if>
+      </div>
+    </div>
+  </main>
+
+  <footer style="flex: none; display: flex; gap: 12px; padding: 16px 20px 30px">
+    <button type="button" onClick="{{prev}}" aria-label="Vorheriger Schritt" disabled="{{isFirst}}" style="{{prevStyle}}">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg>
+    </button>
+    <sc-if value="{{notLast}}" hint-placeholder-val="{{true}}">
+      <button type="button" onClick="{{next}}" style="flex: 1; min-height: 60px; border-radius: 30px; border: none; background: #F4F1EA; color: #1F2A44; font-family: 'Newsreader', Georgia, serif; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px">
+        Weiter
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+      </button>
+    </sc-if>
+    <sc-if value="{{isLast}}" hint-placeholder-val="{{false}}">
+      <a href="Gerichte.dc.html" style="flex: 1; min-height: 60px; border-radius: 30px; background: #D9B877; color: #1D1D1B; font-size: 17px; display: flex; align-items: center; justify-content: center; gap: 8px">Fertig · guten Appetit</a>
+    </sc-if>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { step: 0, dir: 'n', flip: false, left: null, running: false };
+    this.steps = [
+      { t: 'Zwiebel und Paprika in Olivenöl anbraten, bis sie weich sind.', i: ['2 Paprika rot', '1 Zwiebel', '2 EL Olivenöl'], min: 8 },
+      { t: 'Knoblauch und Gewürze dazu und kurz mitbraten.', i: ['3 Zehen Knoblauch', 'Kreuzkümmel', 'Paprikapulver'], min: 1 },
+      { t: 'Tomaten, eine Prise Zucker und Salz dazu. Köcheln lassen, bis es sämig ist.', i: ['400 g Dosentomaten'], min: 8 },
+      { t: 'Für Valerie eine Kelle milde Sauce abnehmen. Dann fünf Mulden drücken und in jede ein Ei schlagen.', i: ['5 Eier'], min: 0 },
+      { t: 'Deckel drauf, bei mittlerer Hitze stocken lassen – Eiweiß fest, Eigelb weich.', i: [], min: 6 },
+      { t: 'Feta drüberbröseln, Kräuter drauf, mit Fladenbrot servieren.', i: ['100 g Feta', '½ Bund Petersilie', 'Fladenbrot'], min: 0 }
+    ];
+  }
+  componentWillUnmount() { this.stopTick(); }
+  stopTick() { if (this.tick) { clearInterval(this.tick); this.tick = null; } }
+  go(delta) {
+    var n = this.state.step + delta;
+    if (n < 0 || n >= this.steps.length) return;
+    this.stopTick();
+    this.setState({ step: n, dir: delta > 0 ? 'n' : 'p', flip: !this.state.flip, left: null, running: false });
+  }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var st = this.steps[s.step];
+    var total = st.min * 60;
+    var left = s.left === null ? total : s.left;
+    var mm = Math.floor(left / 60);
+    var ss = left % 60;
+    var name = (s.dir === 'n' ? 'milaIn' : 'milaBack') + (s.flip ? 'A' : 'B');
+    var bars = this.steps.map(function (x, k) {
+      return { style: 'flex:1;height:4px;border-radius:2px;transition:background 0.4s;background:' + (k <= s.step ? '#D9B877' : 'rgba(244,241,234,0.18)') + ';' };
+    });
+    var isFirst = s.step === 0;
+    var isLast = s.step === this.steps.length - 1;
+    return {
+      anim: 'animation:' + name + ' 0.45s cubic-bezier(0.2,0.8,0.3,1);',
+      bars: bars,
+      num: s.step + 1,
+      total: this.steps.length,
+      text: st.t,
+      ings: st.i,
+      hasIngs: st.i.length > 0,
+      hasTimer: st.min > 0,
+      clock: mm + ':' + (ss < 10 ? '0' : '') + ss,
+      clockStyle: 'font-size:28px;font-variant-numeric:tabular-nums;line-height:1;color:#F4F1EA;' + (s.running ? 'animation:milaPulse 2s ease-in-out infinite;' : ''),
+      timerLabel: left === 0 ? 'fertig' : (s.running ? 'läuft · tippen für Pause' : 'Timer starten'),
+      ringOffset: total ? (163.4 * (1 - left / total)).toFixed(1) : 0,
+      toggleTimer: function () {
+        if (s.running) { self.stopTick(); self.setState({ running: false }); return; }
+        if (left === 0) return;
+        self.setState({ running: true, left: left });
+        self.stopTick();
+        self.tick = setInterval(function () {
+          var l = (self.state.left === null ? total : self.state.left) - 1;
+          if (l <= 0) { self.stopTick(); self.setState({ left: 0, running: false }); }
+          else self.setState({ left: l });
+        }, 1000);
+      },
+      isFirst: isFirst,
+      isLast: isLast,
+      notLast: !isLast,
+      prevStyle: 'flex:none;width:60px;height:60px;border-radius:30px;border:1px solid rgba(244,241,234,0.3);background:transparent;color:#F4F1EA;display:flex;align-items:center;justify-content:center;cursor:pointer;' + (isFirst ? 'opacity:0.3;cursor:default;' : ''),
+      prev: function () { self.go(-1); },
+      next: function () { self.go(1); }
+    };
+  }
+}
+</script>
+</body>
+</html>

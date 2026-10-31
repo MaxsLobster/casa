@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Mila – Einkaufsliste</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#1F2A44}
+@keyframes milaTick{0%{transform:scale(0.4);opacity:0}70%{transform:scale(1.15)}100%{transform:none;opacity:1}}
+@keyframes milaDrop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background-color: #F4F1EA; background-image: radial-gradient(circle at 1px 1px, rgba(29,29,27,0.16) 1px, transparent 1.4px); background-size: 19px 19px; background-position: 6px 8px; color: #1D1D1B; font-family: 'Newsreader', Georgia, serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="position: absolute; left: 22px; top: 0; bottom: 80px; border-left: 1.5px dashed rgba(29,29,27,0.2)"></div>
+
+  <main style="flex: 1; overflow-y: auto; padding: 14px 16px 24px 38px; display: flex; flex-direction: column; gap: 14px">
+
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <button type="button" style="display: flex; align-items: center; gap: 4px; min-height: 40px; border: none; background: transparent; padding: 0; font-family: 'Newsreader', Georgia, serif; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; cursor: pointer">‹ Casa</button>
+      <span style="display: flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6B5222">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"></path><path d="M2 10h2M20 10h2M9 6c0-1 1-1 1-2M14 6c0-1 1-1 1-2"></path></svg>
+        Mila
+      </span>
+    </div>
+
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 10px">
+      <div style="display: flex; flex-direction: column">
+        <span style="font-family: 'Caveat', cursive; font-size: 40px; line-height: 0.95; color: #1F2A44">Einkauf</span>
+        <span style="font-size: 12px; color: #6E6A60">{{openCount}} offen · für KW 45</span>
+      </div>
+      <span style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #6E6A60">
+        <span style="display: flex">
+          <span style="width: 26px; height: 26px; border-radius: 13px; background: #1F2A44; color: #F4F1EA; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; border: 2px solid #F4F1EA">M</span>
+          <span style="width: 26px; height: 26px; border-radius: 13px; background: #B08A45; color: #1D1D1B; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; border: 2px solid #F4F1EA; margin-left: -8px">A</span>
+        </span>
+        live geteilt
+      </span>
+    </header>
+
+    <label style="display: flex; align-items: center; gap: 10px; background: #FBF9F4; border: 1px solid rgba(31,42,68,0.2); border-radius: 12px; padding: 0 14px; min-height: 48px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+      <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Was fehlt noch?</span>
+      <input type="text" placeholder="Was fehlt noch?" style="flex: 1; border: none; background: transparent; outline: none; font-family: 'Caveat', cursive; font-size: 22px; color: #1D1D1B">
+    </label>
+
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
+      <section style="display: flex; flex-direction: column">
+        <h2 style="margin: 0 0 2px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: #6E6A60">{{g.label}}</h2>
+        <sc-for list="{{g.items}}" as="it" hint-placeholder-count="3">
+          <button type="button" onClick="{{it.toggle}}" style="display: flex; align-items: center; gap: 12px; width: 100%; min-height: 46px; background: transparent; border: none; border-bottom: 1px solid rgba(29,29,27,0.1); padding: 4px 0; cursor: pointer; text-align: left; font-family: 'Newsreader', Georgia, serif; animation: milaDrop 0.25s ease-out">
+            <span style="flex: none; width: 22px; height: 22px; border-radius: 11px; border: 1.6px solid #1F2A44; box-sizing: border-box"></span>
+            <span style="flex: 1; min-width: 0; font-family: 'Caveat', cursive; font-size: 24px; line-height: 1.05; color: #1D1D1B">{{it.name}}</span>
+            <span style="flex: none; display: flex; flex-direction: column; align-items: flex-end">
+              <span style="font-size: 13px; color: #3F3C36">{{it.amount}}</span>
+              <span style="{{it.srcStyle}}">{{it.src}}</span>
+            </span>
+          </button>
+        </sc-for>
+      </section>
+    </sc-for>
+
+    <section style="display: flex; flex-direction: column; margin-top: 4px">
+      <button type="button" onClick="{{toggleDone}}" style="align-self: flex-start; display: flex; align-items: center; gap: 8px; min-height: 40px; border: none; background: transparent; padding: 0; cursor: pointer; font-family: 'Newsreader', Georgia, serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: #6E6A60">
+        Im Wagen · {{doneCount}}
+        <span style="font-size: 14px">{{doneArrow}}</span>
+      </button>
+      <sc-if value="{{showDone}}" hint-placeholder-val="{{true}}">
+        <sc-for list="{{done}}" as="it" hint-placeholder-count="2">
+          <button type="button" onClick="{{it.toggle}}" style="display: flex; align-items: center; gap: 12px; width: 100%; min-height: 42px; background: transparent; border: none; padding: 2px 0; cursor: pointer; text-align: left; font-family: 'Newsreader', Georgia, serif; opacity: 0.55">
+            <span style="flex: none; width: 22px; height: 22px; border-radius: 11px; background: #1F2A44; display: flex; align-items: center; justify-content: center; animation: milaTick 0.3s ease-out">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+            </span>
+            <span style="flex: 1; font-family: 'Caveat', cursive; font-size: 22px; color: #3F3C36; text-decoration: line-through; text-decoration-color: rgba(31,42,68,0.5)">{{it.name}}</span>
+          </button>
+        </sc-for>
+      </sc-if>
+    </section>
+  </main>
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.12); background: #F4F1EA; display: flex; align-items: center; justify-content: space-around; padding: 0 10px 14px; box-sizing: border-box">
+    <a href="Main.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Woche</a>
+    <a href="Liste.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: #1F2A44; padding: 12px 4px; border-bottom: 2px solid #B08A45">Liste</a>
+    <a href="Gerichte.dc.html" style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6A60; padding: 12px 4px">Gerichte</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { checked: { eier: true, zitronen: true }, showDone: true };
+  }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var items = [
+      { id: 'karotten', g: 'og', name: 'Karotten', amount: '2 Stück', src: 'Mo · Bolognese' },
+      { id: 'sellerie', g: 'og', name: 'Staudensellerie', amount: '1 Stange', src: 'Mo · Bolognese' },
+      { id: 'paprika', g: 'og', name: 'Paprika rot', amount: '6 Stück', src: 'Mi + Do' },
+      { id: 'petersilie', g: 'og', name: 'Petersilie', amount: '½ Bund', src: 'Mi · Shakshuka' },
+      { id: 'zitronen', g: 'og', name: 'Zitronen', amount: '3 Stück', src: 'Anna', anna: true },
+      { id: 'rinderhack', g: 'k', name: 'Rinderhack (Bio)', amount: '500 g', src: 'Mo · Bolognese' },
+      { id: 'haehnchen', g: 'k', name: 'Hähnchenschenkel', amount: '600 g', src: 'Fr · Teriyaki' },
+      { id: 'feta', g: 'k', name: 'Feta', amount: '100 g', src: 'Mi · Shakshuka' },
+      { id: 'eier', g: 'k', name: 'Eier', amount: '10 Stück', src: 'Mi · Shakshuka' },
+      { id: 'nacken', g: 'k', name: 'Schweinenacken', amount: '2,5 kg', src: 'Sa · Pulled Pork' },
+      { id: 'rigatoni', g: 't', name: 'Rigatoni', amount: '500 g', src: 'Di · Bolognese' },
+      { id: 'tomaten', g: 't', name: 'Dosentomaten', amount: '2 Dosen', src: 'Mo + Mi' },
+      { id: 'brot', g: 't', name: 'Fladenbrot', amount: '1', src: 'Mi · Shakshuka' },
+      { id: 'rotwein', g: 'ge', name: 'Rotwein zum Kochen', amount: '1 Flasche', src: 'Mo · Bolognese' },
+      { id: 'tabs', g: 's', name: 'Spülmaschinentabs', amount: '', src: 'Anna', anna: true }
+    ];
+    var labels = { og: 'Obst & Gemüse', k: 'Kühlregal', t: 'Trocken & Vorrat', ge: 'Getränke', s: 'Sonstiges' };
+    var order = ['og', 'k', 't', 'ge', 's'];
+    function toggleFor(id) {
+      return function () {
+        var c = Object.assign({}, s.checked);
+        if (c[id]) delete c[id]; else c[id] = true;
+        self.setState({ checked: c });
+      };
+    }
+    var groups = [];
+    order.forEach(function (key) {
+      var list = items.filter(function (i) { return i.g === key && !s.checked[i.id]; }).map(function (i) {
+        return {
+          name: i.name,
+          amount: i.amount,
+          src: i.src,
+          srcStyle: 'font-size:11px;' + (i.anna ? 'color:#6B5222;font-weight:600;' : 'color:#6E6A60;'),
+          toggle: toggleFor(i.id)
+        };
+      });
+      if (list.length) groups.push({ label: labels[key], items: list });
+    });
+    var done = items.filter(function (i) { return s.checked[i.id]; }).map(function (i) {
+      return { name: i.name, toggle: toggleFor(i.id) };
+    });
+    return {
+      groups: groups,
+      done: done,
+      doneCount: done.length,
+      openCount: items.length - done.length,
+      showDone: s.showDone && done.length > 0,
+      doneArrow: s.showDone ? '▾' : '▸',
+      toggleDone: function () { self.setState({ showDone: !s.showDone }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

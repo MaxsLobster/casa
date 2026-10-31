@@ -1,0 +1,45 @@
+{
+  "order": ["obst_gemuese", "kuehl", "trocken", "getraenke", "sonstiges"],
+  "labels": {
+    "obst_gemuese": "Obst & Gemüse",
+    "kuehl": "Kühlregal",
+    "trocken": "Trocken & Vorrat",
+    "getraenke": "Getränke",
+    "sonstiges": "Sonstiges"
+  },
+  "rules": [
+    {
+      "cat": "trocken",
+      "keywords": [
+        "tomatenmark", "passata", "kokosmilch", "brühe", "currypaste", "fischsauce",
+        "sojasauce", "chia", "haferflock", "flocken", "reis", "linse", "mehl",
+        "pasta", "spaghetti", "nudel", "pinienkern", "mandel", "olivenöl", "öl",
+        "essig", "dose", "gewürz", "paste", "zucker", "sirup", "honig", "bambus",
+        "palmzucker", "pulver", "brot", "toast", "cracker", "nüsse"
+      ]
+    },
+    {
+      "cat": "kuehl",
+      "keywords": [
+        "hack", "rind", "schwein", "hähnch", "lamm", "fisch", "wurst", "speck",
+        "garnele", "milch", "joghurt", "butter", "käse", "parmesan", "feta",
+        "sahne", "quark", "frischkäse", "eier", "creme", "mozzarella", "ricotta"
+      ]
+    },
+    {
+      "cat": "getraenke",
+      "keywords": ["wein", "bier", "limonad", "cola", "prosecco"]
+    },
+    {
+      "cat": "obst_gemuese",
+      "keywords": [
+        "karotte", "sellerie", "zwiebel", "knoblauch", "paprika", "tomate",
+        "basilikum", "petersilie", "koriander", "thymian", "rosmarin", "zitrone",
+        "limette", "ingwer", "spargel", "aubergine", "kartoffel", "bärlauch",
+        "beere", "banane", "kräuter", "zuckerschot", "apfel", "birne", "salat",
+        "gurk", "lauch", "schalotte", "peperoncino", "chili", "kapern", "minze",
+        "dill", "avocado", "kresse", "zweige", "topping"
+      ]
+    }
+  ]
+}
