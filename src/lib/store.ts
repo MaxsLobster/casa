@@ -11,6 +11,8 @@ export type Filter = Record<string, string | number | boolean | null>
 export interface Store {
   select<T extends TableName>(table: T, filter?: Filter): Promise<TableRow[T][]>
   insert<T extends TableName>(table: T, row: Partial<TableRow[T]>): Promise<TableRow[T]>
+  /** Mehrere Zeilen auf einmal (z. B. Zutaten eines Rezepts) */
+  insertMany<T extends TableName>(table: T, rows: Partial<TableRow[T]>[]): Promise<TableRow[T][]>
   update<T extends TableName>(table: T, key: Filter, patch: Partial<TableRow[T]>): Promise<void>
   upsert<T extends TableName>(table: T, row: Partial<TableRow[T]>, onConflict: string): Promise<TableRow[T]>
   remove<T extends TableName>(table: T, key: Filter): Promise<void>
@@ -35,6 +37,13 @@ export class SupabaseStore implements Store {
     const { data, error } = await this.db.from(table).insert(row as never).select('*').single()
     if (error) throw error
     return data as TableRow[T]
+  }
+
+  async insertMany<T extends TableName>(table: T, rows: Partial<TableRow[T]>[]): Promise<TableRow[T][]> {
+    if (!rows.length) return []
+    const { data, error } = await this.db.from(table).insert(rows as never).select('*')
+    if (error) throw error
+    return (data ?? []) as TableRow[T][]
   }
 
   async update<T extends TableName>(table: T, key: Filter, patch: Partial<TableRow[T]>): Promise<void> {
@@ -123,6 +132,13 @@ export class LocalStore implements Store {
 
   async insert<T extends TableName>(table: T, row: Partial<TableRow[T]>): Promise<TableRow[T]> {
     return this.insertSync(table, row)
+  }
+
+  async insertMany<T extends TableName>(table: T, rows: Partial<TableRow[T]>[]): Promise<TableRow[T][]> {
+    const now = new Date().toISOString()
+    const full = rows.map((row) => ({ id: crypto.randomUUID(), created_at: now, updated_at: now, ...row }) as TableRow[T])
+    this.write(table, [...this.read(table), ...full])
+    return full
   }
 
   async update<T extends TableName>(table: T, key: Filter, patch: Partial<TableRow[T]>): Promise<void> {

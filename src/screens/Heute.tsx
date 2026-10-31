@@ -9,6 +9,7 @@ import { BAND_END as T_END, BAND_START as T_START, goldSegments, navySegments, p
 import { Check } from '../components/ui'
 import type { Task } from '../lib/types'
 import { wantsStagger } from '../state/splash'
+import { PotIcon } from '../mila/icons'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 
@@ -147,6 +148,9 @@ export function Heute() {
     <div className="page heute">
       <Link to="/einstellungen" className="heute__gear" aria-label="Einstellungen">
         <GearIcon />
+      </Link>
+      <Link to="/mila/woche" className="heute__gear heute__pot" aria-label="Mila, der Essensplaner">
+        <PotIcon />
       </Link>
       {/* ---------- Kopf ---------- */}
       <div className="heute__head">

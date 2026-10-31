@@ -153,8 +153,9 @@ export type TableName =
   | 'push_subscriptions'
   | 'item_seen'
   | 'notifications'
+  | MilaTableName
 
-export interface TableRow {
+export interface TableRow extends MilaTableRow {
   households: Household
   members: Member
   tasks: Task
@@ -166,4 +167,96 @@ export interface TableRow {
   push_subscriptions: PushSubscriptionRow
   item_seen: ItemSeen
   notifications: NotificationRow
+}
+
+// ---------------------------------------------------------------------------
+// Mila · Essensplaner (eigener Bereich, Tabellen mit Präfix mila_)
+// ---------------------------------------------------------------------------
+
+export type MilaCategory = 'schnell' | 'mealprep' | 'wochenende' | 'grill' | 'fruehstueck'
+export type ShopCategory = 'obst_gemuese' | 'kuehl' | 'trocken' | 'getraenke' | 'sonstiges'
+
+export interface MilaRecipe {
+  id: Id
+  household_id: Id
+  name: string
+  category: MilaCategory
+  time_min: number | null
+  portions: number
+  valerie_tauglich: boolean
+  devices: string[] // thermomix | pfanne | topf | wok | ofen | plancha | bge | dutch_oven
+  notes: string | null
+  valerie_note: string | null
+  image_url: string | null
+  created_by: Id | null
+  updated_by: Id | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MilaIngredient {
+  id: Id
+  household_id: Id
+  recipe_id: Id
+  position: number
+  name: string
+  amount: number | null
+  unit: string
+  pantry_basic: boolean
+  shop_category: ShopCategory
+}
+
+export interface MilaStep {
+  id: Id
+  household_id: Id
+  recipe_id: Id
+  position: number
+  title: string | null
+  text: string
+  timer_sec: number | null
+  is_thermomix: boolean
+  tm_time_sec: number | null
+  tm_temp: string | null
+  tm_speed: string | null
+  tm_reverse: boolean
+  ingredient_ids: Id[]
+}
+
+export interface MilaWeekDay {
+  id: Id
+  household_id: Id
+  date: string
+  recipe_id: Id | null
+  free_text: string | null
+  added_to_list: boolean
+  created_by: Id | null
+  updated_by: Id | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MilaShoppingItem {
+  id: Id
+  household_id: Id
+  name: string
+  amount: string
+  category: ShopCategory
+  source_label: string | null
+  source_week: string | null
+  source_recipe_ids: Id[]
+  added_by: Id | null
+  checked: boolean
+  checked_by: Id | null
+  checked_at: string | null
+  created_at: string
+}
+
+export type MilaTableName = 'mila_recipes' | 'mila_ingredients' | 'mila_steps' | 'mila_week_days' | 'mila_shopping_items'
+
+export interface MilaTableRow {
+  mila_recipes: MilaRecipe
+  mila_ingredients: MilaIngredient
+  mila_steps: MilaStep
+  mila_week_days: MilaWeekDay
+  mila_shopping_items: MilaShoppingItem
 }

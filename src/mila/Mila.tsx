@@ -1,0 +1,67 @@
+// Mila · Gerüst: Kopf, Routen, drei Reiter
+import type { ReactNode } from 'react'
+import { Link, Navigate, NavLink, Route, Routes } from 'react-router-dom'
+import { MilaProvider, useMila } from './MilaContext'
+import { PotIcon } from './icons'
+import { useSplashGone } from '../state/splash'
+import { Woche } from './Woche'
+import { Liste } from './Liste'
+import { Gerichte } from './Gerichte'
+import './mila.css'
+
+export function Mila() {
+  return (
+    <MilaProvider>
+      <MilaShell />
+    </MilaProvider>
+  )
+}
+
+function MilaShell() {
+  const splashGone = useSplashGone()
+  return (
+    <div className="app mila">
+      <div className="panes">
+        <div className="pane">
+          <Routes>
+            <Route path="/mila/woche" element={<Woche />} />
+            <Route path="/mila/liste" element={<Liste />} />
+            <Route path="/mila/gerichte" element={<Gerichte />} />
+            <Route path="*" element={<Navigate to="/mila/woche" replace />} />
+          </Routes>
+        </div>
+      </div>
+      <nav className="nav" aria-label="Mila">
+        <NavLink to="/mila/woche" className="nav__item">Woche</NavLink>
+        <NavLink to="/mila/liste" className="nav__item">Liste</NavLink>
+        <NavLink to="/mila/gerichte" className="nav__item">Gerichte</NavLink>
+      </nav>
+      {splashGone && <div className="edge" aria-hidden="true" />}
+    </div>
+  )
+}
+
+/** Oberste Zeile: ‹ Casa links, Mila-Marke rechts */
+export function MilaTop() {
+  return (
+    <div className="m-top">
+      <Link to="/heute" className="m-back">‹ Casa</Link>
+      <span className="m-brand">
+        <PotIcon size={16} />
+        Mila
+      </span>
+    </div>
+  )
+}
+
+/** Seite mit Kopf; zeigt Ladezustand und Fehler aus dem Kontext */
+export function MilaPage({ children }: { children: ReactNode }) {
+  const { ready, error } = useMila()
+  return (
+    <div className="page">
+      <MilaTop />
+      {error && <p className="hint hint--brown">{error}</p>}
+      {ready ? children : <span className="hint">Einen Moment …</span>}
+    </div>
+  )
+}

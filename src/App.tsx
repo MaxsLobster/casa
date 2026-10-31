@@ -15,6 +15,7 @@ import { SetPassword } from './screens/SetPassword'
 import { clearRecovery, pendingRecovery } from './lib/auth'
 import { finishSplash, wantsStagger } from './state/splash'
 import { useSplashGone } from './state/splash'
+import { Mila } from './mila/Mila'
 
 export default function App() {
   return (
@@ -96,6 +97,9 @@ function Shell() {
       </div>
     )
   }
+
+  // Mila, der Essensplaner: eigener Bereich mit eigener Leiste
+  if (loc.pathname.startsWith('/mila')) return <Mila />
 
   const isNeu = loc.pathname === '/neu'
 

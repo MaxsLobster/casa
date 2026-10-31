@@ -713,6 +713,7 @@ a { color: inherit; text-decoration: none; }
   display: flex; align-items: center; justify-content: center; color: var(--grey-2); z-index: 2;
 }
 .heute__gear:active { color: var(--navy); }
+.heute__pot { right: 46px; }
 .heute__head { display: flex; flex-direction: column; padding-right: 4px; }
 .heute__date { display: flex; align-items: flex-end; gap: 14px; }
 .heute__num { font-size: 88px; line-height: 0.85; font-weight: 500; color: var(--navy); letter-spacing: -0.02em; }
