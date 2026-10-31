@@ -9,6 +9,7 @@ import { Liste } from './Liste'
 import { Gerichte } from './Gerichte'
 import { Gericht } from './Gericht'
 import { RezeptForm } from './RezeptForm'
+import { Kochen } from './Kochen'
 import './mila.css'
 
 export function Mila() {
@@ -24,8 +25,9 @@ function MilaShell() {
   const loc = useLocation()
   // Detail, Formular und Kochmodus haben eigene Knöpfe unten, keine Reiterleiste
   const showNav = !/^\/mila\/(gerichte\/.+|kochen)/.test(loc.pathname)
+  const cooking = loc.pathname.startsWith('/mila/kochen')
   return (
-    <div className="app mila">
+    <div className={'app mila' + (cooking ? ' mila--kochen' : '')}>
       <div className="panes">
         <div className="pane">
           <Routes>
@@ -35,6 +37,7 @@ function MilaShell() {
             <Route path="/mila/gerichte/neu" element={<RezeptForm />} />
             <Route path="/mila/gerichte/:id" element={<Gericht />} />
             <Route path="/mila/gerichte/:id/bearbeiten" element={<RezeptForm />} />
+            <Route path="/mila/kochen/:id" element={<Kochen />} />
             <Route path="*" element={<Navigate to="/mila/woche" replace />} />
           </Routes>
         </div>

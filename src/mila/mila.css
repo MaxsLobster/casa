@@ -216,3 +216,76 @@
 .m-tmfields { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; align-items: end; }
 .m-tmfields .m-input { padding: 8px; }
 @media (max-width: 400px) { .m-tmfields { grid-template-columns: 1fr 1fr; } }
+
+/* Kochmodus: immer Navy, auch tagsüber und im dunklen Notizbuch */
+.m-cook {
+  --ck-bg: #1F2A44; --ck-ink: #F4F1EA; --ck-gold: #D9B877; --ck-dim: rgba(244, 241, 234, 0.6); --ck-line: rgba(244, 241, 234, 0.18); --ck-fill: rgba(244, 241, 234, 0.08);
+  position: fixed; inset: 0; z-index: 15; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--ck-bg); color: var(--ck-ink); font-family: var(--font-ui);
+}
+.mila--kochen .edge { background-color: #1F2A44; background-image: none; }
+.m-cook__head { flex: none; display: flex; flex-direction: column; gap: 12px; padding: calc(16px + env(safe-area-inset-top)) 20px 0; }
+.m-cook__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.m-cook__x { width: 44px; height: 44px; margin-left: -10px; flex: none; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: rgba(244, 241, 234, 0.75); cursor: pointer; }
+.m-cook__name { flex: 1; min-width: 0; text-align: center; font-family: var(--font-hand); font-size: 26px; line-height: 1; color: var(--ck-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-cook__awake { flex: none; display: flex; align-items: center; gap: 5px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ck-dim); }
+.m-cook__tm { flex: none; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: var(--ck-gold); border: 1.3px solid var(--ck-gold); border-radius: 999px; padding: 2px 8px; }
+.m-cook__bars { display: flex; gap: 5px; }
+.m-cook__bar { flex: 1; height: 4px; border-radius: 2px; background: var(--ck-line); transition: background 0.4s; }
+.m-cook__bar--on { background: var(--ck-gold); }
+.m-cook__main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 24px 24px 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+.m-cook__step { display: flex; flex-direction: column; gap: 20px; }
+.m-cook__step--next { animation: m-cook-in 0.45s cubic-bezier(0.2, 0.8, 0.3, 1); }
+.m-cook__step--back { animation: m-cook-back 0.45s cubic-bezier(0.2, 0.8, 0.3, 1); }
+@keyframes m-cook-in { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: none; } }
+@keyframes m-cook-back { from { opacity: 0; transform: translateX(-36px); } to { opacity: 1; transform: none; } }
+.m-cook__numrow { display: flex; align-items: baseline; gap: 12px; }
+.m-cook__num { font-family: var(--font-hand); font-size: 64px; line-height: 0.8; color: var(--ck-gold); }
+.m-cook__of { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ck-dim); }
+.m-cook__title { font-family: var(--font-hand); font-size: 30px; line-height: 1; color: var(--ck-ink); }
+.m-cook__text { margin: 0; font-size: 27px; line-height: 1.32; color: var(--ck-ink); }
+.m-cook__text--s { font-size: 23px; }
+.m-cook__ings { display: flex; flex-direction: column; gap: 8px; }
+.m-cook__label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ck-dim); }
+.m-cook__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.m-cook__chip { font-family: var(--font-hand); font-size: 21px; line-height: 1.2; color: var(--ck-ink); background: var(--ck-fill); border: 1px solid var(--ck-line); border-radius: 999px; padding: 2px 12px; }
+.m-cook__dim { color: var(--ck-dim); padding: 40px 26px; }
+.m-cook__hint { display: block; margin-top: 10px; font-size: 12px; line-height: 1.4; color: var(--ck-dim); }
+
+/* Timer (normale Schritte) */
+.m-cook__timer {
+  align-self: flex-start; display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 6px 20px 6px 6px; border-radius: 40px;
+  border: 1px solid rgba(217, 184, 119, 0.5); background: rgba(217, 184, 119, 0.1); color: var(--ck-ink); cursor: pointer; font-family: var(--font-ui); text-align: left;
+}
+.m-cook__clockwrap { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.m-cook__clock { font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ck-ink); }
+.m-cook__clock--run { animation: m-pulse 2s ease-in-out infinite; }
+.m-cook__clock--done { color: var(--ck-gold); }
+@keyframes m-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+/* Thermomix-Kacheln */
+.m-cook__tiles-wrap { flex: none; padding-bottom: 16px; animation: m-cook-tile 0.5s 0.08s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+@keyframes m-cook-tile { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
+.m-cook__tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 22px; }
+.m-cook__tile {
+  position: relative; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; gap: 6px; min-height: 104px; box-sizing: border-box;
+  padding: 12px 10px 18px; border-radius: 16px; background: rgba(244, 241, 234, 0.07); border: 1px solid rgba(244, 241, 234, 0.14); color: var(--ck-ink); font-family: var(--font-ui); text-align: left;
+}
+.m-cook__tile--time { cursor: pointer; }
+.m-cook__tile--time:disabled { cursor: default; }
+.m-cook__tile--run { background: rgba(217, 184, 119, 0.16); border: 1.5px solid var(--ck-gold); }
+.m-cook__tileval { font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ck-ink); white-space: nowrap; }
+.m-cook__tilebar { position: absolute; left: 10px; right: 10px; bottom: 10px; height: 4px; border-radius: 2px; background: rgba(244, 241, 234, 0.15); overflow: hidden; }
+.m-cook__tilefill { display: block; height: 100%; border-radius: 2px; background: var(--ck-gold); transition: width 0.9s linear; }
+.m-cook__speed { display: flex; align-items: center; gap: 6px; }
+.m-cook__rev { display: flex; }
+.m-cook__rev--spin { animation: m-spin 2.4s linear infinite; }
+@keyframes m-spin { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+
+/* Fuß */
+.m-cook__foot { flex: none; display: flex; gap: 12px; padding: 16px 20px calc(22px + env(safe-area-inset-bottom)); }
+.m-cook__prev { flex: none; width: 60px; height: 60px; border-radius: 30px; border: 1px solid rgba(244, 241, 234, 0.3); background: transparent; color: var(--ck-ink); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.m-cook__prev:disabled { opacity: 0.3; cursor: default; }
+.m-cook__next { flex: 1; min-height: 60px; border-radius: 30px; border: none; background: var(--ck-ink); color: var(--ck-bg); font-family: var(--font-ui); font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.m-cook__done { flex: 1; min-height: 60px; border-radius: 30px; border: none; background: var(--ck-gold); color: #1D1D1B; font-family: var(--font-ui); font-size: 17px; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .m-cook__step, .m-cook__tiles-wrap, .m-cook__clock--run, .m-cook__rev--spin { animation: none; } }
