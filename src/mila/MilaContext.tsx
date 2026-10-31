@@ -26,11 +26,21 @@ export interface Mila {
   stepsOf(recipeId: string): MilaStep[]
   reload(table?: MilaTableName): Promise<void>
 
+  /** Rezepte: neu anlegen oder (mit id) ersetzen; Zutaten und Schritte kommen komplett mit */
+  saveRecipe(recipe: RecipeInput, ingredients: IngredientInput[], steps: StepInput[], id?: string): Promise<string>
+
+  /** Woche: ein Abendessen an einem Datum setzen (Rezept oder Freitext), null leert den Tag */
+  setWeekDay(date: string, value: { recipe_id: string | null; free_text: string | null } | null): Promise<void>
+
   /** Einkaufsliste */
   addItems(rows: NewItem[]): Promise<void>
   setChecked(id: string, checked: boolean): Promise<void>
   finishShopping(): Promise<void>
 }
+
+export type RecipeInput = Pick<MilaRecipe, 'name' | 'category' | 'time_min' | 'portions' | 'valerie_tauglich' | 'devices' | 'notes' | 'valerie_note'>
+export type IngredientInput = Pick<MilaIngredient, 'name' | 'amount' | 'unit' | 'pantry_basic'> & { id?: string; shop_category?: ShopCategory }
+export type StepInput = Pick<MilaStep, 'title' | 'text' | 'timer_sec' | 'is_thermomix' | 'tm_time_sec' | 'tm_temp' | 'tm_speed' | 'tm_reverse' | 'ingredient_ids'>
 
 export interface NewItem {
   name: string
@@ -163,6 +173,60 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     setError((err as Error).message)
     loadRef.current('mila_shopping_items')
   }
+  const saveRecipe = async (recipe: RecipeInput, ings: IngredientInput[], sts: StepInput[], id?: string) => {
+    const rid = id ?? crypto.randomUUID()
+    const ingRows: Partial<MilaIngredient>[] = ings.map((i, k) => ({
+      id: i.id ?? crypto.randomUUID(),
+      household_id: hid,
+      recipe_id: rid,
+      position: k,
+      name: i.name.trim(),
+      amount: i.amount,
+      unit: i.unit.trim(),
+      pantry_basic: i.pantry_basic,
+      shop_category: i.shop_category ?? categorize(i.name),
+    }))
+    const known = new Set(ingRows.map((i) => i.id))
+    const stepRows: Partial<MilaStep>[] = sts.map((s, k) => ({
+      id: crypto.randomUUID(),
+      household_id: hid,
+      recipe_id: rid,
+      position: k,
+      ...s,
+      ingredient_ids: s.ingredient_ids.filter((x) => known.has(x)),
+    }))
+    try {
+      if (id) {
+        await store.update('mila_recipes', { id }, { ...recipe, updated_by: me.id })
+        await store.remove('mila_ingredients', { recipe_id: id })
+        await store.remove('mila_steps', { recipe_id: id })
+      } else {
+        await store.insert('mila_recipes', { id: rid, household_id: hid, ...recipe, image_url: null, created_by: me.id, updated_by: me.id })
+      }
+      await store.insertMany('mila_ingredients', ingRows)
+      await store.insertMany('mila_steps', stepRows)
+    } finally {
+      await Promise.all([loadRef.current('mila_recipes'), loadRef.current('mila_ingredients'), loadRef.current('mila_steps')])
+    }
+    return rid
+  }
+
+  const setWeekDay = async (date: string, value: { recipe_id: string | null; free_text: string | null } | null) => {
+    const existing = weekDays.find((w) => w.date === date)
+    try {
+      if (!value) {
+        if (existing) await store.remove('mila_week_days', { id: existing.id })
+      } else if (existing) {
+        await store.update('mila_week_days', { id: existing.id }, { ...value, added_to_list: false, updated_by: me.id })
+      } else {
+        await store.insert('mila_week_days', { household_id: hid, date, ...value, added_to_list: false, created_by: me.id, updated_by: me.id })
+      }
+    } catch (err) {
+      setError((err as Error).message)
+    }
+    await loadRef.current('mila_week_days')
+  }
+
   const addItems = async (rows: NewItem[]) => {
     const now = new Date().toISOString()
     const full: Partial<MilaShoppingItem>[] = rows
@@ -228,6 +292,8 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     ingredientsOf: (id) => ingByRecipe.get(id) ?? [],
     stepsOf: (id) => stepsByRecipe.get(id) ?? [],
     reload: load,
+    saveRecipe,
+    setWeekDay,
     addItems,
     setChecked,
     finishShopping,
