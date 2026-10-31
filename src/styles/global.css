@@ -949,3 +949,24 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 
 /* Plus-Knopf mit etwas Tiefe */
 :root[data-paper="on"] .nav__plus { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 4px rgba(0, 0, 0, 0.15); }
+
+/* ---------- Diagnose „Test oberer Rand“ (Einstellungen) ---------- */
+.toptest {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 500; pointer-events: none;
+  height: calc(env(safe-area-inset-top) + 90px);
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%),
+    linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%);
+  background-size: 4px 4px; background-position: 0 0, 2px 2px;
+}
+.toptest__probe { position: absolute; top: 0; left: 0; width: 0; height: 0; padding-top: env(safe-area-inset-top); visibility: hidden; }
+.toptest__stripes {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(to right, rgba(255,0,0,0.8) 0 24px, rgba(255,210,0,0.8) 24px 48px, rgba(0,90,255,0.8) 48px 72px, rgba(0,170,60,0.8) 72px 96px);
+}
+.toptest__line { position: absolute; left: 0; right: 0; top: env(safe-area-inset-top); height: 2px; background: #FF00FF; }
+.toptest__label {
+  position: absolute; left: 8px; bottom: 6px; font-size: 12px; font-weight: 600; color: #000;
+  background: #fff; padding: 2px 6px; border-radius: 4px;
+}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useCasa } from '../state/HouseholdContext'
 import { Toggle } from '../components/ui'
 import { setPaper, usePaper } from '../state/paper'
+import { setTopTest, useTopTest } from '../state/topTest'
 import { SetPassword } from './SetPassword'
 import { currentPushSubscription, isIOS, isStandalone, permissionState, pushSupported } from '../lib/push'
 
@@ -10,6 +11,7 @@ export function Einstellungen() {
   const { me, user, settings, updateSettings, signOut, isDemo, household, enablePush, disablePush, sendTestPush } = useCasa()
   const darkAuto = settings?.dark_mode_auto ?? true
   const paper = usePaper()
+  const topTest = useTopTest()
   const [pwOpen, setPwOpen] = useState(false)
   const [pwDone, setPwDone] = useState(false)
 
@@ -171,6 +173,16 @@ export function Einstellungen() {
           onChange={setPaper}
           label="Papier-Look"
           hint="Körnung, gestanzte Löcher und raue Tinte wie in einem echten Notizbuch. Gilt für dieses Gerät. Aus, falls es hier ruckelt."
+        />
+      </div>
+
+      {/* ---------- Diagnose ---------- */}
+      <div>
+        <Toggle
+          on={topTest}
+          onChange={setTopTest}
+          label="Test oberer Rand"
+          hint="Nur zur Fehlersuche: kräftige Streifen ganz oben, über allem. Zeigt, ob iOS unter der Statusleiste etwas weichzeichnet. Danach wieder aus."
         />
       </div>
 
