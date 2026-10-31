@@ -13,6 +13,7 @@ import { Sonntag } from './screens/Sonntag'
 import { Einstellungen } from './screens/Einstellungen'
 import { SetPassword } from './screens/SetPassword'
 import { clearRecovery, pendingRecovery } from './lib/auth'
+import { finishSplash, wantsStagger } from './state/splash'
 
 export default function App() {
   return (
@@ -40,6 +41,18 @@ function Shell() {
   const wide = useWide()
   const loc = useLocation()
   const [recovery, setRecovery] = useState(pendingRecovery)
+
+  // Zettel vom Kaltstart wegnehmen, sobald klar ist, was darunter liegt.
+  const ready = casa.authReady && (!casa.user || recovery || casa.dataReady)
+  const heuteReady = casa.authReady && !!casa.user && !recovery && casa.dataReady && !!casa.me
+  useEffect(() => {
+    if (ready) finishSplash(heuteReady && wantsStagger() ? 'stagger' : 'quick')
+  }, [ready, heuteReady])
+  useEffect(() => {
+    // Nach spätestens drei Sekunden Zettel weg, auch wenn noch geladen wird
+    const t = window.setTimeout(() => finishSplash('quick'), 3000)
+    return () => window.clearTimeout(t)
+  }, [])
 
   if (!casa.authReady) return <Blank />
   if (!casa.user) return <Login />

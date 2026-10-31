@@ -1,7 +1,7 @@
 /* Casa · Notizbuch für zwei */
 
 :root {
-  --paper: #F2EDE2;
+  --paper: #F5F1E8;
   --paper-2: #FBF8F1;        /* Eingabefelder, Chips */
   --paper-3: #E4DDCF;        /* inaktive Knöpfe */
   --ink: #243150;            /* matte Tinte */
@@ -10,7 +10,7 @@
   --hatch: rgba(36, 49, 80, 0.5);
   --hole: rgba(60, 48, 30, 0.30);
   --hole-hi: rgba(255, 255, 255, 0.7);
-  --vignette: rgba(110, 86, 50, 0.16);
+  --vignette: rgba(110, 86, 50, 0.06);
   --moon-lit: #EFE7D2;
   --moon-dark: rgba(36, 49, 80, 0.82);
   --paper-layers: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.4px);
@@ -55,7 +55,7 @@
   --hatch: rgba(233, 225, 207, 0.55);
   --hole: rgba(0, 0, 0, 0.55);
   --hole-hi: rgba(255, 255, 255, 0.06);
-  --vignette: rgba(0, 0, 0, 0.35);
+  --vignette: rgba(0, 0, 0, 0.18);
   --moon-lit: #E9E1CF;
   --moon-dark: rgba(233, 225, 207, 0.10);
   --navy: #E9E1CF;           /* Termine: Creme */
@@ -81,11 +81,15 @@
 
 html, body { margin: 0; padding: 0; height: 100%; }
 
-body {
+/* Papier auf html UND body: so läuft es hinter Statusleiste und Home-Leiste durch, auch beim Überziehen. */
+html, body {
   background-color: var(--paper);
   background-image: var(--paper-layers);
   background-size: var(--paper-sizes);
   background-position: var(--paper-pos);
+}
+
+body {
   color: var(--ink);
   font-family: var(--font-ui);
   font-weight: 500; /* Newsreader 500: auf dem gepunkteten Papier klarer als 400 */
@@ -678,6 +682,13 @@ a { color: inherit; text-decoration: none; }
 .between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
 .fade-in { animation: fade-in 0.25s var(--ease); }
+/* Kaltstart: Zeilen von Heute erscheinen nacheinander, nachdem der Zettel weg ist (Startbild, v5) */
+.rise { animation: rise 0.3s ease-out calc(0.6s + var(--i, 0) * 80ms) both; }
+:root.splash-skip .rise { animation-delay: 0s; }
+@keyframes rise {
+  from { opacity: 0; filter: blur(3px); transform: translateY(5px); }
+  to { opacity: 1; filter: blur(0); transform: none; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
@@ -734,7 +745,7 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 .tl__now { position: absolute; right: 18px; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: var(--brown); background-color: var(--paper); padding: 1px 0; font-variant-numeric: tabular-nums; z-index: 1; }
 .tl__tube {
   position: absolute; right: 2px; top: 0; bottom: 0; width: 12px; border-radius: 6px;
-  border: 1.5px solid var(--navy-line-strong); overflow: hidden; background: var(--paper-2);
+  border: 1.5px solid var(--navy-line-strong); overflow: hidden; background: var(--paper);
 }
 .tl__fill { position: absolute; left: 0; right: 0; top: 0; background: rgba(36, 49, 80, 0.16); border-bottom: 2px solid var(--brown); transition: height 0.6s var(--ease); }
 :root[data-theme="dark"] .tl__fill { background: rgba(233, 225, 207, 0.16); }
@@ -854,11 +865,10 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 :root[data-paper="on"] {
   --paper-layers:
     url(/paper/grain-light.png),
-    url(/paper/fibers-light.png),
     radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.4px),
     url(/paper/mottle-light.png);
-  --paper-sizes: 256px 256px, 512px 512px, 19px 19px, 512px 512px;
-  --paper-pos: 0 0, 0 0, 6px 8px, 0 0;
+  --paper-sizes: 256px 256px, 19px 19px, 512px 512px;
+  --paper-pos: 0 0, 6px 8px, 0 0;
 }
 :root[data-paper="on"][data-theme="dark"] {
   --paper-layers:
@@ -866,6 +876,8 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
     url(/paper/fibers-dark.png),
     radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.4px),
     url(/paper/mottle-dark.png);
+  --paper-sizes: 256px 256px, 512px 512px, 19px 19px, 512px 512px;
+  --paper-pos: 0 0, 0 0, 6px 8px, 0 0;
 }
 
 /* Vignette: Ränder minimal dunkler, wie Papier unter einer Lampe */
@@ -903,9 +915,8 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
   filter: url(#aInk);
   text-shadow: 0 0 0.6px var(--ink-bleed);
 }
-/* Datumszahl wie eingedrückt im Buchdruck */
+/* Datumszahl wie eingedrückt im Buchdruck (ohne rauen Filter, nur der Schatten) */
 :root[data-paper="on"] .heute__num {
-  filter: url(#aInk); opacity: 0.94;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45), 0 -0.5px 0 rgba(60, 48, 30, 0.15);
 }
 :root[data-paper="on"][data-theme="dark"] .heute__num {

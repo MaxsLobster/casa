@@ -78,18 +78,18 @@ const MOTTLE_D = [140, 158, 217] // 0.55 0.62 0.85
 
 // Körnung: feines Rauschen, 256 px
 const soft = () => (rnd() + rnd() + rnd() + rnd() + rnd()) / 5
-const grainL = () => 0.6 * soft() - 0.22
+// Stufe „mittel“ (v5): hell halb so stark wie v4, Fleckigkeit nur ein Hauch, keine Fasern hell
+const grainL = () => 0.3 * soft() - 0.11
 const grainD = () => 0.38 * soft() - 0.13
 tile('grain-light', 256, LIGHT, grainL)
 tile('grain-dark', 256, DARK, grainD)
 
 // Fleckigkeit: sehr großflächig, 512 px
 const mot = fractal([[3, 3, 1], [6, 6, 0.5]])
-tile('mottle-light', 512, MOTTLE_L, (u, v) => 0.26 * mot(u, v) - 0.08)
-tile('mottle-dark', 512, MOTTLE_D, (u, v) => 0.20 * mot(u, v) - 0.07)
+tile('mottle-light', 512, MOTTLE_L, (u, v) => 0.10 * mot(u, v) - 0.04)
+tile('mottle-dark', 512, MOTTLE_D, (u, v) => 0.14 * mot(u, v) - 0.05)
 
 // Fasern: in x lang, in y fein, 512 px, ganz dezent
 const fib = fractal([[6, 48, 1], [12, 96, 0.5]])
-tile('fibers-light', 512, LIGHT, (u, v) => 0.14 * fib(u, v) - 0.07)
 tile('fibers-dark', 512, DARK, (u, v) => 0.10 * fib(u, v) - 0.05)
 console.log('fertig')

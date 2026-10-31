@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – Analog</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}
+</style>
+</helmet>
+<div style="{{pageStyle}}">
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="aInk" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="4" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="0.9" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter>
+    <filter id="aRough" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="9" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter>
+    <filter id="aWash" x="-30%" y="-10%" width="160%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="3" seed="7" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"></feDisplacementMap><feGaussianBlur in="d" stdDeviation="0.7"></feGaussianBlur></filter>
+    <filter id="aMoon"><feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" seed="12" result="n"></feTurbulence><feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.9 0.62" result="spots"></feColorMatrix><feComposite in="spots" in2="SourceGraphic" operator="in" result="s2"></feComposite><feMerge><feMergeNode in="SourceGraphic"></feMergeNode><feMergeNode in="s2"></feMergeNode></feMerge></filter>
+  </svg>
+
+  <div style="{{perfStyle}}"></div>
+  <div style="{{vignetteStyle}}"></div>
+
+  <main style="position: relative; flex: 1; overflow: hidden; padding: 28px 70px 16px 40px; display: flex; flex-direction: column; gap: 14px">
+
+    <header style="display: flex; align-items: flex-end; gap: 14px">
+      <span style="{{bigStyle}}">30</span>
+      <span style="display: flex; flex-direction: column; padding-bottom: 12px">
+        <span style="{{wdStyle}}">Freitag</span>
+        <span style="{{smallCaps}}">Oktober · KW 44</span>
+      </span>
+    </header>
+
+    <div style="{{tearStyle}}"></div>
+
+    <div style="display: flex; align-items: center; gap: 14px">
+      <span style="{{rowText}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{sunColor}}" stroke-width="1.7" stroke-linecap="round" style="{{roughFilter}}"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M5.3 18.7L7 17M17 7l1.7-1.7"></path></svg>
+        6:52–16:58
+      </span>
+      <span style="{{rowText}}">
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-label="Mond abnehmend, 80 Prozent">
+          <circle cx="12" cy="12" r="10" fill="{{moonDark}}"></circle>
+          <path d="M12 2 A10 10 0 0 0 12 22 A6 10 0 0 0 12 2 Z" fill="{{moonLit}}" style="{{moonFilter}}"></path>
+          <circle cx="12" cy="12" r="10" fill="none" stroke="{{moonRim}}" stroke-width="0.8"></circle>
+        </svg>
+        abnehmend
+      </span>
+    </div>
+
+    <span style="{{groupHead}}">Heute noch</span>
+
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <sc-for list="{{tasks}}" as="t" hint-placeholder-count="3">
+        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 6px 0">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="{{ringWrap}}" aria-hidden="true"><path d="{{ringPath}}" stroke="{{inkColor}}" stroke-width="1.6" stroke-linecap="round"></path></svg>
+          <span style="{{handStyle}}">{{t}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="flex: 1"></div>
+
+    <div style="display: flex; gap: 10px; flex-wrap: wrap">
+      <button type="button" onClick="{{toggleAnalog}}" style="{{pillStyle}}">{{analogLabel}}</button>
+      <button type="button" onClick="{{toggleDark}}" style="{{pillStyle}}">{{modeLabel}}</button>
+    </div>
+  </main>
+
+  <div style="position: absolute; right: 18px; top: 250px; bottom: 112px; width: 40px">
+    <sc-for list="{{ticks}}" as="k" hint-placeholder-count="6">
+      <span style="{{k.style}}">{{k.label}}</span>
+    </sc-for>
+    <div style="{{tubeStyle}}">
+      <div style="{{washStyle}}"></div>
+      <div style="{{fillStyle}}"></div>
+    </div>
+    <div style="{{edgeStyle}}"></div>
+    <span style="{{dotStyle}}"></span>
+    <span style="{{timeStyle}}">16:40</span>
+  </div>
+
+  <nav style="{{navStyle}}">
+    <a href="StartB1.dc.html" style="{{navActive}}">Heute</a>
+    <a href="Woche3.dc.html" style="{{navItem}}">Woche</a>
+    <a href="Neu.dc.html" aria-label="Neu eintragen" style="{{plusStyle}}">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+    <a href="Tinte.dc.html" style="{{navItem}}">To-Dos</a>
+    <a href="Montag.dc.html" style="{{navItem}}">Sonntag</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { lvl: 'mittel', dark: false };
+  }
+  renderVals() {
+    var self = this;
+    var L = this.state.lvl;
+    var A = L !== 'aus';
+    var M = L === 'mittel';
+    var dk = this.state.dark;
+
+    function svgUrl(w, h, inner) {
+      var s = "<svg xmlns='http://www.w3.org/2000/svg' width='" + w + "' height='" + h + "'>" + inner + "</svg>";
+      return 'url("data:image/svg+xml,' + encodeURIComponent(s) + '")';
+    }
+    function noise(id, freq, oct, seed, matrix, w, h) {
+      return svgUrl(w, h, "<filter id='" + id + "' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='" + freq + "' numOctaves='" + oct + "' seed='" + seed + "' stitchTiles='stitch'/><feColorMatrix type='matrix' values='" + matrix + "'/></filter><rect width='100%' height='100%' filter='url(#" + id + ")'/>");
+    }
+
+    var C = dk
+      ? { paper: '#1A2340', ink: '#E9E1CF', inkSoft: 'rgba(233,225,207,0.55)', muted: '#A39D8C', gold: '#D9AE62', brown: '#E0B977', dots: 'rgba(233,225,207,0.13)', line: 'rgba(233,225,207,0.14)', hole: 'rgba(0,0,0,0.55)', holeHi: 'rgba(255,255,255,0.06)', plusBg: '#E9E1CF', plusFg: '#1A2340', moonLit: '#E9E1CF', moonDark: 'rgba(233,225,207,0.10)', grainRGB: '0.95 0.92 0.85', mottle: '0.55 0.62 0.85' }
+      : { paper: '#F2EDE2', ink: '#243150', inkSoft: 'rgba(36,49,80,0.55)', muted: '#5F5B52', gold: '#B08A45', brown: '#6B5222', dots: 'rgba(29,29,27,0.15)', line: 'rgba(29,29,27,0.13)', hole: 'rgba(60,48,30,0.30)', holeHi: 'rgba(255,255,255,0.7)', plusBg: '#243150', plusFg: '#F2EDE2', moonLit: '#EFE7D2', moonDark: 'rgba(36,49,80,0.82)', grainRGB: '0.30 0.24 0.16', mottle: '0.55 0.42 0.22' };
+    if (M) {
+      C.paper = dk ? '#1A2340' : '#F5F1E8';
+    }
+    if (!A) {
+      C.ink = dk ? '#EDE6D6' : '#1F2A44';
+      C.paper = dk ? '#18203A' : '#F4F1EA';
+    }
+
+    var g = C.grainRGB.split(' ');
+    var grain = noise('g', '0.9', 3, 3, '0 0 0 0 ' + g[0] + '  0 0 0 0 ' + g[1] + '  0 0 0 0 ' + g[2] + '  0 0 0 ' + (M ? (dk ? '0.40 -0.15' : '0.42 -0.20') : (dk ? '0.55 -0.18' : '0.75 -0.30')), 240, 240);
+    var mo = C.mottle.split(' ');
+    var mottle = noise('m', '0.007', 2, 21, '0 0 0 0 ' + mo[0] + '  0 0 0 0 ' + mo[1] + '  0 0 0 0 ' + mo[2] + '  0 0 0 ' + (M ? '0.10 -0.04' : (dk ? '0.20 -0.07' : '0.26 -0.08')), 700, 900);
+    var fibers = noise('f', '0.015 0.12', 2, 5, '0 0 0 0 ' + g[0] + '  0 0 0 0 ' + g[1] + '  0 0 0 0 ' + g[2] + '  0 0 0 ' + (dk ? '0.10 -0.05' : '0.14 -0.07'), 400, 400);
+    var dotsBg = 'radial-gradient(circle at 1px 1px,' + C.dots + ' 1px,transparent 1.4px)';
+
+    var bg = A
+      ? 'background-color:' + C.paper + ';background-image:' + grain + ',' + (M ? 'none' : fibers) + ',' + dotsBg + ',' + mottle + ';background-size:240px 240px,400px 400px,19px 19px,700px 900px;background-position:0 0,0 0,6px 8px,0 0;'
+      : 'background-color:' + C.paper + ';background-image:' + dotsBg + ';background-size:19px 19px;background-position:6px 8px;';
+
+    var inkF = A ? 'filter:url(#aInk);' : '';
+    var bleed = A ? 'text-shadow:0 0 0.6px ' + C.inkSoft + ';' : '';
+    var hand = "font-family:'Caveat',cursive;color:" + C.ink + ';' + bleed + inkF;
+
+    var pct = function (h) { return ((h - 6) / 16 * 100); };
+    var now = 16 + 40 / 60;
+    var ticks = [6, 9, 12, 15, 18, 21].map(function (h) {
+      return { label: String(h), style: 'position:absolute;left:0;width:16px;text-align:right;transform:translateY(-50%);top:' + pct(h) + '%;font-size:12px;color:' + C.muted + ';font-family:Newsreader,Georgia,serif;' };
+    });
+
+    var navBase = "font-size:12px;letter-spacing:0.12em;text-transform:uppercase;padding:12px 4px;font-family:'Newsreader',Georgia,serif;";
+    var navBg = A ? bg : 'background:' + C.paper + ';';
+
+    return {
+      tasks: ['Altglas, Plastik, Papier wegbringen', 'Lounge-Kissen in den Keller', 'Kamera-Zugangsdaten teilen'],
+      analogLabel: 'Papier: ' + L,
+      modeLabel: dk ? 'Hell' : 'Dunkel',
+      toggleAnalog: function () { self.setState({ lvl: L === 'stark' ? 'mittel' : (L === 'mittel' ? 'aus' : 'stark') }); },
+      toggleDark: function () { self.setState({ dark: !dk }); },
+      ticks: ticks,
+      sunColor: C.gold,
+      roughFilter: A ? 'filter:url(#aRough)' : '',
+      moonLit: C.moonLit,
+      moonDark: C.moonDark,
+      moonRim: C.inkSoft,
+      moonFilter: A ? 'filter:url(#aMoon)' : '',
+      inkColor: C.ink,
+      ringPath: A ? 'M12.4 3.3 C17.6 3.1 21 7.2 20.7 12.3 C20.4 17.3 16.6 20.9 11.7 20.7 C6.8 20.5 3.2 16.7 3.4 11.7 C3.6 7.3 6.6 3.9 10.6 3.4 L11.6 3.5' : 'M12 3 A9 9 0 1 1 11.99 3 Z',
+      ringWrap: 'flex:none;margin-top:6px;' + (A ? 'filter:url(#aRough);' : ''),
+      pageStyle: 'position:relative;width:390px;height:844px;box-sizing:border-box;' + bg + "color:" + C.ink + ";font-family:'Newsreader',Georgia,serif;font-weight:500;display:flex;flex-direction:column;overflow:hidden;",
+      vignetteStyle: A ? 'position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 40%, transparent 55%, ' + (dk ? (M ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.35)') : (M ? 'rgba(110,86,50,0.06)' : 'rgba(110,86,50,0.16)')) + ' 100%);' : 'display:none',
+      perfStyle: A
+        ? 'position:absolute;left:19px;top:0;bottom:80px;width:6px;background-image:radial-gradient(circle at 3px 3px,' + C.hole + ' 1.7px,' + C.holeHi + ' 2.3px,transparent 2.8px);background-size:6px 9px;background-repeat:repeat-y;'
+        : 'position:absolute;left:22px;top:0;bottom:80px;border-left:1.5px dashed ' + C.line + ';',
+      bigStyle: "font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:100px;line-height:0.85;letter-spacing:-0.02em;color:" + C.ink + ';' + (A ? (dk ? 'text-shadow:0 -1px 0 rgba(0,0,0,0.5),0 1px 0 rgba(255,255,255,0.06);' : 'text-shadow:0 1px 0 rgba(255,255,255,0.45),0 -0.5px 0 rgba(60,48,30,0.15);') + (M ? '' : 'filter:url(#aInk);opacity:0.94;') : ''),
+      wdStyle: hand + 'font-size:40px;line-height:1;',
+      smallCaps: 'font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:' + C.muted + ';margin-top:4px;',
+      tearStyle: A
+        ? 'height:6px;background-image:radial-gradient(circle at 3px 3px,' + C.hole + ' 1.5px,' + C.holeHi + ' 2px,transparent 2.4px);background-size:8px 6px;background-repeat:repeat-x;'
+        : 'border-top:2px dotted ' + C.line + ';',
+      rowText: 'display:flex;align-items:center;gap:7px;font-size:15px;color:' + C.ink + ';',
+      groupHead: 'margin-top:8px;font-size:13px;letter-spacing:0.16em;text-transform:uppercase;font-weight:600;color:' + C.muted + ';',
+      handStyle: hand + 'font-size:27px;line-height:1.12;',
+      tubeStyle: 'position:absolute;left:22px;top:-6px;bottom:-6px;width:14px;border-radius:8px;border:1.4px solid ' + C.inkSoft + ';box-sizing:border-box;overflow:hidden;' + (A ? 'filter:url(#aRough);' : ''),
+      washStyle: 'position:absolute;left:1px;right:1px;top:calc(' + pct(8) + '% + 4px);height:' + (pct(14) - pct(8)) + '%;border-radius:5px;background:' + C.gold + ';opacity:' + (A ? '0.62' : '0.55') + ';' + (A ? 'filter:url(#aWash);box-shadow:inset 0 0 3px ' + C.brown + ';' : ''),
+      fillStyle: 'position:absolute;left:0;right:0;top:0;height:calc(' + pct(now) + '% + 6px);' + (A
+        ? 'background:repeating-linear-gradient(-48deg,' + C.inkSoft + ' 0 1px,transparent 1px 4px);opacity:0.75;'
+        : 'background:' + (dk ? 'rgba(237,230,214,0.18)' : 'rgba(31,42,68,0.16)') + ';'),
+      edgeStyle: 'position:absolute;left:20px;width:18px;height:2px;border-radius:1px;background:' + C.brown + ';top:' + pct(now) + '%;' + (A ? 'filter:url(#aRough);' : ''),
+      dotStyle: 'position:absolute;left:25px;width:8px;height:8px;margin-top:-3px;border-radius:50%;background:' + C.brown + ';top:' + pct(now) + '%;',
+      timeStyle: "position:absolute;right:22px;top:" + pct(now) + "%;transform:translateY(-50%);font-family:'Caveat',cursive;font-size:20px;color:" + C.brown + ';white-space:nowrap;' + (A ? 'filter:url(#aInk);' : ''),
+      pillStyle: "font-family:'Newsreader',Georgia,serif;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:" + C.muted + ';background:transparent;border:1px solid ' + C.line + ';border-radius:999px;padding:6px 14px;min-height:40px;cursor:pointer;',
+      navStyle: 'position:relative;flex:none;height:80px;border-top:1px solid ' + C.line + ';' + navBg + 'display:flex;align-items:center;justify-content:space-around;padding:0 10px 14px;box-sizing:border-box;',
+      navItem: navBase + 'color:' + C.muted + ';',
+      navActive: navBase + 'font-weight:600;color:' + C.ink + ';border-bottom:2px solid ' + C.gold + ';',
+      plusStyle: 'width:52px;height:52px;border-radius:26px;background:' + C.plusBg + ';color:' + C.plusFg + ';display:flex;align-items:center;justify-content:center;' + (A ? 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 2px 4px rgba(0,0,0,0.15);' : '')
+    };
+  }
+}
+</script>
+</body>
+</html>

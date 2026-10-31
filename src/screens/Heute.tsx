@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import { addDays, dayLabel, eventEnd, fromISO, hhmm, isoWeek, uhr, weekdayLong, weekdayShort, type ISODate } from '../lib/dates'
@@ -8,6 +8,7 @@ import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import { BAND_END as T_END, BAND_START as T_START, goldSegments, navySegments, pct, toH } from '../lib/band'
 import { Check } from '../components/ui'
 import type { Task } from '../lib/types'
+import { wantsStagger } from '../state/splash'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 
@@ -30,6 +31,16 @@ export function Heute() {
   const nav = useNavigate()
   const { me, partner, members, people, tasks, events, normalWeek, overrides, setTaskDone, isNew, markSeen } = casa
   const voice: Voice = { me, members }
+
+  // Kaltstart: Zeilen erscheinen nacheinander (siehe state/splash.ts). Danach Klassen wieder weg.
+  const [stagger, setStagger] = useState(wantsStagger)
+  useEffect(() => {
+    if (!stagger) return
+    const t = window.setTimeout(() => setStagger(false), 1800)
+    return () => window.clearTimeout(t)
+  }, [stagger])
+  const rc = stagger ? ' rise' : ''
+  const rs = (i: number): CSSProperties | undefined => (stagger ? ({ '--i': Math.min(i, 9) } as CSSProperties) : undefined)
 
   // ---------- Kopf ----------
   const d = fromISO(today)
@@ -139,15 +150,15 @@ export function Heute() {
       </Link>
       {/* ---------- Kopf ---------- */}
       <div className="heute__head">
-        <div className="heute__date">
+        <div className={'heute__date' + rc} style={rs(0)}>
           <span className="heute__num">{d.getDate()}</span>
           <div className="stack" style={{ gap: 2, paddingBottom: 4 }}>
             <span className="heute__wd">{weekdayLong(today)}</span>
             <span className="kicker" style={{ fontSize: 12 }}>{MONTHS[d.getMonth()]} · KW {isoWeek(today)}</span>
           </div>
         </div>
-        <div className="heute__tear" />
-        <div className="heute__info">
+        <div className={'heute__tear' + rc} style={rs(1)} />
+        <div className={'heute__info' + rc} style={rs(2)}>
           <span className="heute__sun" title="Sonnenaufgang – Sonnenuntergang">
             <SunIcon />
             {sun.sunrise}–{sun.sunset}
@@ -173,7 +184,7 @@ export function Heute() {
           </span>
         </div>
         {shown && (
-          <figure className="heute__figure fade-in">
+          <figure className={stagger ? 'heute__figure rise' : 'heute__figure fade-in'} style={rs(3)}>
             <span className="label label--small">{shown.label}</span>
             <blockquote className="hand" style={{ margin: 0, fontSize: 24, lineHeight: 1.2 }}>{shown.text}</blockquote>
             {shown.source && <figcaption className="label" style={{ alignSelf: 'flex-end', fontSize: 12 }}>{shown.source}</figcaption>}
@@ -185,7 +196,7 @@ export function Heute() {
       <div className="heute__body">
         <div className="heute__left">
           {newCount > 0 && (
-            <button type="button" className="note heute__note" onClick={openNew} style={{ textAlign: 'left', width: '100%', cursor: 'pointer' }}>
+            <button type="button" className={'note heute__note' + rc} onClick={openNew} style={{ textAlign: 'left', width: '100%', cursor: 'pointer', ...rs(3) }}>
               <span className="label label--small" style={{ color: 'var(--brown)' }}>Neu von {partner?.display_name ?? 'Anna'}</span>
               <span className="hand" style={{ fontSize: 24, lineHeight: 1.15 }}>
                 {firstNew}
@@ -195,10 +206,10 @@ export function Heute() {
           )}
 
           <section className="stack" style={{ gap: 12 }}>
-            <h2 className="heute__h2">Heute noch</h2>
-            {rows.length === 0 && <p className="hint">Nichts mehr für heute. Schön.</p>}
-            {rows.map((r) => (
-              <div className="heute__row" key={r.key}>
+            <h2 className={'heute__h2' + rc} style={rs(4)}>Heute noch</h2>
+            {rows.length === 0 && <p className={'hint' + rc} style={rs(5)}>Nichts mehr für heute. Schön.</p>}
+            {rows.map((r, idx) => (
+              <div className={'heute__row' + rc} style={rs(5 + idx)} key={r.key}>
                 <span className="heute__time">
                   {r.kind === 'task' && r.task ? (
                     <span style={{ transform: 'scale(0.8)', transformOrigin: 'center', marginLeft: 10 }}>
@@ -222,7 +233,7 @@ export function Heute() {
           </section>
 
           {soon.length > 0 && (
-            <section className="stack" style={{ gap: 8 }}>
+            <section className={'stack' + rc} style={{ gap: 8, ...rs(5 + rows.length) }}>
               <h2 className="heute__h2">Demnächst</h2>
               {soon.map((o) => (
                 <button type="button" key={o.id + o.occ_date} className="heute__soon" onClick={() => nav('/woche')}>
@@ -236,7 +247,7 @@ export function Heute() {
           <div className="spacer" />
         </div>
 
-        <div className="tl" aria-label="Tagesverlauf">
+        <div className={'tl' + rc} style={rs(3)} aria-label="Tagesverlauf">
           {[6, 9, 12, 15, 18, 21].map((hh) => (
             <span key={hh} className="tl__num" style={{ top: pct(hh) }}>{hh}</span>
           ))}

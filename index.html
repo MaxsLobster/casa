@@ -5,13 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
     <title>Casa</title>
     <meta name="description" content="Casa – Notizbuch für zwei" />
-    <meta name="theme-color" content="#F2EDE2" />
+    <meta name="theme-color" content="#F5F1E8" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Casa" />
     <link rel="icon" href="/casa/icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/casa/icons/apple-touch-icon.png" />
+    <!-- Statisches Startbild (iOS liest es beim Hinzufügen zum Home-Bildschirm). Erzeugt mit: node scripts/make-splash.mjs -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-440x956@3x.png" media="screen and (device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" /><!-- iPhone 16 Pro Max, 17 Pro Max -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-430x932@3x.png" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" /><!-- iPhone 14 Pro Max, 15 Plus, 15 Pro Max, 16 Plus -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-428x926@3x.png" media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" /><!-- iPhone 12 Pro Max, 13 Pro Max, 14 Plus -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-420x912@3x.png" media="screen and (device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" /><!-- iPhone Air -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-414x896@3x.png" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" /><!-- iPhone 11 Pro Max, XS Max -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-414x896@2x.png" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /><!-- iPhone 11, XR -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-402x874@3x.png" media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" /><!-- iPhone 16 Pro, 17, 17 Pro -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-393x852@3x.png" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" /><!-- iPhone 14 Pro, 15, 15 Pro, 16 -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-390x844@3x.png" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" /><!-- iPhone 12, 13, 14, 16e -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-375x812@3x.png" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" /><!-- iPhone 12 mini, 13 mini, X, XS, 11 Pro -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-375x667@2x.png" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /><!-- iPhone SE -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-1032x1376@2x.png" media="screen and (device-width: 1032px) and (device-height: 1376px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /><!-- iPad Pro 13 (M4) -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-1024x1366@2x.png" media="screen and (device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /><!-- iPad Pro 12.9 -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-834x1210@2x.png" media="screen and (device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /><!-- iPad Pro 11 (M4) -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-834x1194@2x.png" media="screen and (device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /><!-- iPad Air 11, iPad Pro 11 -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-820x1180@2x.png" media="screen and (device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /><!-- iPad 10, 11 -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-810x1080@2x.png" media="screen and (device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /><!-- iPad 9 -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-768x1024@2x.png" media="screen and (device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /><!-- iPad (alt) -->
+    <link rel="apple-touch-startup-image" href="/casa/splash/splash-744x1133@2x.png" media="screen and (device-width: 744px) and (device-height: 1133px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" /><!-- iPad mini -->
+    <style>
+#splash{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;cursor:default;
+  background-color:#1A2340;background-image:radial-gradient(circle at 1px 1px,rgba(233,225,207,0.13) 1px,transparent 1.4px);
+  background-size:19px 19px;background-position:6px 8px}
+#splash .zettel{position:relative;width:120px;height:120px;transform:rotate(-4deg);background:#EFE4C8;
+  box-shadow:0 5px 12px rgba(0,0,0,0.4)}
+#splash .tape{position:absolute;top:-10px;left:50%;width:58px;height:18px;margin-left:-29px;
+  background:rgba(217,174,98,0.5);transform:rotate(3deg)}
+#splash svg.haken{position:absolute;inset:0;width:120px;height:120px;filter:url(#sRough)}
+#splash.go .zettel{animation:zettel-weg .5s cubic-bezier(.4,0,.2,1) both}
+#splash.go{animation:splash-weg .4s ease .4s both;pointer-events:none}
+#splash.quick{animation:splash-weg .3s ease both;pointer-events:none}
+@keyframes zettel-weg{to{opacity:0;transform:rotate(-8deg) scale(.9)}}
+@keyframes splash-weg{to{opacity:0}}
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
@@ -40,12 +75,32 @@
           var h = new Date().getHours();
           if (auto !== 'off' && (h >= 20 || h < 6)) {
             document.documentElement.setAttribute('data-theme', 'dark');
+            var tc = document.querySelector('meta[name="theme-color"]');
+            if (tc) tc.setAttribute('content', '#1A2340');
           }
         } catch (e) {}
       })();
     </script>
   </head>
   <body>
+    <!-- Zettel wie auf dem Startbild: liegt über allem, bis die App bereit ist (siehe src/state/splash.ts) -->
+    <div id="splash" aria-hidden="true">
+      <svg width="0" height="0" style="position:absolute"><filter id="sRough" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="9" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></svg>
+      <div class="zettel"><span class="tape"></span><svg class="haken" viewBox="0 0 96 96" fill="none"><path d="M26 50 L42 66 L72 32" stroke="#243150" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+    </div>
+    <script>
+      (function () {
+        var s = document.getElementById('splash');
+        if (!s) return;
+        // Antippen überspringt: Zettel sofort überblenden, Zeilen von Heute ohne Staffelung
+        s.addEventListener('click', function () {
+          s.classList.add('quick');
+          document.documentElement.classList.add('splash-skip');
+          setTimeout(function () { s.remove(); }, 350);
+        });
+        s.addEventListener('animationend', function (e) { if (e.target === s) s.remove(); });
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
