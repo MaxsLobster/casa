@@ -9,7 +9,7 @@ Alles unten ist eingespielt, aber nach einer Faustregel entschieden. Was dir nic
 
 ## Shakshuka
 - Schritt 5: Bereich „5–7 min“: kleinerer Wert genommen
-- Keinem Schritt zugeordnet: Eier, Petersilie oder Koriander
+- Keinem Schritt zugeordnet: Petersilie oder Koriander
 
 ## Teriyaki-Hähnchen-Bowl
 - Schritt 3: mehrere Zeitangaben, erste („6 min“) genommen
@@ -19,7 +19,6 @@ Alles unten ist eingespielt, aber nach einer Faustregel entschieden. Was dir nic
 ## Miso-Lachs aus dem Ofen
 - Schritt 1: Marinier- oder Wartezeit, kein Timer gesetzt
 - Schritt 3: mehrere Zeitangaben, erste („12 min“) genommen
-- Keinem Schritt zugeordnet: Lachsfilets (mit Haut)
 
 ## Hummus-Bowl mit Falafel
 - Schritt 1: mehrere Zeitangaben, erste („6 min“) genommen
@@ -29,26 +28,25 @@ Alles unten ist eingespielt, aber nach einer Faustregel entschieden. Was dir nic
 
 ## Maki-Rollen einfach
 - Schritt 1: mehrere Zeitangaben, erste („15 min“) genommen
-- Keinem Schritt zugeordnet: Salz, Sojasauce, Wasabi, eingelegter Ingwer
+- Keinem Schritt zugeordnet: Sojasauce, Wasabi, eingelegter Ingwer
 
 ## Hähnchen-Shawarma-Bowl
 - Schritt 1: Marinier- oder Wartezeit, kein Timer gesetzt
 - Schritt 3: mehrere Zeitangaben, erste („4 min“) genommen
-- Keinem Schritt zugeordnet: Kreuzkümmel, Koriander, Paprika edelsüß, Zimt, Kurkuma, Salatherzen
+- Keinem Schritt zugeordnet: Kreuzkümmel, Koriander, Paprika edelsüß, Zimt, Kurkuma
 
 ## Gemüse-Lasagne
 - Schritt 6: mehrere Zeitangaben, erste („35 min“) genommen
 - Keinem Schritt zugeordnet: Paprika
 
 ## Chicken Katsu mit Tonkatsu-Sauce
-- Keinem Schritt zugeordnet: Eier, Sonnenblumenöl
+- Keinem Schritt zugeordnet: Sonnenblumenöl
 
 ## Chana Masala
 - Keinem Schritt zugeordnet: Wasser
 
 ## Tom Kha Gai
 - Zutat „Vogelaugen-Chilis“: Menge „1-3“ → 1 genommen
-- Keinem Schritt zugeordnet: Vogelaugen-Chilis
 
 ## Mapo Tofu
 - Keinem Schritt zugeordnet: Speisestärke

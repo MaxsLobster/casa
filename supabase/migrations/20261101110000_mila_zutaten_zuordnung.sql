@@ -1,0 +1,242 @@
+-- Mila · Zutaten-Zuordnung je Schritt neu (Wortstämme: Eier = Ei, Hack in Rinderhack).
+-- Erzeugt aus src/mila/seed.json; die vollständigen Daten stehen in 20261101100100_mila_rezepte.sql.
+
+-- Bolognese-Basis (Thermomix)
+update public.mila_steps set ingredient_ids = array['475e2b22-bc99-537b-a2a2-2788eded4742', '3cf09788-b42f-51a9-a281-b927fba19161', '06a08baa-1dc4-5fef-ae20-e3409c0019ac', '0c3efae4-4a83-5f77-a0ad-a2b59a64ba97']::uuid[] where id = '6e10688e-2e13-593e-a91b-2e36599a0d7b';
+update public.mila_steps set ingredient_ids = array['c05203fd-f973-5caa-acd6-6b15fbb1af4d']::uuid[] where id = '20d3aef0-c2af-538b-a4a7-473c8b0ab10d';
+update public.mila_steps set ingredient_ids = array['1aaba84b-a473-5184-abbb-dad99f6326bf', '3714ddd5-ed6a-53f9-a3c5-128c58e7e629', 'b2296a72-3bcb-5712-adc9-2e393e21fb3a']::uuid[] where id = 'b23c829b-cff2-5e52-ae4f-3a81cf527b13';
+update public.mila_steps set ingredient_ids = array['5f09839f-f6df-54a9-ad1c-cfe9f8ad49c5']::uuid[] where id = '2008f988-e4c4-5a30-a553-9d5e1d7eee24';
+update public.mila_steps set ingredient_ids = array['63e1844f-41d5-5323-a1c8-0f2a1708e24d', 'fa04ac03-acd1-594f-aa27-b27153753ccd', '2434c0fd-19e9-57a8-adc9-d9f93b90ca6c']::uuid[] where id = 'aabf9a48-15d2-5a7b-a5a7-0dbdf2d13a3e';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = 'e855bc29-7dde-5a90-a626-5d69edb0924a';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '17e3f309-da64-5ff2-a868-30ef63e37d9d';
+
+-- Pasta Aglio e Olio
+update public.mila_steps set ingredient_ids = array['d9ff6616-6905-5023-a6de-82571d8529b8']::uuid[] where id = '380b816d-00a1-50b3-acb9-23088d1bfdc2';
+update public.mila_steps set ingredient_ids = array['21a7398f-8960-5f42-ad49-30aac8068d88', 'c59a5152-b0b2-59fe-a008-2160c48e6abb', '038fd987-4b2a-5e92-a761-45ea291d1fd1']::uuid[] where id = '5368fe94-4d6d-5a9d-a3ba-772ef0c2b2f8';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '1948a886-7301-5548-aa44-392f0c017413';
+update public.mila_steps set ingredient_ids = array['98690033-90b6-5c26-a675-c1cf14703fad', '0c1efdf9-735f-5659-a1f1-f7c7e2fe48d8']::uuid[] where id = 'a13fd94d-aede-5db3-a653-45503ca3dc34';
+
+-- Shakshuka
+update public.mila_steps set ingredient_ids = array['b84d120a-5dbf-563b-a65f-70c642088a8f', 'fbb4ceef-785f-5d67-a636-a6eaf6791ad9', 'f19d2021-a13d-5be2-aedc-adf19c1587fa', '929eecd3-ffa7-5455-a325-2ce1df3fd9dc']::uuid[] where id = '7021a235-8983-5f2f-a136-7425d066e7c4';
+update public.mila_steps set ingredient_ids = array['182f4e21-d776-5b7d-a580-38d2db098a73']::uuid[] where id = 'b641ce25-f07d-580d-af71-2a526304b9bd';
+update public.mila_steps set ingredient_ids = array['eb1e1363-2096-5ccb-ad34-7520362dc108']::uuid[] where id = '82132e7f-66a3-5087-a357-79d7ec989229';
+update public.mila_steps set ingredient_ids = array['4cb757fb-4a0c-5a18-ad8e-d45a4836a05f']::uuid[] where id = '48150e17-3d35-53a9-a9b9-fae3d873b9f7';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '52e008dc-aea4-5666-a0ba-b5da3a5d681a';
+update public.mila_steps set ingredient_ids = array['67470cdd-231a-5892-aeda-c7dbb6314468', 'e7f87b84-7d15-52b7-a662-f414cd223d81']::uuid[] where id = '054f4e18-42c2-5e67-a5d5-6add265fed99';
+
+-- Thai-Erdnussnudeln
+update public.mila_steps set ingredient_ids = array['f955aca9-4880-5f74-a673-e11cde633e9a']::uuid[] where id = '25349010-2c70-53f5-ae58-d0b10e1e7100';
+update public.mila_steps set ingredient_ids = array['b92f4997-697e-50fa-ac09-8b1b34966f6e', '784d2c98-d157-57ed-a383-dd4c900a072a', '47e0326e-a9e6-553a-a80b-d3617774d623', '7b2370db-6be8-566b-a79f-50419182ee27', 'c7efff7d-8c60-52fd-a05a-e813e5be0bcc']::uuid[] where id = '9e1d4a0d-420b-5669-a0f7-6814db188cb7';
+update public.mila_steps set ingredient_ids = array['850ff569-ecce-54eb-a73c-4c682888a537']::uuid[] where id = 'c54d894e-b23a-5111-abf6-c241de5f38ab';
+update public.mila_steps set ingredient_ids = array['9cf4b93b-c1d8-541c-ac0d-5222d0b363b5', '4efbc34a-90e8-57bb-a03b-f818897af12f', '037f0129-a9b8-5946-a8c4-007ddb85cb11']::uuid[] where id = '569c31ae-f7dd-594f-adb8-a0ab60471d42';
+update public.mila_steps set ingredient_ids = array['f955aca9-4880-5f74-a673-e11cde633e9a', '784d2c98-d157-57ed-a383-dd4c900a072a']::uuid[] where id = '792fcf68-52b2-505b-ad33-4a3a90a3444f';
+update public.mila_steps set ingredient_ids = array['ef2b8302-2908-5bf7-a218-dad404e390c0', '34ef4bea-ae0a-5542-a8e0-577f23ca349b', 'c7efff7d-8c60-52fd-a05a-e813e5be0bcc']::uuid[] where id = '082fc24e-2888-5bf2-ab4d-95692e3ab07a';
+
+-- Teriyaki-Hähnchen-Bowl
+update public.mila_steps set ingredient_ids = array['8848abe7-e24d-5d73-a4b5-1525dd5dd4c2']::uuid[] where id = '3374c831-0be8-512d-ab51-0e0cb0b83706';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '3546dc67-b573-5320-a683-a3d0266ff8c3';
+update public.mila_steps set ingredient_ids = array['88c0af5e-8ae7-5f8d-a90e-eb787d4ba715']::uuid[] where id = '991ae02f-ef15-543b-af18-476ea467e93d';
+update public.mila_steps set ingredient_ids = array['88c0af5e-8ae7-5f8d-a90e-eb787d4ba715', 'e89139a2-c01d-57a5-a7b6-ee68fd94ceec']::uuid[] where id = '611e667d-9c83-5216-ad0e-55aa698bfc84';
+update public.mila_steps set ingredient_ids = array['88c0af5e-8ae7-5f8d-a90e-eb787d4ba715', '8848abe7-e24d-5d73-a4b5-1525dd5dd4c2', '8940d699-a9d6-54f1-a286-25f71dedecc6', 'df49e07d-131a-544c-ac6e-0bc03bea5e43', '9895b332-ac1a-59e9-adf4-f45d806c01d7', '2dea6930-b0bc-5a8f-a036-65870918ce3f', 'e89139a2-c01d-57a5-a7b6-ee68fd94ceec']::uuid[] where id = 'd22c88f3-8bf3-5b36-a888-10a50b2b2f84';
+
+-- Korean Beef Bowl
+update public.mila_steps set ingredient_ids = array['59ce407e-378b-5b7e-aa20-48f96f38d3b0']::uuid[] where id = '65b595b4-43aa-5fcb-a77f-b5483366997e';
+update public.mila_steps set ingredient_ids = array['4d7a4417-dd55-5316-ac7f-5a5f39c39ac8']::uuid[] where id = '5b7ba581-d5cd-5eda-afa5-a472c669f9de';
+update public.mila_steps set ingredient_ids = array['93712094-3624-5c03-a963-63963192ba96', '6d80e440-c703-585f-a31d-b08f7e1fcc4e']::uuid[] where id = 'c7951abe-e2e6-5eb4-ae56-7220b627a104';
+update public.mila_steps set ingredient_ids = array['d2927904-cba5-5321-a8cf-2fe66a6565c2', 'be3ee4c5-abc6-50de-ad20-7a3e4da1f57e', '8e09887f-2610-59d9-affd-048a95b0f905', '502ca156-e46c-5292-a628-9a6af9782932', '8cf513cc-34d5-5411-a857-aacc1994c8bb']::uuid[] where id = 'fcce6a75-46d9-5df6-a60e-519ea4bb3c94';
+update public.mila_steps set ingredient_ids = array['4d7a4417-dd55-5316-ac7f-5a5f39c39ac8', 'be3ee4c5-abc6-50de-ad20-7a3e4da1f57e', '59ce407e-378b-5b7e-aa20-48f96f38d3b0', 'ae59255f-e9c2-55db-a191-5bd1bf447122', '7ed9c658-e0fe-5efe-a2e9-11a453d9db16', 'c545b3c9-89d0-5a22-a6f5-38f18e37a5cb', '8cf513cc-34d5-5411-a857-aacc1994c8bb']::uuid[] where id = 'e1b13153-b7d5-56af-a931-df6a7682fce2';
+
+-- Linsen-Dal
+update public.mila_steps set ingredient_ids = array['edd2774d-4751-5dd8-a681-de3b7bbe8ce0', '4abda403-5d04-5b97-a06b-f3d11547dee8', '9286f375-aea1-504d-aaa7-e7a8a5283cab', 'a4201cdb-7582-5835-abc2-ea2384e9408a']::uuid[] where id = '5dc0d7fb-27aa-5a7e-a9b1-885a09180bed';
+update public.mila_steps set ingredient_ids = array['13a69dc7-3bb1-57c5-a4b2-f46cb090bb66']::uuid[] where id = '6cc6b783-9915-5fca-a73f-44ccb2046ee6';
+update public.mila_steps set ingredient_ids = array['4abda403-5d04-5b97-a06b-f3d11547dee8', '9286f375-aea1-504d-aaa7-e7a8a5283cab', 'a4201cdb-7582-5835-abc2-ea2384e9408a']::uuid[] where id = '2d444a6c-0939-5f75-aba0-83be19038b73';
+update public.mila_steps set ingredient_ids = array['13a69dc7-3bb1-57c5-a4b2-f46cb090bb66']::uuid[] where id = '680a14de-1fa4-54a9-aaea-9bc8703c05aa';
+update public.mila_steps set ingredient_ids = array['edd2774d-4751-5dd8-a681-de3b7bbe8ce0', 'a337aac8-54b4-594b-a879-f4c8f7ebf46d', '28e649e9-7b34-56a9-a403-40bd4b9314e3', '7c7200eb-11fc-5705-a7ca-bd26b5e4416f']::uuid[] where id = 'd831d492-f9cc-57f3-a113-1d292716d314';
+update public.mila_steps set ingredient_ids = array['81218070-6f8a-5cc2-a43b-68a2da1e4ed1', '4fa356a6-4069-5039-a1b2-519cab4f0a5b', 'ebb6be97-5660-5bd8-a578-c9ebbe0e18bc']::uuid[] where id = 'fac7b2e8-adb8-5980-ab5b-34fa4a055643';
+
+-- Miso-Lachs aus dem Ofen
+update public.mila_steps set ingredient_ids = array['1505c221-e1a7-59f6-aa3f-68c1b03d3953', '37a799eb-adfe-5744-a6ad-ee792d33da9b', '4df87660-a7d7-5ebb-a88f-73404f09ffbd', 'd222d940-2468-5c97-af7b-4b1b7e59f353', '9ca3f10e-a585-57a3-a37f-95df351229ee']::uuid[] where id = 'b00e9106-a69b-5f24-ac7b-02f8e491dd69';
+update public.mila_steps set ingredient_ids = array['40241fe3-cd23-56eb-a1b1-3c0f05755aad']::uuid[] where id = '4c87c900-e2f9-5d65-ab42-4027beb00efd';
+update public.mila_steps set ingredient_ids = array['1505c221-e1a7-59f6-aa3f-68c1b03d3953']::uuid[] where id = 'b8a927a5-8a90-56be-ad2a-b6d80f8cd5a2';
+update public.mila_steps set ingredient_ids = array['b4b1e27f-f7e4-50de-a5b6-85ce377fbf21', '403bec42-b77d-55b1-a5cf-70f9f49a8ca9']::uuid[] where id = '2808d1b5-42af-5ece-a289-67d3a3a06cc3';
+update public.mila_steps set ingredient_ids = array['1505c221-e1a7-59f6-aa3f-68c1b03d3953', '40241fe3-cd23-56eb-a1b1-3c0f05755aad', 'b4b1e27f-f7e4-50de-a5b6-85ce377fbf21', '403bec42-b77d-55b1-a5cf-70f9f49a8ca9']::uuid[] where id = 'c6fec619-9bc0-568f-a0f7-9187a324ddbf';
+
+-- Caprese-Quinoa-Bowl
+update public.mila_steps set ingredient_ids = array['fe243b3f-2b1f-55ab-a9fe-e422110af3f3', '34d45ade-72ac-503b-aa39-fbde62e39b5d']::uuid[] where id = '7bfadc51-4e5c-5514-a5ec-568118bd7aa8';
+update public.mila_steps set ingredient_ids = array['34f21dd5-fcce-5bf8-ac19-18ae2ced84fa', '134a485b-3946-528c-ac53-a3dd37b0b5ef', '566a2f57-c810-527b-a124-d49d163f3627']::uuid[] where id = '12d86ffe-9437-57b9-afe7-da431bfa41e4';
+update public.mila_steps set ingredient_ids = array['f4645e93-0196-51b6-a806-347f415b4ce0', '2e9caa98-4e6c-5f4f-a623-bb1d4517dee0']::uuid[] where id = 'aff28692-6fa9-53e3-aa08-2d0f3e576eb6';
+update public.mila_steps set ingredient_ids = array['f7c544bb-23bf-5baf-a092-06253534de04']::uuid[] where id = 'ff3e04bf-7d65-53c9-a443-984a115acfd7';
+
+-- Hummus-Bowl mit Falafel
+update public.mila_steps set ingredient_ids = array['64debf59-2c3c-5466-acca-d6b69e0c7019']::uuid[] where id = '791921cc-6879-5d40-a147-d807ef172b46';
+update public.mila_steps set ingredient_ids = array['0763e3d0-0377-59bf-a122-c49e31d4e040', '0ea5da4e-f801-58f3-a8c6-8ce0800b515f']::uuid[] where id = '1fee71d7-4561-5ef1-af40-2bf7d8af52dd';
+update public.mila_steps set ingredient_ids = array['64debf59-2c3c-5466-acca-d6b69e0c7019', '0113ce06-2761-5bd9-a462-ab9800211a46', 'f3b5be19-509e-5ab6-a74a-72660d3b76ed', 'e3bdee68-ee77-514e-a2bb-ce723bf2ab2f', 'dfe7bc77-fa9b-5d3d-a47b-a07aa00edd4f', '26e4cee5-e631-5486-adb9-f84e0c896a8a', '406b8920-37d0-5de7-ad5c-6fdad0ae7d47']::uuid[] where id = '992b50d8-5951-5118-a0ba-c2741838dbeb';
+update public.mila_steps set ingredient_ids = array['0113ce06-2761-5bd9-a462-ab9800211a46', '0763e3d0-0377-59bf-a122-c49e31d4e040', '0ea5da4e-f801-58f3-a8c6-8ce0800b515f']::uuid[] where id = '03e698c0-2da8-5702-ab22-2c8a6edee7b9';
+
+-- Overnight Oats (5-Portionen-Basis)
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '2f154e63-fbcd-5e97-af67-155480ff73d5';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = 'bbeab7e3-9fff-5610-a4d5-a7ba190e43ab';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '14aef393-2d0f-56e5-a0a7-4f128d250944';
+update public.mila_steps set ingredient_ids = array['31ade2b1-1032-538f-a54c-8505e6e3b00e']::uuid[] where id = '2abbd5a5-922c-5857-a5da-e774d74554f0';
+
+-- Maki-Rollen einfach
+update public.mila_steps set ingredient_ids = array['73ccc98f-0eae-5a10-a321-6aa58eed5a8e', '3deecdc7-3837-5bd3-a283-7701d6a21689']::uuid[] where id = '99ce466c-836d-505c-abd5-e79f489d814a';
+update public.mila_steps set ingredient_ids = array['73ccc98f-0eae-5a10-a321-6aa58eed5a8e', '3deecdc7-3837-5bd3-a283-7701d6a21689', '2e561203-6939-5fff-a494-dabd08e403ee', '9d3b3664-c684-53be-a0e0-522434986f98']::uuid[] where id = 'e13b31f4-639f-5cbf-a94e-b91d7dcc46a4';
+update public.mila_steps set ingredient_ids = array['73ccc98f-0eae-5a10-a321-6aa58eed5a8e', '3deecdc7-3837-5bd3-a283-7701d6a21689', 'df8d7adf-8ddf-5ab6-a0f3-bb0d58a16630']::uuid[] where id = 'f93fc784-730f-5906-ae0c-edd337a274fa';
+update public.mila_steps set ingredient_ids = array['18222249-7b6f-55f6-a369-aa5b6464b2e1', 'b39ec957-c96c-596f-a7d6-b7d5a8a4f79d', '34baf9af-7271-5c71-ae66-0d3fd71d0c2f']::uuid[] where id = 'a7142dd3-f332-531b-a247-337115e24425';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '9a5827cd-7ed8-5134-a20d-51952ac05ac1';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '2df4233c-5e0c-59e5-afa3-e4f9acd6f680';
+
+-- Rotes Thai Curry
+update public.mila_steps set ingredient_ids = array['a731009c-fce7-5e0e-a31a-129a25fb8142']::uuid[] where id = 'b26a9cfb-fc88-5119-a246-6dac453269e4';
+update public.mila_steps set ingredient_ids = array['822c70bb-b7df-5246-a890-bc69d9bcc4a0', '81e32075-98d9-5343-a64f-2100ed9150e6']::uuid[] where id = 'a896059f-3036-5c81-a32b-fb43054a38ba';
+update public.mila_steps set ingredient_ids = array['81e32075-98d9-5343-a64f-2100ed9150e6', '117566c0-95fd-5a2a-a414-65a196240d27']::uuid[] where id = '888f9130-728b-5394-a862-1eec9980af54';
+update public.mila_steps set ingredient_ids = array['64aa995a-78fd-5ce9-a731-87b524812029']::uuid[] where id = 'a74cd662-544a-55f7-a783-515e8a78beab';
+update public.mila_steps set ingredient_ids = array['eea6a87f-eb2e-5ea8-a362-9b10b569560c', '42e6d7b9-5384-5772-a97c-ef66878c756f', '8e37b9c3-18f8-59a8-ac63-f7f7c57eec78']::uuid[] where id = '5f3e314d-2911-5b95-a110-4cb226c04229';
+update public.mila_steps set ingredient_ids = array['ed9139cf-59a9-5ba9-a3ec-f101ba50711c', '9f1ac44a-55c0-595f-ad83-e0974b95767d', '334c2c8b-c0ab-5e2c-a498-87298d852f07']::uuid[] where id = '4efcd5d4-4fd7-5050-a35f-2d390b740d12';
+update public.mila_steps set ingredient_ids = array['87e26364-c8cf-5156-af67-6cb078747536', 'a731009c-fce7-5e0e-a31a-129a25fb8142']::uuid[] where id = 'd569f376-3d49-5c98-a193-5329f258d798';
+
+-- Hähnchen-Shawarma-Bowl
+update public.mila_steps set ingredient_ids = array['cbf423f1-51bb-5542-a9b4-0e569c8e4e41', '66b84321-d023-58e5-a310-b407011316e8', 'd925a11f-d13f-56de-acea-d7b7136227a9', 'd07b0832-36db-5e1a-a2f4-23a35ee6b27f', 'b8aea9ff-26c7-5913-a758-f41aee0e41a9']::uuid[] where id = '7954d51c-561f-58fd-aef5-615d664db873';
+update public.mila_steps set ingredient_ids = array['effe39e9-5994-51b7-a5c9-06fb47ec9f0b']::uuid[] where id = '0a0e55ad-8d8e-57fd-a52a-8cedd6eddbee';
+update public.mila_steps set ingredient_ids = array['cbf423f1-51bb-5542-a9b4-0e569c8e4e41']::uuid[] where id = 'f6e32d7b-e704-516c-aced-9cf5075cbe63';
+update public.mila_steps set ingredient_ids = array['cbf423f1-51bb-5542-a9b4-0e569c8e4e41', 'effe39e9-5994-51b7-a5c9-06fb47ec9f0b', '3222f3e5-3b45-5b1e-a6fa-50511e3510f4', 'f2578da4-f710-5ef9-a26f-611bed0d6424', 'bf96229d-8265-5f24-a29e-3fb53b5d5458', 'f435d0fd-ed8b-5be0-a14a-b69e68051416', 'b8aea9ff-26c7-5913-a758-f41aee0e41a9']::uuid[] where id = '23e0b042-647e-5429-a331-d3bd2a22f112';
+
+-- Gemüse-Lasagne
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '979d86ef-453e-5d91-ae70-c162117416b7';
+update public.mila_steps set ingredient_ids = array['cfacfb4e-d4fc-5b74-a0f1-af1168ba994d', '29398317-ecfc-5344-a699-7b490748a005']::uuid[] where id = '6e45a928-a1c6-51bd-a92d-940cb98df8a6';
+update public.mila_steps set ingredient_ids = array['9e28584d-bd11-5727-ab3e-586e69c72731', 'c1784809-2a52-5030-ad13-4be6a047fbbe']::uuid[] where id = 'ad8b5f75-30d6-5cdf-aed5-f2bf249be4e7';
+update public.mila_steps set ingredient_ids = array['ebea1735-7c9e-51ce-a6ce-cd05f896dd70', '672139e3-5d00-5fdd-a9e6-d39773d5fe80']::uuid[] where id = 'b97c703d-edd2-54b8-a874-2fe605529ced';
+update public.mila_steps set ingredient_ids = array['e0e5f9e6-f3f9-5475-abfb-88168a9173a9', 'ebea1735-7c9e-51ce-a6ce-cd05f896dd70', '672139e3-5d00-5fdd-a9e6-d39773d5fe80', 'a74072a8-1832-5c13-a92a-98b7ee5638e9', '881f43f5-ff65-510b-aa34-c7af70e5bedd']::uuid[] where id = '0db45d6c-0fb9-5afe-abd0-f3f6c4643fd5';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '4eb30783-1d5d-5d02-a3dc-38f3a76ad3dc';
+
+-- Chicken Katsu mit Tonkatsu-Sauce
+update public.mila_steps set ingredient_ids = array['0e0c9215-5c31-5300-aa1d-718d0279cf7c']::uuid[] where id = '57c5fc47-9675-5410-a84f-15780930ccca';
+update public.mila_steps set ingredient_ids = array['6506a687-ad80-5bda-a1e1-684d8f866b0e']::uuid[] where id = '90353408-3275-5f0f-a07d-61eae3680f41';
+update public.mila_steps set ingredient_ids = array['76cff20c-1061-5f8e-adfd-c7e70a24f42d']::uuid[] where id = 'af67a7d4-eeed-5336-a729-d136700aa2df';
+update public.mila_steps set ingredient_ids = array['62e0115b-1913-5554-ad83-54f20afea332', '8f06a0b6-317d-5bf2-a4ce-84a25495490c', '6ad2ff7a-41f6-5d95-a751-7631fed6251f']::uuid[] where id = 'c3aa93d1-cc88-57d9-af3d-c2849b91f26c';
+update public.mila_steps set ingredient_ids = array['76cff20c-1061-5f8e-adfd-c7e70a24f42d']::uuid[] where id = 'c1068666-ba5f-5c86-a4e5-954aae951b92';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '41cca470-cbc2-5df3-a8c8-978bb64ef2f3';
+update public.mila_steps set ingredient_ids = array['0e0c9215-5c31-5300-aa1d-718d0279cf7c', '7c4c6419-b48f-572b-a893-ec4ccb70d779', '6506a687-ad80-5bda-a1e1-684d8f866b0e', '0213324a-408f-5183-ac02-7add50a3a8aa']::uuid[] where id = '01876b90-bb64-56d6-a814-ebb1421ab280';
+
+-- Chana Masala
+update public.mila_steps set ingredient_ids = array['dfdc355c-9fbe-5df5-ad4f-8c89c2e63638']::uuid[] where id = '2f4a2997-1e09-5224-ae92-568b1f8c4809';
+update public.mila_steps set ingredient_ids = array['f35540fe-3a88-5362-ad78-b836aff8f952']::uuid[] where id = '5deb3270-4d39-54b0-ac1b-f2caefd6ab22';
+update public.mila_steps set ingredient_ids = array['227b4082-64ec-580d-a373-8e7ded02962c', 'd1b70c12-8bcb-52d1-afaa-bfbc48c082ae']::uuid[] where id = '9481d5b3-53ff-548a-acca-d2234c51dfb7';
+update public.mila_steps set ingredient_ids = array['3529eac8-28d9-50c5-a14e-f05e1342ca23']::uuid[] where id = '86d9c377-8af6-5ada-afd4-1ee0d7d222a9';
+update public.mila_steps set ingredient_ids = array['dfa4a967-301f-5b0d-a439-58f907be0f56']::uuid[] where id = 'f187d802-5cec-5770-acf2-fd64bfdf1eec';
+update public.mila_steps set ingredient_ids = array['38b58417-5e62-5545-a6d8-6a23bed56f82', '3529eac8-28d9-50c5-a14e-f05e1342ca23']::uuid[] where id = '881a0a23-881b-5d34-a405-57f7a2d47649';
+update public.mila_steps set ingredient_ids = array['3529eac8-28d9-50c5-a14e-f05e1342ca23', '9b829adc-cad2-51b6-aea5-0d8ecc76ed3a', '27b0530c-594f-58f5-acda-1e550911a5bb']::uuid[] where id = '1017c03d-61f1-5149-a52b-59716bbcd6b0';
+
+-- Pad Thai
+update public.mila_steps set ingredient_ids = array['284b5388-dd90-546a-ac58-dccba549ba12']::uuid[] where id = 'f0641cc6-9795-5e3f-a786-d6a02492d7cd';
+update public.mila_steps set ingredient_ids = array['3d440883-4176-5f5e-a094-cfb88112eb79', '60603af7-9cfc-5cac-aea3-184d8526e633', 'd235f318-3460-5547-a838-69d82ef40350']::uuid[] where id = '32c50d72-9e14-576c-a7a3-9a0fda9268ee';
+update public.mila_steps set ingredient_ids = array['b986b1ed-2183-54ac-af9a-60178b6f6fb8']::uuid[] where id = 'a15d5877-d5d5-5841-a420-b2e6aecfb336';
+update public.mila_steps set ingredient_ids = array['57a9e700-638d-541a-a4aa-91e30a343265']::uuid[] where id = '2e5a362a-5b15-5858-aa55-0da82da4dd88';
+update public.mila_steps set ingredient_ids = array['284b5388-dd90-546a-ac58-dccba549ba12', '60603af7-9cfc-5cac-aea3-184d8526e633', 'd235f318-3460-5547-a838-69d82ef40350']::uuid[] where id = '322f8e6e-f8e2-5a9d-ac0b-6f9b54969098';
+update public.mila_steps set ingredient_ids = array['b986b1ed-2183-54ac-af9a-60178b6f6fb8', '7a0eb8f1-560f-5755-aed6-b883ac6f5bb7', '7a68221c-32f6-58f0-a63b-8c3dd33daaa7']::uuid[] where id = 'd611b2ef-6614-517a-a899-9aa4a69fd260';
+update public.mila_steps set ingredient_ids = array['8b467660-f353-5600-a8c9-76413ef3c727', '6a0322ab-ee64-51f4-ae96-b749674aaf94', 'c6158116-5fdb-52dc-a9d4-2e5cbfad7602']::uuid[] where id = '1ed561eb-43e2-5bac-afe2-cb031c660735';
+
+-- Tom Kha Gai
+update public.mila_steps set ingredient_ids = array['4418843f-e1d1-5161-a241-8135a8f3671a', 'c2d27676-963c-5c51-ad7f-8b5c0cbb0fec', 'c1478b8e-3681-56ae-abeb-302ef6b2bd4d', '84892b78-5df1-5a77-a450-c19e9b1c14a4', '3c28c04c-cf3c-532c-aa10-3c1260f85a31', '833aa6b8-eaca-5cff-ae46-8e28785647be']::uuid[] where id = '5631ea7a-adb3-5316-a0d0-0edb5bf492d6';
+update public.mila_steps set ingredient_ids = array['c87c4ccb-e835-56cb-a376-5bfc784f0973', '4a813eab-7ae9-54a8-a877-acadc02438d6']::uuid[] where id = '27b1ba74-8cb1-5127-af98-c54b8bae1e86';
+update public.mila_steps set ingredient_ids = array['84ba13cc-199f-5465-a8a5-e4ebb53bd3ea', '12b4feae-aae8-5d6e-a106-a935625d88c8', 'b62072fd-8ebe-5124-ae5e-1390ccf3a6ab', '833aa6b8-eaca-5cff-ae46-8e28785647be']::uuid[] where id = '69a7d187-28d8-5796-aed7-71697fe7b747';
+update public.mila_steps set ingredient_ids = array['c1478b8e-3681-56ae-abeb-302ef6b2bd4d', '84892b78-5df1-5a77-a450-c19e9b1c14a4', '4851500e-644c-525b-aed2-afadd37fd37d']::uuid[] where id = 'd472fa96-b517-588d-ad9c-371c385f0662';
+
+-- Mapo Tofu
+update public.mila_steps set ingredient_ids = array['8241654d-8cb6-5f23-a1df-ed0aae1a647c']::uuid[] where id = 'cd3af2de-8b26-58ab-ae28-3a64efb36ea0';
+update public.mila_steps set ingredient_ids = array['63b66605-545f-5e14-a8ef-3444b75d1908']::uuid[] where id = '4e46de1a-23f7-57a8-ab58-9cff669d2bd6';
+update public.mila_steps set ingredient_ids = array['61b713f3-7542-57b0-a0e4-b3cc92f4027e']::uuid[] where id = '47396cb4-3216-5d53-ac35-0b11c9993521';
+update public.mila_steps set ingredient_ids = array['22583506-fda1-5641-aac8-f81c8bf5569d', 'f573ba60-1a38-581e-af50-a6cc7d82b411']::uuid[] where id = 'c791cc39-9303-5a09-a6bd-a45f1ba400c3';
+update public.mila_steps set ingredient_ids = array['484a73e3-c7f0-5be5-a9a0-9a3dbde3714f', '9c97bd3f-3333-5007-ac27-e341563330be', '563cdfe5-f880-58df-a58a-c834c9a0be80', '4d1206af-481c-51d5-a394-e3556b72cd50', '4a6112c9-4d53-5467-ab0c-ca5e0a049209']::uuid[] where id = '2e2e3a72-dcd4-560f-a746-1d80707a446f';
+update public.mila_steps set ingredient_ids = array['63b66605-545f-5e14-a8ef-3444b75d1908', '61b713f3-7542-57b0-a0e4-b3cc92f4027e']::uuid[] where id = '90f18292-ed4f-574c-a861-81e897a74129';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '0ce1bcb9-4f43-54b8-ad8f-ae58b21e02ae';
+update public.mila_steps set ingredient_ids = array['cce06324-9801-511c-aca1-ae8638e17210', 'a329f178-d9a8-57b2-ab3d-b94fdf65ccea']::uuid[] where id = '5dcd3658-cdb5-5861-ab43-ac5b626f7541';
+
+-- Caponata
+update public.mila_steps set ingredient_ids = array['15cdaad0-d5df-5571-acf7-169f96904ee1', '47118b94-3f74-5ab0-ad41-41ddb3de332b', '3ee84613-628f-52b3-a551-7dcf0b4c9fcd']::uuid[] where id = '619d751d-e44f-5002-a695-d9502c49be0f';
+update public.mila_steps set ingredient_ids = array['e2e81232-0bc4-503a-a5f0-926fce298793', 'cc39b4e9-0d21-543b-aa59-01a80c094ee5']::uuid[] where id = '6a5528dd-8751-5aa0-ad33-b112fc7b2281';
+update public.mila_steps set ingredient_ids = array['6074ed2c-a790-59c4-abb5-999065d7be53', '47118b94-3f74-5ab0-ad41-41ddb3de332b', 'f7aa77fc-5351-5c00-a7e9-c8fb15d8ad45', '017aaebe-1fa2-527b-af46-4d0cbae1b47f', '3ee84613-628f-52b3-a551-7dcf0b4c9fcd']::uuid[] where id = 'bab2fd1a-c3f5-54af-aff0-ef0e28b05f1a';
+update public.mila_steps set ingredient_ids = array['15cdaad0-d5df-5571-acf7-169f96904ee1']::uuid[] where id = 'b66b7c45-24c6-52c2-a2d9-62c4619784ca';
+update public.mila_steps set ingredient_ids = array['9f083b79-8bce-5b84-abb4-a2b5fe15e9d6', 'e64b632e-c572-5684-a18f-dc3dbca418b3']::uuid[] where id = '748ed751-204c-53a0-a710-7a2a0a0057b7';
+update public.mila_steps set ingredient_ids = array['385b1cfa-3fbc-5c1a-ae46-25501efc7e30']::uuid[] where id = '1688b77a-3b19-55b0-a727-2d66d43a0777';
+update public.mila_steps set ingredient_ids = array['3ee84613-628f-52b3-a551-7dcf0b4c9fcd']::uuid[] where id = '6cc64a5a-f376-52a1-ad6c-40668e8fb1ad';
+
+-- Baba Ganoush + Lamm-Kofta
+update public.mila_steps set ingredient_ids = array['4abe3288-be1e-5947-a66e-94c59ef266c0']::uuid[] where id = '193dcc61-3067-519a-a25a-c3ca170e0e40';
+update public.mila_steps set ingredient_ids = array['4608a9c9-4e4f-5247-aef9-5b2d61c0fc27', '7f0e8e28-93bd-57a5-a22b-351af29f321f', '6250bdf2-15e4-50c2-ae54-23432be2a566', '8f994a22-d035-569b-a5de-14b21d4691df', '2d4e9ee2-1434-5a2d-a764-4bf17feac356']::uuid[] where id = 'a776b98b-6ef4-5eea-a1dc-dcaae0975297';
+update public.mila_steps set ingredient_ids = array['4abe3288-be1e-5947-a66e-94c59ef266c0', '69648ee8-189b-5137-a3eb-f6056634bcc7', '4608a9c9-4e4f-5247-aef9-5b2d61c0fc27', '83907f5a-5c70-5a36-a828-f91e297bd339', 'c19f1c93-f8ab-535b-a6e8-2ed5f7641a47']::uuid[] where id = '05a7c559-5fd7-5c24-a443-075f999eb56d';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '600c8cab-0fa5-5150-a41b-92d1d91400ec';
+update public.mila_steps set ingredient_ids = array['4608a9c9-4e4f-5247-aef9-5b2d61c0fc27', '83907f5a-5c70-5a36-a828-f91e297bd339', 'fa3ff1d4-4620-563b-a091-e731edc4c0e2']::uuid[] where id = 'd7ccd3a4-2700-5121-a310-64ef6da7577b';
+
+-- Bun Bo Nam Bo
+update public.mila_steps set ingredient_ids = array['d86029fd-be94-5d7e-aa6e-f40e76c96607', '650a89e8-2ed6-5a5b-aaa0-00c711719ab2']::uuid[] where id = '63c741ad-516b-507c-a85d-c7116f7f9020';
+update public.mila_steps set ingredient_ids = array['99b52a5a-25d0-53cb-ae66-cee783953278']::uuid[] where id = '6f5b4a00-dfba-540c-af97-250285953157';
+update public.mila_steps set ingredient_ids = array['650a89e8-2ed6-5a5b-aaa0-00c711719ab2']::uuid[] where id = '9d996bae-2e0e-56a9-a6b5-f5338c068600';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '4bdb3d5e-2a14-5da9-a8cb-eab7e3681783';
+update public.mila_steps set ingredient_ids = array['99b52a5a-25d0-53cb-ae66-cee783953278', '67fa4337-8b93-52d9-ab2e-cbdd061d7917', '47afe9dc-683d-5173-a811-b590979bd8ef', '9162c5fb-4dca-512c-a3ec-0dc196abf771', '6b4fc547-21da-5135-a0a6-42c639aa19f1', '405ea895-60f8-5590-aabb-7d1e2eaddf01']::uuid[] where id = '4a7544e0-c3c3-5249-aed3-0e1e29d9df33';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '25c77858-83b5-5f01-a12c-4b68d9ff7364';
+
+-- Gemüse-Ofen-Gratin
+update public.mila_steps set ingredient_ids = array['574c990d-b25f-539c-a88a-b962f5b4ce1b']::uuid[] where id = 'deada8f7-7292-51c0-aa7a-c7f2300ec980';
+update public.mila_steps set ingredient_ids = array['b7c33b51-f59b-5845-a15b-75606b54007a', '76ca3d93-4d20-5797-a553-2ee0091e7efd', '3dcc6a80-81b9-5ef0-abf8-5492fad312ca', '4f68fc1f-9054-5667-a4ed-fb1f11543d41', '614f58e5-0d7d-5cce-aad4-83d34b169aa2', '574c990d-b25f-539c-a88a-b962f5b4ce1b']::uuid[] where id = 'f180a22c-c3d1-5bbe-ae8e-53ebe9c38617';
+update public.mila_steps set ingredient_ids = array['938866a2-4e6a-5f2c-ab77-a5ad69fd5469', 'bb067743-f6f3-57d8-a391-0cef4fe001c9']::uuid[] where id = '667005db-f98f-5a82-aa94-91435039ffda';
+update public.mila_steps set ingredient_ids = array['a6fcce43-841d-55a4-a828-0c323a1acdb9']::uuid[] where id = '25189ee3-9fd1-5967-a6f8-9ce1ebdaa479';
+update public.mila_steps set ingredient_ids = array['b7c33b51-f59b-5845-a15b-75606b54007a']::uuid[] where id = '1bfddc23-d793-589b-a583-25263ae538b1';
+
+-- Pho Bo
+update public.mila_steps set ingredient_ids = array['4b292712-2cb6-5f41-adf3-c5c1af86efeb', '45006591-5b02-5932-af2e-200e726ef1ac']::uuid[] where id = '28cbd9c3-e81e-5f78-ab52-970837aa4af4';
+update public.mila_steps set ingredient_ids = array['64884eaa-4369-5934-a0e8-8f51b00154ad', '630d2a25-ea18-59a0-a84f-a953929f1221', '1bf7fa32-d270-51e9-a485-988dc162e9ae']::uuid[] where id = '2f8d0b69-f6f9-56cd-ab9e-346ab9861784';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = 'ecc5e362-c6f5-55ed-aae6-cc82bb3e669e';
+update public.mila_steps set ingredient_ids = array['4b292712-2cb6-5f41-adf3-c5c1af86efeb', '64884eaa-4369-5934-a0e8-8f51b00154ad', '630d2a25-ea18-59a0-a84f-a953929f1221', '1bf7fa32-d270-51e9-a485-988dc162e9ae']::uuid[] where id = '4dd4e188-4b6c-542c-addf-00e9a0b1c39b';
+update public.mila_steps set ingredient_ids = array['45006591-5b02-5932-af2e-200e726ef1ac']::uuid[] where id = '5545fdbe-ef23-555d-aca1-27d816566dfc';
+update public.mila_steps set ingredient_ids = array['5d5a94b6-654f-5752-aa1c-ce43aedfd2fc', '0dc35a62-a298-5af8-a2b4-46ca4a4a634b', 'efeb591c-21d9-53f7-a45b-8b44ab219dd5']::uuid[] where id = 'b3b99d20-75fc-5fb0-aaab-ba4870f034b6';
+update public.mila_steps set ingredient_ids = array['19af8161-f75c-5230-a9d5-1a8a7c2dd24e']::uuid[] where id = '63ce8f4c-f0c9-568b-ac2a-9b0de06d1458';
+update public.mila_steps set ingredient_ids = array['45006591-5b02-5932-af2e-200e726ef1ac', '19af8161-f75c-5230-a9d5-1a8a7c2dd24e', '1bf7fa32-d270-51e9-a485-988dc162e9ae']::uuid[] where id = 'adfc0deb-2c27-5f1a-a549-d75a36c2c398';
+
+-- Pulled Pork (Big Green Egg)
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '447716eb-6d11-5946-a788-3cc537e311ec';
+update public.mila_steps set ingredient_ids = array['c064f726-0547-50cd-ae09-4140a990bc21']::uuid[] where id = '70a14e88-8a1a-5dc9-af92-06ca672a54d3';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '9fe08b37-dd86-5811-a070-4e571ea5fb97';
+update public.mila_steps set ingredient_ids = array['4e77abff-f123-5515-a21a-9674dadc6a0f', '892f4cc0-083a-5851-a779-346fc6a4b1e0']::uuid[] where id = '561eae2b-c5f9-5a55-a92d-cf8218144114';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = 'fc30b485-d6a8-5f08-ac25-8cd784824dff';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '278e589b-cab4-5907-a46d-63d7a5b199a4';
+update public.mila_steps set ingredient_ids = array['892f4cc0-083a-5851-a779-346fc6a4b1e0']::uuid[] where id = '6de30ec4-7b9c-57bc-a0e4-05a0e58501a0';
+update public.mila_steps set ingredient_ids = array['418da168-682d-59da-a842-d5bd1077cef5']::uuid[] where id = '07e76e0d-e399-5509-a66f-5b97fff68c81';
+
+-- Rotisserie-Hähnchen (Big Green Egg)
+update public.mila_steps set ingredient_ids = array['6c0f0cc1-a5ce-554a-a201-c90c6c384217', 'df311acd-e012-5077-a766-db64dc8c8077']::uuid[] where id = '8bda03ac-3f66-5b4a-a185-f29b2e26f2f5';
+update public.mila_steps set ingredient_ids = array['7900eeda-c039-5c58-ac93-e6801e784ad2', 'cf5f14f4-7e81-5ccf-ad6b-948d1143d67a', 'bac24b9c-37d0-5da0-ac2a-5efd00d793f9', 'df311acd-e012-5077-a766-db64dc8c8077']::uuid[] where id = '6a9ba6a0-dbf0-56e5-af47-dae574016558';
+update public.mila_steps set ingredient_ids = array['fa5d9e2d-96a3-5541-ac17-7293af3baf86', '7900eeda-c039-5c58-ac93-e6801e784ad2']::uuid[] where id = '4ea0ad2f-13a7-5117-a7e7-1f36ad7545b4';
+update public.mila_steps set ingredient_ids = array['7741e3fd-a49b-521a-ab2e-727c2b65fae9']::uuid[] where id = 'c565c244-54b5-50c0-ae64-19c45dd69a20';
+update public.mila_steps set ingredient_ids = array['6c0f0cc1-a5ce-554a-a201-c90c6c384217']::uuid[] where id = 'ee406c33-3b51-59e4-aa94-09d1a7902b22';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '110503a1-3553-5eb1-a77e-bad7d0bc68ba';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = 'df54b986-eef5-59f3-aaa7-7fc3ea640e5f';
+
+-- Boeuf Bourguignon (Dutch Oven)
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = 'cd8e5cd7-a690-5bdc-ac5a-4145cd358d81';
+update public.mila_steps set ingredient_ids = array['35766836-fb32-51a9-a681-1ec6188a9f6b']::uuid[] where id = '33764410-2e87-50a1-ac9e-848211869ae9';
+update public.mila_steps set ingredient_ids = array['ab241fa2-0287-56f2-a6e8-53625b0f359d']::uuid[] where id = '88ec973c-19fb-5992-a559-9901ef014a01';
+update public.mila_steps set ingredient_ids = array['a94f917e-e88a-56f8-ac39-6d4e0f4ecd17', '1205e40d-100b-524a-a935-6c4af6abc8a8', '751bfc10-9883-5678-a7a8-57d4dc02f0a8', 'bb800319-9678-55bf-ae44-9590682071f2', '7d04e82d-6059-50f6-ac3d-40fde41bd266']::uuid[] where id = 'f34d73b3-0a1c-505b-a432-304aa9c0204b';
+update public.mila_steps set ingredient_ids = array['894b14f5-5cd0-5654-a21c-dbdc04635a92']::uuid[] where id = 'e71631e1-279e-5445-ae5a-60abd30b867c';
+update public.mila_steps set ingredient_ids = array['ab241fa2-0287-56f2-a6e8-53625b0f359d', '35766836-fb32-51a9-a681-1ec6188a9f6b', 'd8e4e855-6972-5802-ad3d-fbf46a65bf1c', '5f692af7-fd50-570e-a9da-bf75f6a84c61', 'fb12b9df-d5d3-5938-adf1-34a054928720']::uuid[] where id = 'f47f31c4-2158-5e72-a17b-14f4852a7488';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '4acf5b00-9785-5f9d-a79d-43bd4177f9c4';
+update public.mila_steps set ingredient_ids = array['a94f917e-e88a-56f8-ac39-6d4e0f4ecd17', '7d04e82d-6059-50f6-ac3d-40fde41bd266', '996d2255-08d6-5a8b-a51b-b41d066c4488', '7a585ebc-e7df-52f6-a481-5479060dbe68']::uuid[] where id = '2ac55fb8-8f15-5146-a45b-e7e0aa542792';
+update public.mila_steps set ingredient_ids = array['fb12b9df-d5d3-5938-adf1-34a054928720', '7a585ebc-e7df-52f6-a481-5479060dbe68', 'a1064ec8-68ac-5f4b-ac46-47fdb175d6b0']::uuid[] where id = '9a418b90-8b02-523e-a25d-df5e7f848a1d';
+
+-- Moussaka mit Béchamel
+update public.mila_steps set ingredient_ids = array['a26d7465-c71f-50ef-aaba-28ce2adbe6cb', '570d2c96-5cb7-5483-a8e0-1e2144f51a44', '38de30b5-0b9e-52a2-ac34-9eeaba119210']::uuid[] where id = '81846e91-ac53-5ba7-ad60-930849cd3dfe';
+update public.mila_steps set ingredient_ids = array['7365c554-b213-5789-a258-48f0704f9482', '0093cc11-5382-5f03-ab59-d6eecedd0ec5', 'b4a557a2-e7f8-59d9-a66a-db4a8327fcf0', 'e65d1c52-d794-5347-a593-7d6d6e49bc08', '0b714d79-515a-5f66-a4a0-e4722955d9d8', '208497fd-154c-5a5a-a050-06a686003f19']::uuid[] where id = 'c60d9fe2-441a-55be-a80a-c6043201195e';
+update public.mila_steps set ingredient_ids = array['0bec2e18-d069-50f6-add5-97a255815280', '9c9bca95-71ab-5211-a9d1-efcb68b07eed', 'b863563e-ba40-5784-ab0f-da9d7c1bd36e', '5bee33ca-d25e-5403-a17e-f38a9bf4002c', '38de30b5-0b9e-52a2-ac34-9eeaba119210']::uuid[] where id = '25530c8f-682c-5843-a05c-0985cd0e7ac7';
+update public.mila_steps set ingredient_ids = array['a26d7465-c71f-50ef-aaba-28ce2adbe6cb', '570d2c96-5cb7-5483-a8e0-1e2144f51a44']::uuid[] where id = '6b068f44-535f-59a0-a3f8-802cd5cb4b48';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '87b9b3f7-01a2-5eb2-affa-c5fa38d41ef1';
+
+-- Ramen from Scratch (Shoyu-Basis)
+update public.mila_steps set ingredient_ids = array['ca72e94c-31b4-5f4c-ac20-01b977cfa746', '37dc2f34-4e1d-5368-a716-100996bdc09a']::uuid[] where id = '2719c583-8e4a-50ba-a563-71c5c0e62a2c';
+update public.mila_steps set ingredient_ids = array['ca72e94c-31b4-5f4c-ac20-01b977cfa746', '37dc2f34-4e1d-5368-a716-100996bdc09a', '46c508f6-6a57-5eca-a581-f8b2ee0304dd', 'bf809ec8-3914-5383-ac1d-a4c534c3cbf7']::uuid[] where id = '0e934d3b-6544-5bb2-ad08-6b6c96e82155';
+update public.mila_steps set ingredient_ids = array['46c508f6-6a57-5eca-a581-f8b2ee0304dd']::uuid[] where id = '55fa4f8a-7c20-57bb-ac93-6264cbcfe3bf';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '5026d1ba-7aee-51ea-a018-3d38deb7d898';
+update public.mila_steps set ingredient_ids = array['bf809ec8-3914-5383-ac1d-a4c534c3cbf7', '0f72e968-3ae7-57c5-a21b-9921b8f26f42', '57b4d2f8-be6f-52a2-a017-5a841192eaeb', '09af25f4-109b-5258-ab4b-a4612ed4adf5']::uuid[] where id = '1cf13f8d-d552-5e14-a37b-eab8cc818360';
+update public.mila_steps set ingredient_ids = array['0f72e968-3ae7-57c5-a21b-9921b8f26f42', '57b4d2f8-be6f-52a2-a017-5a841192eaeb', '8a322f23-3b63-502a-a598-522db11c8a2e']::uuid[] where id = '99335917-ecaf-585c-a597-4b5b2b11249e';
+update public.mila_steps set ingredient_ids = '{}'::uuid[] where id = '3fadae1b-0e5c-5a24-ae7a-620b50adeaa1';
+update public.mila_steps set ingredient_ids = array['bf809ec8-3914-5383-ac1d-a4c534c3cbf7', '6d8621c5-b509-5dc6-ae53-b9e19dd19fc8', '8a322f23-3b63-502a-a598-522db11c8a2e', '107bb43e-0e07-5761-a225-79c4497ab507', '47f16d5e-8a09-568c-aa99-e2d9d9acbeaf', 'ded9cdac-8e4d-51de-ae0d-3ea2050e083c']::uuid[] where id = '797656b9-7d89-5446-a0de-38a13c38bac6';

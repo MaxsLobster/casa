@@ -105,24 +105,45 @@ function parseStep(text) {
   return { ...base, timer_sec: sec, unsure: note }
 }
 
-const STOP = new Set(['oder', 'bio', 'frisch', 'gehackt', 'gerieben', 'extra', 'vergine', 'stück', 'nach', 'geschmack', 'zum', 'als', 'beilage', 'getrocknete', 'flocken', 'style', 'flach', 'dicke', 'schicht', 'dünn', 'klein', 'kleine', 'große', 'groß', 'wasser', 'salz', 'pfeffer'])
+// Wörter, die in Zutatennamen nichts über die Zutat sagen
+const STOP_ING = new Set(['oder', 'bio', 'frisch', 'gehackt', 'gerieben', 'extra', 'vergine', 'stück', 'nach', 'geschmack', 'zum', 'als', 'beilage', 'getrocknete', 'flocken', 'style', 'flach', 'dicke', 'schicht', 'dünn', 'klein', 'kleine', 'große', 'groß', 'wasser', 'mit', 'ohne', 'und', 'haut', 'optional', 'saisonal', 'trockener', 'rot', 'grün', 'gelb', 'weiß'])
+// Füllwörter im Schritttext, die nie eine Zutat sind
+const STOP_STEP = new Set(['ein', 'eine', 'einen', 'einem', 'einer', 'eines', 'und', 'oder', 'mit', 'ohne', 'auf', 'aus', 'dazu', 'rein', 'bis', 'dann', 'alle', 'alles', 'wenn', 'nicht', 'nur', 'nach', 'vor', 'über', 'unter', 'bei', 'zum', 'zur', 'min', 'sek', 'std', 'stufe', 'heiß', 'kalt', 'gut', 'kurz', 'lang', 'der', 'die', 'das', 'den', 'dem', 'des', 'ist', 'sind', 'wird', 'werden', 'noch', 'schon', 'auch', 'sehr', 'ganz', 'etwas', 'wieder', 'dabei', 'darauf', 'drüber', 'drauf', 'davon', 'erst', 'dicke', 'dicken', 'kleine', 'kleinen', 'große', 'großen', 'heißes', 'heißem', 'kalten', 'kaltem'])
+
+/** Mögliche Wortstämme: das Wort selbst und ohne typische Endungen (Eier → ei, Tomaten → tomat/tomate, Zwiebeln → zwiebel) */
+function stems(w) {
+  const out = new Set([w])
+  for (const end of ['en', 'er', 'es', 'e', 'n', 's']) {
+    if (w.endsWith(end) && w.length - end.length >= 2) out.add(w.slice(0, -end.length))
+  }
+  return out
+}
+
+function words(text, stripParens = false) {
+  let t = text.toLowerCase()
+  if (stripParens) t = t.replace(/\(.*?\)/g, ' ')
+  return t.split(/[^a-zäöüß]+/).filter(Boolean)
+}
 
 /** Wörter einer Zutat, mit denen wir sie im Schritttext suchen */
 function ingredientKeys(name) {
-  return name
-    .toLowerCase()
-    .replace(/\(.*?\)/g, ' ')
-    .split(/[^a-zäöüß]+/)
-    .filter((w) => w.length >= 4 && !STOP.has(w))
+  return words(name, true).filter((w) => w.length >= 2 && !STOP_ING.has(w))
+}
+
+/** Passt ein Wort des Schritts zu einem Wort der Zutat? Gleicher Stamm, oder bei längeren Wörtern Teil eines zusammengesetzten Worts (Hack ↔ Rinderhack, Lachs ↔ Lachsfilets). */
+function wordMatch(sw, iw) {
+  const a = stems(sw)
+  const b = stems(iw)
+  for (const x of a) if (b.has(x)) return true
+  if (sw.length >= 4 && iw.length >= 4) {
+    for (const x of a) for (const y of b) if (x.length >= 4 && y.length >= 4 && (y.startsWith(x) || y.endsWith(x) || x.startsWith(y) || x.endsWith(y))) return true
+  }
+  return false
 }
 
 function stepMentions(stepText, keys) {
-  const t = stepText.toLowerCase()
-  const words = t.split(/[^a-zäöüß]+/)
-  return keys.some((w) => {
-    if (t.includes(w.slice(0, Math.min(w.length, 6)))) return true
-    return words.some((x) => x.length >= 4 && w.endsWith(x) && x !== w)
-  })
+  const sws = words(stepText).filter((w) => !STOP_STEP.has(w))
+  return keys.some((iw) => sws.some((sw) => wordMatch(sw, iw)))
 }
 
 // ---------------------------------------------------------------------------

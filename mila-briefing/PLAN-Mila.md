@@ -73,6 +73,7 @@ Zwei kleine Abweichungen vom Briefing-Vorschlag, beide nur, damit es zu Casa pas
 - **Gerichte-Filter:** Alle · Schnell · Thermomix · Meal-Prep · Grill. Overnight Oats (Frühstück) erscheint nur unter „Alle“.
 - **Bildschirm an im Kochmodus:** Screen Wake Lock, geht auf dem iPhone ab iOS 16.4 vom Home-Bildschirm aus.
 - **Kochmodus-Farben:** fest Navy mit heller Schrift, auch tagsüber (so im Briefing).
+- **Zutaten je Schritt:** Zuordnung über Wortstämme (Eier = Ei, Tomaten = Tomate, Hack in Rinderhack). Was danach keinem Schritt zugeordnet ist, zeigt der Kochmodus in einem Schritt 0 „Bereitlegen“ mit allen Zutaten (Max, 31.10.).
 
 ---
 
