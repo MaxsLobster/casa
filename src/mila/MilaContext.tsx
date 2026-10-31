@@ -31,6 +31,8 @@ export interface Mila {
 
   /** Woche: ein Abendessen an einem Datum setzen (Rezept oder Freitext), null leert den Tag */
   setWeekDay(date: string, value: { recipe_id: string | null; free_text: string | null } | null): Promise<void>
+  /** Woche: diese Tage als „Zutaten stehen auf der Liste“ markieren */
+  markAddedToList(dates: string[]): Promise<void>
 
   /** Einkaufsliste */
   addItems(rows: NewItem[]): Promise<void>
@@ -227,6 +229,18 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     await loadRef.current('mila_week_days')
   }
 
+  const markAddedToList = async (dates: string[]) => {
+    const rows = weekDays.filter((w) => dates.includes(w.date) && !w.added_to_list)
+    if (!rows.length) return
+    setWeekDays((prev) => prev.map((w) => (dates.includes(w.date) ? { ...w, added_to_list: true } : w)))
+    try {
+      for (const w of rows) await store.update('mila_week_days', { id: w.id }, { added_to_list: true, updated_by: me.id })
+    } catch (err) {
+      setError((err as Error).message)
+    }
+    await loadRef.current('mila_week_days')
+  }
+
   const addItems = async (rows: NewItem[]) => {
     const now = new Date().toISOString()
     const full: Partial<MilaShoppingItem>[] = rows
@@ -294,6 +308,7 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     reload: load,
     saveRecipe,
     setWeekDay,
+    markAddedToList,
     addItems,
     setChecked,
     finishShopping,
