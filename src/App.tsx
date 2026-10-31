@@ -14,8 +14,7 @@ import { Einstellungen } from './screens/Einstellungen'
 import { SetPassword } from './screens/SetPassword'
 import { clearRecovery, pendingRecovery } from './lib/auth'
 import { finishSplash, wantsStagger } from './state/splash'
-import { useTopTest } from './state/topTest'
-import { TopTest } from './components/TopTest'
+import { useSplashGone } from './state/splash'
 
 export default function App() {
   return (
@@ -42,7 +41,7 @@ function Shell() {
   useTheme(casa.settings ? casa.settings.dark_mode_auto : null)
   const wide = useWide()
   const loc = useLocation()
-  const topTest = useTopTest()
+  const splashGone = useSplashGone()
   const [recovery, setRecovery] = useState(pendingRecovery)
 
   // Zettel vom Kaltstart wegnehmen, sobald klar ist, was darunter liegt.
@@ -122,7 +121,7 @@ function Shell() {
         </div>
       </div>
       <Nav />
-      {topTest && <TopTest />}
+      {splashGone && <div className="edge" aria-hidden="true" />}
       {isNeu && <Neu />}
       {casa.error && (
         <div style={{ position: 'fixed', left: 16, right: 16, bottom: 'calc(var(--nav-h) + 12px)', zIndex: 40 }}>

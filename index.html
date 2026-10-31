@@ -92,13 +92,14 @@
       (function () {
         var s = document.getElementById('splash');
         if (!s) return;
+        var gone = function () { if (s.parentNode) { s.remove(); window.dispatchEvent(new Event('casa:splashdone')); } };
         // Antippen überspringt: Zettel sofort überblenden, Zeilen von Heute ohne Staffelung
         s.addEventListener('click', function () {
           s.classList.add('quick');
           document.documentElement.classList.add('splash-skip');
-          setTimeout(function () { s.remove(); }, 350);
+          setTimeout(gone, 350);
         });
-        s.addEventListener('animationend', function (e) { if (e.target === s) s.remove(); });
+        s.addEventListener('animationend', function (e) { if (e.target === s) gone(); });
       })();
     </script>
     <div id="root"></div>

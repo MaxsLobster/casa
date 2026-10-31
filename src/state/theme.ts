@@ -9,10 +9,19 @@ export function isNight(d = new Date()): boolean {
 
 function apply(dark: boolean) {
   const root = document.documentElement
+  const was = root.getAttribute('data-theme') === 'dark'
   if (dark) root.setAttribute('data-theme', 'dark')
   else root.removeAttribute('data-theme')
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) meta.setAttribute('content', dark ? '#1A2340' : '#F5F1E8')
+  if (was !== dark) {
+    // iOS liest die Farbe der Statusleiste nur neu, wenn die Leiste oben neu erscheint (siehe .edge in global.css)
+    const edge = document.querySelector<HTMLElement>('.edge')
+    if (edge) {
+      edge.style.display = 'none'
+      requestAnimationFrame(() => requestAnimationFrame(() => { edge.style.display = '' }))
+    }
+  }
 }
 
 /** Ab 20 Uhr dunkles Notizbuch, wenn in den Einstellungen nicht abgeschaltet. */
