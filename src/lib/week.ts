@@ -17,6 +17,7 @@ export type DayState = Partial<Record<Slot, SlotState>>
 export const SLOT_LABEL: Record<Slot, string> = {
   valerie_bringen: 'Valerie bringen',
   valerie_holen: 'Valerie holen',
+  valerie_tag: 'Valerie tagsüber',
   anna_arbeit: 'Anna',
   nachmittag: 'Nachmittag',
   abend_essen: 'Abendessen',
@@ -25,10 +26,10 @@ export const SLOT_LABEL: Record<Slot, string> = {
 }
 
 /** Slots, bei denen der Wert eine Person ist */
-export const PERSON_SLOTS: Slot[] = ['valerie_bringen', 'valerie_holen', 'abend_essen', 'abend_bett']
-export const TIME_SLOTS: Slot[] = ['valerie_holen']
+export const PERSON_SLOTS: Slot[] = ['valerie_bringen', 'valerie_holen', 'valerie_tag', 'abend_essen', 'abend_bett']
+export const TIME_SLOTS: Slot[] = ['valerie_bringen', 'valerie_holen']
 
-export const SLOT_ORDER: Slot[] = ['valerie_bringen', 'valerie_holen', 'anna_arbeit', 'nachmittag', 'abend_essen', 'abend_bett', 'wochenende']
+export const SLOT_ORDER: Slot[] = ['valerie_bringen', 'valerie_holen', 'valerie_tag', 'anna_arbeit', 'nachmittag', 'abend_essen', 'abend_bett', 'wochenende']
 
 /** Wochentags-Vorlage + Abweichungen für ein Datum zusammenführen */
 export function dayState(date: ISODate, template: NormalWeekRow[], overrides: WeekOverride[]): DayState {
@@ -117,22 +118,23 @@ export interface DayLine {
   slots: Slot[]
 }
 
-/** Zeile „Valerie: …" */
+/** Zeile „Valerie: …" – Offenes steht nur als Chip, nicht als Text */
 export function valerieLine(d: DayState, v: Voice, withNote = true): string | null {
   const b = d.valerie_bringen
   const h = d.valerie_holen
-  if (!b && !h) return null
+  const t = d.valerie_tag
+  if (!b && !h && !t) return null
   const parts: string[] = []
-  if (b?.value) parts.push(verb(b.value, v, 'bringst', 'bringt'))
-  if (h?.value) {
-    const t = h.at ? ` um ${uhr(h.at)}` : ''
-    parts.push(verb(h.value, v, 'holst', 'holt') + t)
-  } else if (h?.is_open) {
-    parts.push('Abholen offen')
+  if (b?.value && !b.is_open) parts.push(verb(b.value, v, 'bringst', 'bringt') + (b.at ? ` um ${uhr(b.at)}` : ''))
+  if (h?.value && !h.is_open) {
+    const at = h.at ? ` um ${uhr(h.at)}` : ''
+    parts.push(verb(h.value, v, 'holst', 'holt') + at)
   }
+  if (t?.value && !t.is_open) parts.push(`tagsüber bei ${/^beide$/i.test(t.value) ? 'euch beiden' : isMe(t.value, v) ? 'dir' : t.value}`)
+  if (parts.length === 0) return null
   let s = parts.join(', ')
   if (!withNote) return s
-  if (h?.note && !h.overridden) s += `. ${h.note}`
+  if (h?.note && !h.overridden && !h.is_open) s += `. ${h.note}`
   else if (h?.note && h.overridden) s += ` (${h.note})`
   return s
 }
@@ -189,7 +191,7 @@ function cap(s: string): string {
 export function dayLines(d: DayState, v: Voice): DayLine[] {
   const lines: DayLine[] = []
   const val = valerieLine(d, v)
-  if (val) lines.push({ label: 'Valerie', text: cap(val), slots: ['valerie_bringen', 'valerie_holen'] })
+  if (val) lines.push({ label: 'Valerie', text: cap(val), slots: ['valerie_bringen', 'valerie_holen', 'valerie_tag'] })
   const arb = arbeitLine(d, v)
   if (arb) lines.push({ label: arb.label, text: arb.text, slots: ['anna_arbeit'] })
   if (d.nachmittag?.value) lines.push({ label: 'Nachmittag', text: d.nachmittag.value, slots: ['nachmittag'] })

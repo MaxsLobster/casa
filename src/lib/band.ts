@@ -4,6 +4,7 @@
 import type { Member } from './types'
 import type { DayState } from './week'
 import { isMultiDay, type Occurrence } from './recur'
+import type { ISODate } from './dates'
 
 export const BAND_START = 6
 export const BAND_END = 22
@@ -39,19 +40,31 @@ function clip(segs: Seg[]): Seg[] {
 /**
  * Gold: Valerie ist versorgt.
  * Kita ab 8 bis zum Abholen; holt Oma oder Theresa, bleibt es gold bis 18 Uhr.
- * Mehrtägig bei Oma (Ereignis mit Person): der ganze Tag. Eintägige Ereignisse mit Person: deren Zeit.
+ * „Valerie ist weg" (bei Oma …): der ganze Tag; am ersten Tag ab der Hinbring-Zeit, am letzten bis zur Abholzeit.
+ * „Kita zu" mit Oma/Theresa tagsüber: 8–18 Uhr. Eintägige Termine mit Person: deren Zeit.
+ * Erwartet den Tageszustand NACH applyEffects (entfallene Einträge sind dann schon weg).
  */
-export function goldSegments(day: DayState, occ: Occurrence[], members: Member[]): Seg[] {
+export function goldSegments(date: ISODate, day: DayState, occ: Occurrence[], members: Member[]): Seg[] {
   const out: Seg[] = []
+  const isParent = (v: string | null | undefined) => !!v && members.some((m) => m.display_name.toLowerCase() === v.toLowerCase())
   const b = day.valerie_bringen
   const h = day.valerie_holen
-  if (b?.value || h?.value) {
+  if ((b?.value && !b.is_open) || (h?.value && !h.is_open)) {
     const pickup = toH(h?.at, 14)
     out.push({ from: 8, to: pickup })
-    const byParent = !!h?.value && members.some((m) => m.display_name.toLowerCase() === h.value!.toLowerCase())
-    if (h?.value && !byParent) out.push({ from: pickup, to: 18 })
+    if (h?.value && !h.is_open && !isParent(h.value)) out.push({ from: pickup, to: 18 })
   }
+  const t = day.valerie_tag
+  if (t?.value && !t.is_open && !isParent(t.value) && !/^beide$/i.test(t.value)) out.push({ from: 8, to: 18 })
   for (const o of occ) {
+    if (o.occ_date > date || o.occ_end < date) continue
+    if (o.effect === 'valerie_weg') {
+      const from = o.occ_date === date && o.dropoff_at ? toH(o.dropoff_at, BAND_START) : BAND_START
+      const to = o.occ_end === date && o.pickup_at ? toH(o.pickup_at, BAND_END) : BAND_END
+      out.push({ from, to })
+      continue
+    }
+    if (o.effect === 'kita_zu' || o.effect === 'eltern_weg') continue
     if (!o.person_id) continue
     if (isMultiDay(o) || !o.start_time) out.push({ from: BAND_START, to: BAND_END })
     else out.push({ from: toH(o.start_time, 0), to: o.end_time ? toH(o.end_time, 0) : toH(o.start_time, 0) + 1 })
@@ -59,11 +72,11 @@ export function goldSegments(day: DayState, occ: Occurrence[], members: Member[]
   return clip(out)
 }
 
-/** Navy: Termine mit Uhrzeit, die mich oder uns beide betreffen (keine mehrtägigen, keine Betreuungs-Ereignisse) */
+/** Navy: Termine mit Uhrzeit, die mich oder uns beide betreffen (keine mehrtägigen, keine Betreuungs- oder Wirkungs-Ereignisse) */
 export function navySegments(occ: Occurrence[], meId: string | null): Seg[] {
   return clip(
     occ
-      .filter((o) => !isMultiDay(o) && !!o.start_time && !o.person_id && (o.member_id === null || o.member_id === meId))
+      .filter((o) => !isMultiDay(o) && !!o.start_time && !o.person_id && (!o.effect || o.effect === 'termin') && (o.member_id === null || o.member_id === meId))
       .map((o) => ({ from: toH(o.start_time, 0), to: o.end_time ? toH(o.end_time, 0) : toH(o.start_time, 0) + 1 })),
   )
 }

@@ -113,6 +113,12 @@ export function stampDate(s: ISODate, ref: ISODate = today()): string {
   return shortDate(s)
 }
 
+/** „So–Di" bzw. „Sa" */
+export function spanLabel(from: ISODate, to: ISODate): string {
+  if (from === to) return weekdayShort(from)
+  return `${weekdayShort(from)}–${weekdayShort(to)}`
+}
+
 /** „Do 22.10." */
 export function dayLabel(s: ISODate): string {
   return `${weekdayShort(s)} ${shortDate(s)}`

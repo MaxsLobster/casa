@@ -4,9 +4,11 @@ import type { Event, Repeat } from '../lib/types'
 import { Chips, HandInput, Sheet } from '../components/ui'
 import { WhenPicker } from './WhenPicker'
 import { RepeatPicker } from './RepeatPicker'
+import { EffectChips, HandoverFields, effectChoice, parseEffect, type EffectChoice, type Handover } from './EffectPicker'
+import { defaultTitle } from '../lib/effects'
 
 export function EventEditor({ event, onClose }: { event: Event; onClose: () => void }) {
-  const { members, people, updateEvent, removeEvent } = useCasa()
+  const { me, members, people, updateEvent, removeEvent } = useCasa()
   const today = useToday()
   const close = useCallback(() => onClose(), [onClose])
   const [title, setTitle] = useState(event.title)
@@ -17,27 +19,46 @@ export function EventEditor({ event, onClose }: { event: Event; onClose: () => v
   const [endTime, setEndTime] = useState((event.end_time ?? '').slice(0, 5))
   const [repeat, setRepeat] = useState<Repeat | null>(event.repeat)
   const [note, setNote] = useState(event.note ?? '')
+  const [choice, setChoice] = useState<EffectChoice>(() => effectChoice(event))
+  const [handover, setHandover] = useState<Handover>({ dropoff_by: event.dropoff_by, dropoff_at: (event.dropoff_at ?? '').slice(0, 5), pickup_by: event.pickup_by, pickup_at: (event.pickup_at ?? '').slice(0, 5) })
   const [busy, setBusy] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
 
-  const options = [
-    ...members.filter((m) => m.role === 'partner').map((m) => ({ value: m.id, label: m.display_name })),
-    { value: 'beide', label: 'Beide' },
-    ...people.map((p) => ({ value: 'p:' + p.id, label: p.name })),
-  ]
+  const partners = members.filter((m) => m.role === 'partner')
+  const fx = parseEffect(choice)
+  const askWho = fx.effect === 'termin' || fx.effect === 'valerie_weg'
+  const options =
+    fx.effect === 'valerie_weg'
+      ? people.map((p) => ({ value: 'p:' + p.id, label: p.name }))
+      : [...partners.map((m) => ({ value: m.id, label: m.display_name })), { value: 'beide', label: 'Beide' }, ...people.map((p) => ({ value: 'p:' + p.id, label: p.name }))]
+  const autoTitle = defaultTitle(fx.effect, who.startsWith('p:') ? (people.find((p) => 'p:' + p.id === who)?.name ?? null) : null, fx.member_id ? (partners.find((m) => m.id === fx.member_id)?.display_name ?? null) : null)
+  const finalTitle = title.trim() || autoTitle
   const multi = !!until && !!date && until > date
-  const ready = title.trim().length > 0 && !!date && (!until || until >= date)
+  const ready = finalTitle.length > 0 && !!date && (!until || until >= date)
+
+  function pickEffect(c: EffectChoice) {
+    setChoice(c)
+    const e = parseEffect(c)
+    if (e.effect === 'valerie_weg' && !who.startsWith('p:')) setWho('beide')
+    if (e.effect === 'kita_zu' || e.effect === 'eltern_weg') setWho('beide')
+  }
 
   async function save() {
     if (!ready || !date) return
     setBusy(true)
     try {
+      const w = askWho ? who : 'beide'
       await updateEvent(event.id, {
-        title: title.trim(),
+        title: finalTitle,
         date,
         end_date: multi ? until : null,
-        member_id: who === 'beide' || who.startsWith('p:') ? null : who,
-        person_id: who.startsWith('p:') ? who.slice(2) : null,
+        member_id: fx.effect === 'eltern_weg' ? fx.member_id : w === 'beide' || w.startsWith('p:') ? null : w,
+        person_id: w.startsWith('p:') ? w.slice(2) : null,
+        effect: fx.effect,
+        dropoff_by: fx.effect === 'valerie_weg' ? handover.dropoff_by : null,
+        dropoff_at: fx.effect === 'valerie_weg' && handover.dropoff_by ? handover.dropoff_at || null : null,
+        pickup_by: fx.effect === 'valerie_weg' ? handover.pickup_by : null,
+        pickup_at: fx.effect === 'valerie_weg' && handover.pickup_by ? handover.pickup_at || null : null,
         start_time: multi ? null : time || null,
         end_time: multi ? null : endTime || null,
         repeat,
@@ -55,11 +76,14 @@ export function EventEditor({ event, onClose }: { event: Event; onClose: () => v
         <span className="kicker">Termin</span>
         <button type="button" className="link" onClick={close}>Schließen</button>
       </div>
-      <HandInput value={title} onChange={setTitle} placeholder="Was steht an?" />
-      <div className="stack">
-        <span className="label">Wer?</span>
-        <Chips options={options} value={who} onChange={setWho} />
-      </div>
+      <HandInput value={title} onChange={setTitle} placeholder={autoTitle || 'Was steht an?'} />
+      <EffectChips value={choice} onChange={pickEffect} partners={partners} />
+      {askWho && (
+        <div className="stack">
+          <span className="label">{fx.effect === 'valerie_weg' ? 'Bei wem?' : 'Wer?'}</span>
+          <Chips options={options} value={who} onChange={setWho} />
+        </div>
+      )}
       <div className="stack">
         <span className="label">{multi ? 'Von wann?' : 'Wann?'}</span>
         <WhenPicker kind="termin" value={date} onChange={setDate} today={today} />
@@ -80,6 +104,7 @@ export function EventEditor({ event, onClose }: { event: Event; onClose: () => v
           </div>
         )}
       </div>
+      {fx.effect === 'valerie_weg' && <HandoverFields value={handover} onChange={setHandover} me={me} members={members} people={people} />}
       <div className="stack">
         <span className="label">Wiederholen?</span>
         <RepeatPicker value={repeat} onChange={setRepeat} />

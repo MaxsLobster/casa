@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
-import { addDays, eventEnd, fromISO, hhmm, isoWeek, shortDate, startOfWeek, weekDates, weekRange, weekday, weekdayLongByIndex, weekdayShort, weekdayShortByIndex, type ISODate } from '../lib/dates'
-import { dayLines, daySummary, dayState, hasOverride, openHints, templateState, type DayState, type Voice } from '../lib/week'
+import { addDays, eventEnd, fromISO, hhmm, isoWeek, shortDate, spanLabel, startOfWeek, weekDates, weekRange, weekday, weekdayLongByIndex, weekdayShort, weekdayShortByIndex, type ISODate } from '../lib/dates'
+import { dayLines, daySummary, dayState, hasOpen, hasOverride, openHints, templateState, type DayState, type Voice } from '../lib/week'
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import { BAND_START, BAND_END, goldSegments, navySegments, pct, widthPct, type Seg } from '../lib/band'
+import { applyEffects, dayEffects, effectLines, handoverOpen, isEffectEvent, type DayEffects, type EffectLine } from '../lib/effects'
 import type { Event, Slot, Task } from '../lib/types'
 import { Check, Chevron, Chips, Collapse, Sheet } from '../components/ui'
 import { SlotEditor } from './SlotEditor'
 import { EventEditor } from './EventEditor'
-import { spanLabel } from './Heute'
 
 type View = 'week' | 'normal'
 
@@ -19,6 +19,8 @@ interface DayRow {
   wd: string
   dateLabel: string
   state: DayState
+  fx: DayEffects
+  effects: EffectLine[]
   events: Occurrence[]
   isToday: boolean
   isPast: boolean
@@ -35,6 +37,8 @@ interface Strip {
   kind: 'gold' | 'navy'
   openTop: boolean
   openBottom: boolean
+  lane: number
+  lanes: number
 }
 
 const SCALE = [6, 10, 14, 18, 22]
@@ -58,7 +62,7 @@ export function Woche() {
   const [askLegend, setAskLegend] = useState(false)
   const [editSlots, setEditSlots] = useState<{ slots: Slot[]; date?: string; weekday?: number; state: DayState } | null>(null)
   const [editEvent, setEditEvent] = useState<Event | null>(null)
-  const [takeover, setTakeover] = useState<{ date: ISODate; state: DayState } | null>(null)
+  const [takeover, setTakeover] = useState<{ date: ISODate; state: DayState; fx: DayEffects } | null>(null)
   useEffect(() => {
     if (!jumpTo) return
     setView('week')
@@ -77,8 +81,10 @@ export function Woche() {
   const rows: DayRow[] = useMemo(
     () =>
       dates.map((d) => {
-        const state = dayState(d, normalWeek, overrides)
         const dayOcc = occ.filter((o) => o.occ_date <= d && o.occ_end >= d)
+        const fx = dayEffects(d, dayOcc, members)
+        const state = applyEffects(dayState(d, normalWeek, overrides), fx)
+        const ho = handoverOpen(fx)
         const myTasks = d >= today ? tasks.filter((t) => t.owner_member_id === me?.id && t.status !== 'erledigt' && t.due_date === d) : []
         return {
           key: d,
@@ -86,16 +92,19 @@ export function Woche() {
           wd: weekdayShort(d),
           dateLabel: shortDate(d),
           state,
+          fx,
+          effects: effectLines(d, fx, voice, people),
           events: dayOcc,
           isToday: d === today,
           isPast: d < today,
-          gold: goldSegments(state, dayOcc, members),
+          gold: goldSegments(d, state, dayOcc, members),
           navy: navySegments(dayOcc, me?.id ?? null),
-          hasOpen: !!(state.abend_essen?.is_open || state.abend_bett?.is_open || state.wochenende?.is_open),
+          hasOpen: hasOpen(state) || ho.dropoff || ho.pickup,
           tasks: myTasks.sort((a, b) => a.created_at.localeCompare(b.created_at)),
         }
       }),
-    [dates, normalWeek, overrides, occ, today, tasks, me?.id, members],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dates, normalWeek, overrides, occ, today, tasks, me?.id, members, people],
   )
 
   const templateRows = useMemo(
@@ -133,16 +142,23 @@ export function Woche() {
     }
     const base = listRef.current.getBoundingClientRect().top
     const out: Strip[] = []
-    for (const m of multi) {
+    // Überlappende Ereignisse bekommen eigene Spuren nebeneinander
+    const laneEnd: ISODate[] = []
+    const sorted = [...multi].sort((x, y) => x.occ_date.localeCompare(y.occ_date) || y.occ_end.localeCompare(x.occ_end))
+    for (const m of sorted) {
       const first = dates.find((d) => d >= m.occ_date) ?? dates[0]
       const last = [...dates].reverse().find((d) => d <= m.occ_end) ?? dates[6]
       const a = rowRefs.current[first]
       const b = rowRefs.current[last]
       if (!a || !b) continue
+      let lane = laneEnd.findIndex((end) => end < first)
+      if (lane < 0) lane = laneEnd.length
+      laneEnd[lane] = last
       const top = a.getBoundingClientRect().top - base
       const bottom = b.getBoundingClientRect().bottom - base
-      out.push({ id: m.id + m.occ_date, top: Math.round(top), height: Math.round(bottom - top), kind: m.person_id ? 'gold' : 'navy', openTop: m.occ_date < monday, openBottom: m.occ_end > sunday })
+      out.push({ id: m.id + m.occ_date, top: Math.round(top), height: Math.round(bottom - top), kind: m.person_id || m.effect === 'valerie_weg' ? 'gold' : 'navy', openTop: m.occ_date < monday, openBottom: m.occ_end > sunday, lane, lanes: 1 })
     }
+    for (const s of out) s.lanes = laneEnd.length
     setStrips((prev) => (JSON.stringify(prev) === JSON.stringify(out) ? prev : out))
   }, [view, multi, dates, monday, sunday])
   useLayoutEffect(() => {
@@ -181,8 +197,17 @@ export function Woche() {
     return members.find((m) => m.id === o.member_id)?.display_name ?? ''
   }
 
-  function chipsFor(state: DayState) {
+  function chipsFor(state: DayState, fx: DayEffects) {
     const chips: { key: string; label: string }[] = []
+    const ho = handoverOpen(fx)
+    if (ho.dropoff) chips.push({ key: 'dropoff', label: 'Wer bringt sie hin? · übernehmen' })
+    if (ho.pickup) chips.push({ key: 'pickup', label: 'Wer holt sie ab? · übernehmen' })
+    if (state.valerie_tag?.is_open) chips.push({ key: 'tag', label: 'Valerie tagsüber · wer?' })
+    const vb = state.valerie_bringen
+    const vh = state.valerie_holen
+    if (vb?.is_open && vh?.is_open) chips.push({ key: 'valerie', label: 'Bringen und Holen offen · übernehmen' })
+    else if (vb?.is_open) chips.push({ key: 'bringen', label: 'Bringen offen · übernehmen' })
+    else if (vh?.is_open) chips.push({ key: 'holen', label: 'Holen offen · übernehmen' })
     const es = state.abend_essen
     const bt = state.abend_bett
     if (es?.is_open && bt?.is_open) chips.push({ key: 'abend', label: 'Abend offen · übernehmen' })
@@ -281,7 +306,7 @@ export function Woche() {
         {strips.length > 0 && (
           <div className="wk__strips" aria-hidden>
             {strips.map((s) => (
-              <div key={s.id} className={`wk__strip wk__strip--${s.kind}` + (s.openTop ? ' wk__strip--open-top' : '') + (s.openBottom ? ' wk__strip--open-bottom' : '')} style={{ top: s.top + 6, height: s.height - 12 }} />
+              <div key={s.id} className={`wk__strip wk__strip--${s.kind}` + (s.openTop ? ' wk__strip--open-top' : '') + (s.openBottom ? ' wk__strip--open-bottom' : '')} style={{ top: s.top + 6, height: s.height - 12, ...(s.lanes > 1 ? { width: 4, right: 1 + (s.lanes - 1 - s.lane) * 5 } : {}) }} />
             ))}
           </div>
         )}
@@ -289,8 +314,9 @@ export function Woche() {
         {rows.map((r) => {
           const isOpen = openKey === r.key
           const lines = dayLines(r.state, voice)
-          const chips = chipsFor(r.state)
+          const chips = chipsFor(r.state, r.fx)
           const changed = hasOverride(r.state)
+          const termine = r.events.filter((e) => !isEffectEvent(e))
           return (
             <div className={'wk__day' + (r.isToday ? ' wk__day--today' : '') + (r.isPast && !isOpen ? ' wk__day--past' : '')} key={r.key} ref={(el) => { rowRefs.current[r.date] = el }}>
               <button type="button" className="wk__row" onClick={() => setOpenKey(isOpen ? null : r.key)} aria-expanded={isOpen}>
@@ -316,6 +342,15 @@ export function Woche() {
 
               <Collapse open={isOpen}>
                 <div className="wk__body">
+                  {r.effects.map((l) => (
+                    <button type="button" key={'fx' + l.occ.id} className="day__line day__line--effect" onClick={() => setEditEvent(events.find((x) => x.id === l.occ.base_id) ?? null)}>
+                      <span className="label label--small">{l.label}</span>
+                      <span className="hand">
+                        {l.text}
+                        {isNew('event', l.occ) && <span className="stamp stamp--new" style={{ marginLeft: 8, verticalAlign: 'middle' }}>Neu</span>}
+                      </span>
+                    </button>
+                  ))}
                   {lines.map((l) => {
                     const isChanged = l.slots.some((s) => r.state[s]?.overridden)
                     return (
@@ -330,12 +365,12 @@ export function Woche() {
                       </button>
                     )
                   })}
-                  {changed && lines.length === 0 && <span className="hint">Abweichung an diesem Tag.</span>}
+                  {changed && lines.length === 0 && r.effects.length === 0 && <span className="hint">Abweichung an diesem Tag.</span>}
 
-                  {r.events.length > 0 && (
+                  {termine.length > 0 && (
                     <div className="stack stack--tight">
                       <span className="label label--small">Termine</span>
-                      {r.events.map((e) => {
+                      {termine.map((e) => {
                         const past = !isMultiDay(e) && eventEnd({ date: e.occ_date, start_time: e.start_time, end_time: e.end_time }) <= now
                         return (
                           <button type="button" key={e.id + e.occ_date} className={'day__line' + (past ? ' day__line--past' : '')} style={{ minHeight: 40, padding: '2px 0' }} onClick={() => setEditEvent(events.find((x) => x.id === e.base_id) ?? null)}>
@@ -355,7 +390,7 @@ export function Woche() {
                   {chips.length > 0 && (
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {chips.map((c) => (
-                        <button key={c.key} type="button" className="wk__chip" onClick={() => setTakeover({ date: r.date, state: r.state })}>{c.label}</button>
+                        <button key={c.key} type="button" className="wk__chip" onClick={() => setTakeover({ date: r.date, state: r.state, fx: r.fx })}>{c.label}</button>
                       ))}
                     </div>
                   )}
@@ -363,12 +398,16 @@ export function Woche() {
                   {r.tasks.length > 0 && (
                     <div className="stack" style={{ gap: 2 }}>
                       <span className="label label--small">Für dich fällig</span>
-                      {r.tasks.map((t) => (
-                        <div className="wk__task" key={t.id}>
-                          <Check done={false} onToggle={() => setTaskDone(t.id, true)} label={`${t.title} abhaken`} />
-                          <span className="hand hand--navy" style={{ fontSize: 22, lineHeight: 1.15 }}>{t.title}</span>
-                        </div>
-                      ))}
+                      {r.tasks.map((t) => {
+                        const away = r.fx.away.find((a) => a.member.id === t.owner_member_id)
+                        return (
+                          <div className="wk__task" key={t.id} style={away ? { flexWrap: 'wrap' } : undefined}>
+                            <Check done={false} onToggle={() => setTaskDone(t.id, true)} label={`${t.title} abhaken`} />
+                            <span className="hand hand--navy" style={{ fontSize: 22, lineHeight: 1.15 }}>{t.title}</span>
+                            {away && <span className="hint hint--brown" style={{ width: '100%', paddingLeft: 28 }}>Du bist da weg – trotzdem bei dir lassen? (In To-Dos abgeben)</span>}
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
 
@@ -403,9 +442,10 @@ export function Woche() {
         <Takeover
           date={takeover.date}
           state={takeover.state}
+          fx={takeover.fx}
           onClose={() => setTakeover(null)}
-          onSave={async (slot, value) => {
-            await setOverride({ date: takeover.date, slot, value })
+          onSave={async (slot, value, at) => {
+            await setOverride({ date: takeover.date, slot, value, at: at ?? null })
           }}
         />
       )}
@@ -413,26 +453,51 @@ export function Woche() {
   )
 }
 
-/** Offene Slots eines Tages übernehmen: Ich / Anna / Oma … bzw. Familientag festlegen */
-function Takeover({ date, state, onClose, onSave }: { date: ISODate; state: DayState; onClose: () => void; onSave: (slot: Slot, value: string) => Promise<void> }) {
-  const { me, members, people, setOverride } = useCasa()
+/** Offene Slots eines Tages übernehmen: Ich / Anna / Oma … bzw. Familientag festlegen, Übergabe bei „Valerie ist weg" */
+function Takeover({ date, state, fx, onClose, onSave }: { date: ISODate; state: DayState; fx: DayEffects; onClose: () => void; onSave: (slot: Slot, value: string, at?: string | null) => Promise<void> }) {
+  const { me, members, people, setOverride, updateEvent } = useCasa()
   const close = useCallback(() => onClose(), [onClose])
   const partners = members.filter((m) => m.role === 'partner')
-  const open: Slot[] = (['abend_essen', 'abend_bett'] as Slot[]).filter((s) => state[s]?.is_open)
+  const open: Slot[] = (['valerie_bringen', 'valerie_holen', 'valerie_tag', 'abend_essen', 'abend_bett'] as Slot[]).filter((s) => state[s]?.is_open)
   const weekendOpen = !!state.wochenende?.is_open
+  const ho = handoverOpen(fx)
   const [choice, setChoice] = useState<Record<string, string | null>>({})
+  const [times, setTimes] = useState<Record<string, string>>({})
   const [familientag, setFamilientag] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const label: Record<string, string> = { abend_essen: 'Wer kocht?', abend_bett: 'Wer bringt ins Bett?' }
-  const options = [...partners.map((m) => ({ value: m.display_name, label: m.id === me?.id ? 'Ich' : m.display_name })), ...people.map((p) => ({ value: p.name, label: p.name }))]
+  const label: Record<string, string> = {
+    valerie_bringen: 'Wer bringt Valerie?',
+    valerie_holen: 'Wer holt Valerie?',
+    valerie_tag: 'Valerie tagsüber · wer?',
+    abend_essen: 'Wer kocht?',
+    abend_bett: 'Wer bringt ins Bett?',
+    dropoff: 'Wer bringt sie hin?',
+    pickup: 'Wer holt sie ab?',
+  }
+  const withTime = ['valerie_bringen', 'valerie_holen', 'dropoff', 'pickup']
+  const base = [...partners.map((m) => ({ value: m.display_name, label: m.id === me?.id ? 'Ich' : m.display_name }))]
+  const options = (key: string) => [...base, ...(key === 'valerie_tag' ? [{ value: 'beide', label: 'Beide' }] : []), ...people.map((p) => ({ value: p.name, label: p.name }))]
   const wd = weekday(date)
   const sat = wd === 6 ? date : wd === 7 ? addDays(date, -1) : date
   const sun = addDays(sat, 1)
+  const handover = [...(ho.dropoff ? ['dropoff'] : []), ...(ho.pickup ? ['pickup'] : [])]
 
   async function save() {
     setBusy(true)
     try {
-      for (const s of open) if (choice[s]) await onSave(s, choice[s]!)
+      for (const s of open) if (choice[s]) await onSave(s, choice[s]!, withTime.includes(s) ? times[s] || null : null)
+      if (fx.valerieWeg) {
+        const patch: Record<string, string | null> = {}
+        if (ho.dropoff && choice.dropoff) {
+          patch.dropoff_by = choice.dropoff
+          patch.dropoff_at = times.dropoff || null
+        }
+        if (ho.pickup && choice.pickup) {
+          patch.pickup_by = choice.pickup
+          patch.pickup_at = times.pickup || null
+        }
+        if (Object.keys(patch).length) await updateEvent(fx.valerieWeg.base_id, patch)
+      }
       if (weekendOpen && familientag) {
         await setOverride({ date: familientag === 'sa' ? sat : sun, slot: 'wochenende', value: 'Familientag' })
         await setOverride({ date: familientag === 'sa' ? sun : sat, slot: 'wochenende', value: 'Geteilte Betreuung' })
@@ -442,7 +507,20 @@ function Takeover({ date, state, onClose, onSave }: { date: ISODate; state: DayS
       setBusy(false)
     }
   }
-  const ready = open.some((s) => choice[s]) || (weekendOpen && familientag)
+  const ready = open.some((s) => choice[s]) || handover.some((k) => choice[k]) || (weekendOpen && familientag)
+
+  const block = (key: string) => (
+    <div className="stack" key={key}>
+      <span className="label">{label[key]}</span>
+      <Chips options={options(key)} value={choice[key] ?? null} onChange={(v) => setChoice((c) => ({ ...c, [key]: v }))} />
+      {withTime.includes(key) && (
+        <div className="stack stack--tight">
+          <label className="label label--small" htmlFor={`to-${key}`}>Wann? (optional)</label>
+          <input id={`to-${key}`} className="input-ui" type="time" value={times[key] ?? ''} onChange={(e) => setTimes((t) => ({ ...t, [key]: e.target.value }))} style={{ alignSelf: 'flex-start', minWidth: 140 }} />
+        </div>
+      )}
+    </div>
+  )
 
   return (
     <Sheet onClose={close} title="Übernehmen">
@@ -450,12 +528,8 @@ function Takeover({ date, state, onClose, onSave }: { date: ISODate; state: DayS
         <span className="kicker">{weekdayLongByIndex(wd)}, {shortDate(date)}</span>
         <button type="button" className="link" onClick={close}>Schließen</button>
       </div>
-      {open.map((s) => (
-        <div className="stack" key={s}>
-          <span className="label">{label[s]}</span>
-          <Chips options={options} value={choice[s] ?? null} onChange={(v) => setChoice((c) => ({ ...c, [s]: v }))} />
-        </div>
-      ))}
+      {handover.map(block)}
+      {open.map(block)}
       {weekendOpen && (
         <div className="stack">
           <span className="label">Welcher Tag ist Familientag?</span>

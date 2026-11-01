@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
-import { addDays, dayLabel, eventEnd, fromISO, hhmm, isoWeek, uhr, weekdayLong, weekdayShort, type ISODate } from '../lib/dates'
+import { addDays, dayLabel, eventEnd, fromISO, hhmm, isoWeek, spanLabel, uhr, weekdayLong } from '../lib/dates'
 import { dayState, name as whoName, verb, type Voice } from '../lib/week'
+import { applyEffects, dayEffects, isEffectEvent, personName } from '../lib/effects'
 import { dailyText, moonPhase, readDailyChoice, sunTimes, writeDailyChoice, type DailyKind } from '../lib/daily'
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import { BAND_END as T_END, BAND_START as T_START, goldSegments, navySegments, pct, toH } from '../lib/band'
@@ -67,8 +68,9 @@ export function Heute() {
   const shown = choice.chosen && choice.open ? texts[choice.chosen] : null
 
   // ---------- Heute noch ----------
-  const day = useMemo(() => dayState(today, normalWeek, overrides), [today, normalWeek, overrides])
   const occToday = useMemo(() => occurrences(events, today, today).filter((o) => o.occ_date <= today && o.occ_end >= today), [events, today])
+  const fx = useMemo(() => dayEffects(today, occToday, members), [today, occToday, members])
+  const day = useMemo(() => applyEffects(dayState(today, normalWeek, overrides), fx), [today, normalWeek, overrides, fx])
   const nowH = now.getHours() + now.getMinutes() / 60
 
   const whoEvent = (o: Occurrence) => {
@@ -79,9 +81,31 @@ export function Heute() {
   }
 
   const rows: Row[] = []
+  // Wirkungs-Ereignisse, die heute gelten: Valerie bei Oma, Kita zu, Max/Anna weg
+  const vw = fx.valerieWeg
+  if (vw) {
+    const pn = personName(vw, people)
+    const where = pn ? `bei ${pn}` : vw.title
+    rows.push({ key: 'fxv', sort: -3, time: null, kind: 'valerie', title: pn ? `Valerie ${where}` : vw.title, sub: spanLabel(vw.occ_date, vw.occ_end), isNew: isNew('event', vw) })
+    if (fx.isFirst && vw.dropoff_by && (!vw.dropoff_at || nowH < toH(vw.dropoff_at, 0))) {
+      rows.push({ key: 'fxd', sort: vw.dropoff_at ? toH(vw.dropoff_at, 0) : -2, time: vw.dropoff_at ? hhmm(vw.dropoff_at) : null, kind: 'valerie', title: `${cap(verb(vw.dropoff_by, voice, 'bringst', 'bringt'))} Valerie ${pn ? `zu ${pn}` : 'hin'}`, sub: 'Übergabe' })
+    }
+    if (fx.isLast && vw.pickup_by && (!vw.pickup_at || nowH < toH(vw.pickup_at, 0))) {
+      rows.push({ key: 'fxp', sort: vw.pickup_at ? toH(vw.pickup_at, 0) : -2, time: vw.pickup_at ? hhmm(vw.pickup_at) : null, kind: 'valerie', title: `${cap(verb(vw.pickup_by, voice, 'holst', 'holt'))} Valerie ${pn ? `bei ${pn} ` : ''}ab`, sub: 'Übergabe' })
+    }
+  }
+  const kz = fx.kitaZu
+  if (kz && !vw) {
+    const tag = day.valerie_tag
+    const tagText = tag?.value && !tag.is_open ? `Valerie tagsüber bei ${/^beide$/i.test(tag.value) ? 'euch beiden' : whoName(tag.value, voice) === 'du' ? 'dir' : tag.value}` : null
+    rows.push({ key: 'fxk', sort: -2, time: null, kind: 'plan', title: tagText ?? 'Kita zu', sub: tagText ? `Kita zu · ${spanLabel(kz.occ_date, kz.occ_end)}` : spanLabel(kz.occ_date, kz.occ_end), isNew: isNew('event', kz) })
+  }
+  for (const a of fx.away) {
+    rows.push({ key: 'fxa' + a.member.id, sort: -1, time: null, kind: 'plan', title: a.member.id === me?.id ? 'Du bist weg' : `${a.member.display_name} ist weg`, sub: spanLabel(a.occ.occ_date, a.occ.occ_end), isNew: isNew('event', a.occ) })
+  }
   // Termine heute, noch nicht vorbei
   for (const o of occToday) {
-    if (isMultiDay(o)) continue
+    if (isMultiDay(o) || isEffectEvent(o)) continue
     if (eventEnd({ date: today, start_time: o.start_time, end_time: o.end_time }) <= now) continue
     const parts = [whoEvent(o)]
     if (o.end_time) parts.push(`bis ${uhr(o.end_time)}`)
@@ -109,14 +133,16 @@ export function Heute() {
   // Nur meine Aufgaben, nur genau heute fällig (Überfälliges steht unter To-Dos bei „Liegt noch")
   for (const t of tasks) {
     if (t.status === 'erledigt' || t.due_date !== today || t.owner_member_id !== me?.id) continue
-    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: '', task: t, isNew: isNew('task', t) })
+    const away = fx.away.some((a) => a.member.id === t.owner_member_id)
+    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: away ? 'Du bist weg – trotzdem bei dir lassen?' : '', task: t, isNew: isNew('task', t) })
   }
   rows.sort((a, c) => a.sort - c.sort)
 
   // ---------- Demnächst ----------
   const soon = useMemo(() => {
     const to = addDays(today, 7)
-    return occurrences(events, today, to).filter((o) => isMultiDay(o) && o.occ_end >= today)
+    // Laufende Wirkungs-Ereignisse stehen schon unter „Heute noch"
+    return occurrences(events, today, to).filter((o) => isMultiDay(o) && o.occ_end >= today && !(isEffectEvent(o) && o.occ_date <= today))
   }, [events, today])
 
   // ---------- Neu von … ----------
@@ -138,7 +164,7 @@ export function Heute() {
 
   // ---------- Zeitstrahl ----------
   // Gleiche Rechnung wie das Mini-Band in der Woche
-  const gold = goldSegments(day, occToday, members)
+  const gold = goldSegments(today, day, occToday, members)
   const navy = navySegments(occToday, me?.id ?? null)
   const fill = Math.min(Math.max(nowH, T_START), T_END)
   const fillPct = pct(fill)
@@ -284,13 +310,7 @@ function isPersonName(v: string, members: { display_name: string }[], people: { 
   return members.some((m) => m.display_name.toLowerCase() === t) || people.some((p) => p.name.toLowerCase() === t)
 }
 
-/** „So–Di" bzw. „Sa" */
-export function spanLabel(from: ISODate, to: ISODate): string {
-  if (from === to) return weekdayShort(from)
-  return `${weekdayShort(from)}–${weekdayShort(to)}`
-}
-
-export { whoName }
+export { whoName, spanLabel }
 
 function SunIcon() {
   return (

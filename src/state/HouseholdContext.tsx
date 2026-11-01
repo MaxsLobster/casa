@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { DemoAuth, SupabaseAuth, type Auth, type AuthUser } from '../lib/auth'
 import { LocalStore, SupabaseStore, type Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
-import type { Event, Household, ItemSeen, Member, NormalWeekRow, Person, Settings, Slot, Task, TaskStatus, WeekOverride, TableName, Repeat } from '../lib/types'
+import type { Event, EventEffect, Household, ItemSeen, Member, NormalWeekRow, Person, Settings, Slot, Task, TaskStatus, WeekOverride, TableName, Repeat } from '../lib/types'
 import { addDays, fromISO, toISO, today } from '../lib/dates'
 import { subscribePush, unsubscribePush, type PushKeys } from '../lib/push'
 
@@ -47,8 +47,13 @@ export interface Casa {
     note?: string | null
     repeat?: Repeat | null
     repeat_until?: string | null
+    effect?: EventEffect
+    dropoff_by?: string | null
+    dropoff_at?: string | null
+    pickup_by?: string | null
+    pickup_at?: string | null
   }): Promise<void>
-  updateEvent(id: string, patch: Partial<Pick<Event, 'title' | 'date' | 'end_date' | 'start_time' | 'end_time' | 'member_id' | 'person_id' | 'note' | 'repeat' | 'repeat_until'>>): Promise<void>
+  updateEvent(id: string, patch: Partial<Pick<Event, 'title' | 'date' | 'end_date' | 'start_time' | 'end_time' | 'member_id' | 'person_id' | 'note' | 'repeat' | 'repeat_until' | 'effect' | 'dropoff_by' | 'dropoff_at' | 'pickup_by' | 'pickup_at'>>): Promise<void>
   removeEvent(id: string): Promise<void>
 
   setOverride(input: { date: string; slot: Slot; value: string | null; at?: string | null; note?: string | null }): Promise<void>
@@ -350,6 +355,11 @@ export function CasaProvider({ children }: { children: ReactNode }) {
         person_id: input.person_id ?? null,
         repeat: input.repeat ?? null,
         repeat_until: input.repeat_until ?? null,
+        effect: input.effect ?? 'termin',
+        dropoff_by: input.dropoff_by ?? null,
+        dropoff_at: input.dropoff_at ?? null,
+        pickup_by: input.pickup_by ?? null,
+        pickup_at: input.pickup_at ?? null,
         ...input,
       })
       await load('events')

@@ -4,6 +4,7 @@ import { addDays, isoWeek, lastSundayCutoff, relativeLabel, shortDate, startOfWe
 import type { Task } from '../lib/types'
 import { Check, Chevron, Collapse } from '../components/ui'
 import { TaskEditor } from './TaskEditor'
+import { awayOn } from '../lib/effects'
 
 type GroupId = 'liegt' | 'neu' | 'heute' | 'woche' | 'spaeter' | 'geschafft'
 const GROUP_ORDER: GroupId[] = ['liegt', 'neu', 'heute', 'woche', 'spaeter', 'geschafft']
@@ -23,7 +24,7 @@ function readOpen(): Record<GroupId, boolean> {
 }
 
 export function ToDos() {
-  const { me, members, tasks, setTaskDone, isNew, markSeen } = useCasa()
+  const { me, members, tasks, events, setTaskDone, isNew, markSeen } = useCasa()
   const today = useToday()
   const now = useNow()
   const [editing, setEditing] = useState<Task | null>(null)
@@ -134,6 +135,9 @@ export function ToDos() {
                         <span className="task__meta" style={{ flexWrap: 'wrap' }}>
                           <span className="heute__sub">{meta(t, done)}</span>
                           {!done && newIds.has(t.id) && <span className="stamp stamp--new">Neu</span>}
+                          {!done && awayOn(events, t.owner_member_id, t.due_date) && (
+                            <span className="hint hint--brown" style={{ width: '100%' }}>{mine(t) ? 'Du bist da weg' : `${nameOf(t.owner_member_id)} ist da weg`} – trotzdem {mine(t) ? 'bei dir' : 'dort'} lassen?</span>
+                          )}
                         </span>
                       </button>
                     </div>

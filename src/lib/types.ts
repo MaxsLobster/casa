@@ -15,6 +15,9 @@ export type TaskStatus = 'offen' | 'zugesagt' | 'geparkt' | 'erledigt'
 
 export type Repeat = 'weekly' | 'monthly' | 'yearly'
 
+/** Was ein Ereignis für die Normalwoche bedeutet */
+export type EventEffect = 'termin' | 'valerie_weg' | 'kita_zu' | 'eltern_weg'
+
 export interface Task {
   id: Id
   household_id: Id
@@ -45,6 +48,12 @@ export interface Event {
   note: string | null
   repeat: Repeat | null
   repeat_until: string | null
+  effect: EventEffect
+  // Übergabe bei „Valerie ist weg": wer bringt sie hin / holt sie ab (Name wie in der Woche), und wann
+  dropoff_by: string | null
+  dropoff_at: string | null
+  pickup_by: string | null
+  pickup_at: string | null
   created_by: Id | null
   updated_by: Id | null
   created_at: string
@@ -97,6 +106,7 @@ export interface NotificationRow {
 export type Slot =
   | 'valerie_bringen'
   | 'valerie_holen'
+  | 'valerie_tag' // nur als Abweichung: wer hat Valerie tagsüber, wenn die Kita zu ist
   | 'anna_arbeit'
   | 'nachmittag'
   | 'abend_essen'
