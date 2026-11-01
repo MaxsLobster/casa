@@ -1,11 +1,11 @@
-// Mila · Woche: Rhythmus, Blättern, Tag aufklappen (Tauschen, alle Gerichte, Freitext), Zutaten auf die Liste
+// Mila · Woche: Rhythmus, Blättern, Tag aufklappen (Tauschen, alle Gerichte, Freitext), Zutaten auf die Liste, „Hast du noch?“
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { MilaPage } from './Mila'
-import { useMila } from './MilaContext'
+import { useMila, type NewItem } from './MilaContext'
 import { RHYTHM, isThermomix, minutes } from './rhythm'
-import { collectWeek, hashCode, weekKey } from './week-list'
-import { Sheet } from '../components/ui'
+import { collectBasics, collectWeek, hashCode, weekKey } from './week-list'
+import { Collapse, Sheet } from '../components/ui'
 import type { MilaRecipe, MilaWeekDay } from '../lib/types'
 import { addDays, fromISO, isoWeek, startOfWeek, today, weekDates, weekRange, weekdayShort } from '../lib/dates'
 
@@ -16,6 +16,7 @@ export function Woche() {
   const [pickFor, setPickFor] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [justAdded, setJustAdded] = useState(false)
+  const [askOpen, setAskOpen] = useState(false)
 
   const dates = weekDates(monday)
   const byDate = new Map(weekDays.map((w) => [w.date, w]))
@@ -27,10 +28,16 @@ export function Woche() {
   const wk = weekKey(monday)
   const onList = items.filter((i) => !i.checked && i.source_week === wk).length
 
+  // „Hast du noch?“: Basics der Woche, die noch nicht offen auf der Liste stehen
+  const openNames = new Set(items.filter((i) => !i.checked).map((i) => i.name.trim().toLowerCase()))
+  const basics = collectBasics(monday, week, recipeById, ingredientsOf).filter((b) => !openNames.has(b.name.toLowerCase()))
+  const showBar = pending.length > 0 || onList > 0 || basics.length > 0
+
   function turn(n: number) {
     setMonday(addDays(monday, n))
     setOpen(null)
     setJustAdded(false)
+    setAskOpen(false)
   }
 
   async function choose(date: string, recipe: MilaRecipe) {
@@ -46,6 +53,10 @@ export function Woche() {
   async function clear(date: string) {
     setOpen(null)
     await setWeekDay(date, null)
+  }
+
+  function addBasic(b: NewItem) {
+    addItems([b])
   }
 
   async function toList() {
@@ -114,9 +125,31 @@ export function Woche() {
         })}
       </div>
 
-      {(pending.length > 0 || onList > 0) && <div className="m-week-pad" aria-hidden />}
-      {(pending.length > 0 || onList > 0) && (
+      {showBar && <div className={'m-week-pad' + (askOpen ? ' m-week-pad--tall' : '')} aria-hidden />}
+      {showBar && (
         <div className="m-weekbar">
+          {basics.length > 0 && (
+            <div className="m-ask">
+              <button type="button" className="m-cart m-ask__toggle" aria-expanded={askOpen} onClick={() => setAskOpen((v) => !v)}>
+                Hast du noch? · {basics.length}
+                <span className={'m-cart__arrow' + (askOpen ? ' m-cart__arrow--open' : '')} aria-hidden>▸</span>
+              </button>
+              <Collapse open={askOpen}>
+                <div className="m-ask__body">
+                  <div className="m-ask__chips">
+                    {basics.map((b) => (
+                      <button key={b.name + '|' + b.amount} type="button" className="m-alt m-ask__chip" onClick={() => addBasic(b)} aria-label={`${b.name} auf die Liste`}>
+                        {b.name}
+                        {b.amount ? <span className="m-alt__time">{b.amount}</span> : null}
+                        <span className="m-ask__plus" aria-hidden>+</span>
+                      </button>
+                    ))}
+                  </div>
+                  <span className="m-hint" style={{ fontSize: 12 }}>Basics der Woche. Tippen setzt eins auf die Liste.</span>
+                </div>
+              </Collapse>
+            </div>
+          )}
           {pending.length > 0 ? (
             <button type="button" className="m-bar__main" disabled={busy} onClick={toList}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -126,14 +159,14 @@ export function Woche() {
               Zutaten auf die Liste
               <span className="m-weekbar__count">{pending.length}</span>
             </button>
-          ) : (
+          ) : onList > 0 ? (
             <Link to="/mila/liste" className={'m-weekbar__done' + (justAdded ? ' m-weekbar__done--pop' : '')}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M5 12.5l4.5 4.5L19 7.5" />
               </svg>
               {onList} {onList === 1 ? 'Zutat' : 'Zutaten'} auf der Liste · ansehen ›
             </Link>
-          )}
+          ) : null}
         </div>
       )}
 

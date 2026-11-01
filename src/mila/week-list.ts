@@ -1,4 +1,4 @@
-// Mila · Zutaten einer Woche für die Einkaufsliste einsammeln (reine Logik, ohne React)
+// Mila · Zutaten einer Woche für die Einkaufsliste einsammeln, dazu die Basics für „Hast du noch?“ (reine Logik, ohne React)
 import type { MilaIngredient, MilaRecipe, MilaWeekDay, ShopCategory } from '../lib/types'
 import type { NewItem } from './MilaContext'
 import { formatAmount } from './shopping'
@@ -19,27 +19,40 @@ interface Bucket {
   sources: { date: string; recipe: MilaRecipe }[]
 }
 
+type Lookup = {
+  recipeById: (id: string | null | undefined) => MilaRecipe | null
+  ingredientsOf: (recipeId: string) => MilaIngredient[]
+}
+
 /**
  * Nimmt die Rezept-Tage der Woche, die noch nicht auf der Liste stehen (added_to_list),
  * lässt Basics weg, fasst gleiche Zutat + Einheit zusammen (Mengen addieren)
  * und hängt die Herkunft an: „Mo · Bolognese“ oder „Mi + Do“.
  */
-export function collectWeek(
-  monday: string,
-  days: MilaWeekDay[],
-  recipeById: (id: string | null | undefined) => MilaRecipe | null,
-  ingredientsOf: (recipeId: string) => MilaIngredient[],
-): NewItem[] {
+export function collectWeek(monday: string, days: MilaWeekDay[], recipeById: Lookup['recipeById'], ingredientsOf: Lookup['ingredientsOf']): NewItem[] {
+  return collect(monday, days, { recipeById, ingredientsOf }, false)
+}
+
+/**
+ * „Hast du noch?“: die Basics (Salz, Öl, Gewürze …) aller Rezept-Tage der Woche,
+ * gleich zusammengefasst und beschriftet, damit man sie mit einem Tipp doch auf die Liste setzen kann.
+ */
+export function collectBasics(monday: string, days: MilaWeekDay[], recipeById: Lookup['recipeById'], ingredientsOf: Lookup['ingredientsOf']): NewItem[] {
+  return collect(monday, days, { recipeById, ingredientsOf }, true)
+}
+
+function collect(monday: string, days: MilaWeekDay[], { recipeById, ingredientsOf }: Lookup, basics: boolean): NewItem[] {
   const wk = weekKey(monday)
   const buckets = new Map<string, Bucket>()
   const sorted = [...days].sort((a, b) => a.date.localeCompare(b.date))
   for (const d of sorted) {
-    if (!d.recipe_id || d.added_to_list) continue
+    if (!d.recipe_id || (!basics && d.added_to_list)) continue
     const recipe = recipeById(d.recipe_id)
     if (!recipe) continue
     for (const i of ingredientsOf(recipe.id)) {
-      if (i.pantry_basic) continue
+      if (i.pantry_basic !== basics) continue
       const name = i.name.trim()
+      if (basics && /^wasser$/i.test(name)) continue
       const unit = (i.unit ?? '').trim()
       if (!name) continue
       const key = name.toLowerCase() + '|' + unit.toLowerCase()

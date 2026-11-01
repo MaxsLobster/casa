@@ -60,7 +60,7 @@
     "name": "Zwiebel",
     "amount": 1,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -70,7 +70,7 @@
     "name": "Knoblauch",
     "amount": 3,
     "unit": "Zehen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -90,7 +90,7 @@
     "name": "Dosentomaten (gehackt)",
     "amount": 800,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -110,7 +110,7 @@
     "name": "Tomatenmark",
     "amount": 1,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -274,7 +274,7 @@
     "name": "Spaghetti (Bio)",
     "amount": 300,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -284,7 +284,7 @@
     "name": "Knoblauch",
     "amount": 6,
     "unit": "Zehen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -324,7 +324,7 @@
     "name": "Parmesan",
     "amount": null,
     "unit": "nach Geschmack",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    }
   ],
@@ -427,7 +427,7 @@
     "name": "Zwiebel",
     "amount": 1,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -437,7 +437,7 @@
     "name": "Knoblauch",
     "amount": 3,
     "unit": "Zehen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -467,7 +467,7 @@
     "name": "Dosentomaten (gehackt)",
     "amount": 400,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -477,7 +477,7 @@
     "name": "Eier",
     "amount": 5,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -635,7 +635,7 @@
     "name": "Reisnudeln (flach, Pad-Thai-Style)",
     "amount": 300,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -695,7 +695,7 @@
     "name": "Erdnüsse (geröstet)",
     "amount": 1,
     "unit": "Handvoll",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -705,7 +705,7 @@
     "name": "Erdnussbutter",
     "amount": 4,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -715,7 +715,7 @@
     "name": "Sojasauce",
     "amount": 2,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -735,7 +735,7 @@
     "name": "Honig",
     "amount": 1,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -745,7 +745,7 @@
     "name": "Sesamöl + Limette + Ingwer",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    }
   ],
@@ -888,7 +888,7 @@
     "name": "Sushi-Reis oder Basmati",
     "amount": 250,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -928,7 +928,7 @@
     "name": "Sesam",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -938,7 +938,7 @@
     "name": "Sojasauce",
     "amount": 3,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -948,7 +948,7 @@
     "name": "Mirin",
     "amount": 2,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -958,7 +958,7 @@
     "name": "Sake oder trockener Sherry",
     "amount": 2,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -978,7 +978,7 @@
     "name": "Ingwer",
     "amount": 1,
     "unit": "TL (gerieben)",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    }
   ],
@@ -1101,7 +1101,7 @@
     "name": "Knoblauch",
     "amount": 3,
     "unit": "Zehen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -1111,7 +1111,7 @@
     "name": "Ingwer",
     "amount": 2,
     "unit": "cm",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -1121,7 +1121,7 @@
     "name": "Sojasauce",
     "amount": 4,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -1151,7 +1151,7 @@
     "name": "Gochujang (koreanische Chilipaste)",
     "amount": 1,
     "unit": "TL (optional)",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -1161,7 +1161,7 @@
     "name": "Reis",
     "amount": 250,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -1320,7 +1320,7 @@
     "name": "Rote Linsen",
     "amount": 250,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -1330,7 +1330,7 @@
     "name": "Zwiebel",
     "amount": 1,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -1340,7 +1340,7 @@
     "name": "Knoblauch",
     "amount": 3,
     "unit": "Zehen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -1350,7 +1350,7 @@
     "name": "Ingwer",
     "amount": 2,
     "unit": "cm",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -1360,7 +1360,7 @@
     "name": "Kokosmilch",
     "amount": 400,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -1370,7 +1370,7 @@
     "name": "Dosentomaten",
     "amount": 400,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -1390,7 +1390,7 @@
     "name": "Gemüsebrühe",
     "amount": 500,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -1420,7 +1420,7 @@
     "name": "Basmati-Reis",
     "amount": null,
     "unit": "als Beilage",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    }
   ],
@@ -1564,7 +1564,7 @@
     "name": "Weißes Miso (Shiro)",
     "amount": 3,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -1574,7 +1574,7 @@
     "name": "Mirin",
     "amount": 2,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -1584,7 +1584,7 @@
     "name": "Sake",
     "amount": 2,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -1594,7 +1594,7 @@
     "name": "Honig",
     "amount": 1,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -1604,7 +1604,7 @@
     "name": "Reis",
     "amount": 250,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -1624,7 +1624,7 @@
     "name": "Sesam + Lauchzwiebel",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    }
   ],
@@ -1740,7 +1740,7 @@
     "name": "Quinoa",
     "amount": 200,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -1750,7 +1750,7 @@
     "name": "Gemüsebrühe",
     "amount": 400,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -1810,7 +1810,7 @@
     "name": "Pinienkerne (optional)",
     "amount": null,
     "unit": "geröstet",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    }
   ],
@@ -1967,7 +1967,7 @@
     "name": "Tahini",
     "amount": 3,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -2088,7 +2088,7 @@
     "name": "Zarte Haferflocken",
     "amount": 300,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -2098,7 +2098,7 @@
     "name": "Hafermilch oder Vollmilch",
     "amount": 600,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -2118,7 +2118,7 @@
     "name": "Chiasamen",
     "amount": 2,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -2128,7 +2128,7 @@
     "name": "Ahornsirup",
     "amount": 3,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -2244,7 +2244,7 @@
     "name": "Sushi-Reis",
     "amount": 300,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -2284,7 +2284,7 @@
     "name": "Nori-Blätter",
     "amount": 4,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -2324,7 +2324,7 @@
     "name": "Sojasauce, Wasabi, eingelegter Ingwer",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    }
   ],
@@ -2453,7 +2453,7 @@
     "name": "Rote Currypaste (Mae Ploy)",
     "amount": 3,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -2463,7 +2463,7 @@
     "name": "Kokosmilch",
     "amount": 400,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -2473,7 +2473,7 @@
     "name": "Hühnerbrühe",
     "amount": 200,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -2503,7 +2503,7 @@
     "name": "Bambussprossen (Dose)",
     "amount": 100,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -2523,7 +2523,7 @@
     "name": "Fischsauce",
     "amount": 1,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -2563,7 +2563,7 @@
     "name": "Reis",
     "amount": null,
     "unit": "als Beilage",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    }
   ],
@@ -2721,7 +2721,7 @@
     "name": "Basmati-Reis",
     "amount": 250,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -2751,7 +2751,7 @@
     "name": "Knoblauch",
     "amount": 3,
     "unit": "Zehen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -2811,7 +2811,7 @@
     "name": "Petersilie, Tahini, Oliven",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    }
   ],
@@ -2913,7 +2913,7 @@
     "name": "Lasagneplatten (ohne Vorkochen)",
     "amount": 10,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -2963,7 +2963,7 @@
     "name": "Dosentomaten",
     "amount": 400,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -2993,7 +2993,7 @@
     "name": "Parmesan",
     "amount": 50,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -3003,7 +3003,7 @@
     "name": "Zwiebel + Knoblauch + Olivenöl + Oregano",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    }
   ],
@@ -3140,7 +3140,7 @@
     "name": "Panko (japanisches Brotsemmelbrot)",
     "amount": 100,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -3150,7 +3150,7 @@
     "name": "Eier",
     "amount": 2,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -3180,7 +3180,7 @@
     "name": "Reis",
     "amount": 250,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -3200,7 +3200,7 @@
     "name": "Ketchup, Worcestersauce, Sojasauce, Zucker, Senf (für Sauce)",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -3353,7 +3353,7 @@
     "name": "Kichererbsen (Dose)",
     "amount": 2,
     "unit": "Dosen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -3363,7 +3363,7 @@
     "name": "Zwiebeln",
     "amount": 2,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -3373,7 +3373,7 @@
     "name": "Knoblauch",
     "amount": 4,
     "unit": "Zehen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -3383,7 +3383,7 @@
     "name": "Ingwer",
     "amount": 3,
     "unit": "cm",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -3393,7 +3393,7 @@
     "name": "Dosentomaten",
     "amount": 400,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -3443,7 +3443,7 @@
     "name": "Basmati-Reis oder Naan",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    }
   ],
@@ -3587,7 +3587,7 @@
     "name": "Reisnudeln (flach, breit)",
     "amount": 300,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -3607,7 +3607,7 @@
     "name": "Eier",
     "amount": 2,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -3637,7 +3637,7 @@
     "name": "Erdnüsse (gehackt)",
     "amount": 1,
     "unit": "Handvoll",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -3667,7 +3667,7 @@
     "name": "Tamarindenpaste",
     "amount": 3,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -3677,7 +3677,7 @@
     "name": "Fischsauce",
     "amount": 3,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -3687,7 +3687,7 @@
     "name": "Palmzucker + Sojasauce",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    }
   ],
@@ -3835,7 +3835,7 @@
     "name": "Kokosmilch",
     "amount": 400,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -3845,7 +3845,7 @@
     "name": "Hühnerbrühe",
     "amount": 500,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -3875,7 +3875,7 @@
     "name": "Zitronengras",
     "amount": 3,
     "unit": "Stangen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -3885,7 +3885,7 @@
     "name": "Galgant oder Ingwer",
     "amount": 5,
     "unit": "Scheiben",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -3895,7 +3895,7 @@
     "name": "Kaffir-Limettenblätter",
     "amount": 5,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -3905,7 +3905,7 @@
     "name": "Fischsauce",
     "amount": 2,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -3925,7 +3925,7 @@
     "name": "Vogelaugen-Chilis",
     "amount": 1,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -4069,7 +4069,7 @@
     "name": "Doubanjiang (Sichuan-Bohnenpaste)",
     "amount": 2,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -4079,7 +4079,7 @@
     "name": "Douchi (fermentierte schwarze Bohnen, optional)",
     "amount": 1,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -4089,7 +4089,7 @@
     "name": "Knoblauch",
     "amount": 3,
     "unit": "Zehen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -4099,7 +4099,7 @@
     "name": "Ingwer",
     "amount": 2,
     "unit": "cm",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -4119,7 +4119,7 @@
     "name": "Hühnerbrühe",
     "amount": 300,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -4129,7 +4129,7 @@
     "name": "Sojasauce",
     "amount": 1,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -4159,7 +4159,7 @@
     "name": "Speisestärke",
     "amount": 1,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -4169,7 +4169,7 @@
     "name": "Reis",
     "amount": null,
     "unit": "als Beilage",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    }
   ],
@@ -4350,7 +4350,7 @@
     "name": "Zwiebeln",
     "amount": 2,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -4360,7 +4360,7 @@
     "name": "Dosentomaten",
     "amount": 400,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -4380,7 +4380,7 @@
     "name": "Kapern",
     "amount": 2,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -4410,7 +4410,7 @@
     "name": "Pinienkerne",
     "amount": 30,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -4420,7 +4420,7 @@
     "name": "Rosinen (optional)",
     "amount": 30,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -4430,7 +4430,7 @@
     "name": "Olivenöl + Basilikum",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    }
   ],
@@ -4590,7 +4590,7 @@
     "name": "Tahini",
     "amount": 3,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -4600,7 +4600,7 @@
     "name": "Knoblauch",
     "amount": 2,
     "unit": "Zehen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -4640,7 +4640,7 @@
     "name": "Zwiebel",
     "amount": 1,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -4797,7 +4797,7 @@
     "name": "Reisnudeln (Vermicelli)",
     "amount": 300,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -4867,7 +4867,7 @@
     "name": "Geröstete Erdnüsse",
     "amount": 1,
     "unit": "Handvoll",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -4877,7 +4877,7 @@
     "name": "Zitronengras",
     "amount": 2,
     "unit": "Stangen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -4887,7 +4887,7 @@
     "name": "Fischsauce, Sojasauce, Zucker, Limettensaft, Knoblauch, Chili",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    }
   ],
@@ -5043,7 +5043,7 @@
     "name": "Zwiebel",
     "amount": 1,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -5053,7 +5053,7 @@
     "name": "Knoblauch",
     "amount": 3,
     "unit": "Zehen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -5083,7 +5083,7 @@
     "name": "Parmesan oder Gruyère",
     "amount": 100,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -5093,7 +5093,7 @@
     "name": "Thymian, Rosmarin",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -5237,7 +5237,7 @@
     "name": "Zwiebeln",
     "amount": 2,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -5247,7 +5247,7 @@
     "name": "Ingwer",
     "amount": 10,
     "unit": "cm",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -5267,7 +5267,7 @@
     "name": "Fischsauce",
     "amount": 2,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -5287,7 +5287,7 @@
     "name": "Reisnudeln (flach, Pho-Style)",
     "amount": 400,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -5327,7 +5327,7 @@
     "name": "Hoisin-Sauce, Sriracha",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    }
   ],
@@ -5591,7 +5591,7 @@
     "name": "BBQ-Sauce",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    }
   ],
@@ -5760,7 +5760,7 @@
     "name": "Knoblauchknolle",
     "amount": 1,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -5780,7 +5780,7 @@
     "name": "Butter (weich)",
     "amount": 50,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -5971,7 +5971,7 @@
     "name": "Zwiebeln",
     "amount": 2,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -5991,7 +5991,7 @@
     "name": "Knoblauch",
     "amount": 4,
     "unit": "Zehen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -6021,7 +6021,7 @@
     "name": "Rinderbrühe",
     "amount": 500,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -6031,7 +6031,7 @@
     "name": "Tomatenmark",
     "amount": 1,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -6041,7 +6041,7 @@
     "name": "Bouquet garni (Thymian, Rosmarin, Lorbeer, Petersilie)",
     "amount": 1,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -6071,7 +6071,7 @@
     "name": "Butter, Salz, Pfeffer",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -6293,7 +6293,7 @@
     "name": "Zwiebeln",
     "amount": 2,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -6303,7 +6303,7 @@
     "name": "Knoblauch",
     "amount": 4,
     "unit": "Zehen",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "obst_gemuese"
    },
    {
@@ -6313,7 +6313,7 @@
     "name": "Dosentomaten",
     "amount": 400,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -6333,7 +6333,7 @@
     "name": "Tomatenmark",
     "amount": 1,
     "unit": "EL",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -6353,7 +6353,7 @@
     "name": "Butter (Béchamel)",
     "amount": 70,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -6373,7 +6373,7 @@
     "name": "Milch warm (Béchamel)",
     "amount": 700,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -6383,7 +6383,7 @@
     "name": "Kefalotyri oder Parmesan",
     "amount": 100,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -6393,7 +6393,7 @@
     "name": "Eigelb",
     "amount": 2,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -6541,7 +6541,7 @@
     "name": "Kombu (getrocknete Alge)",
     "amount": 10,
     "unit": "cm Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -6551,7 +6551,7 @@
     "name": "Bonito-Flocken (Katsuobushi)",
     "amount": 30,
     "unit": "g",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -6561,7 +6561,7 @@
     "name": "Lauchzwiebeln, Ingwer, Knoblauch, Zwiebel (Brühe)",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -6571,7 +6571,7 @@
     "name": "Sojasauce (gute Qualität)",
     "amount": 100,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
@@ -6581,7 +6581,7 @@
     "name": "Mirin",
     "amount": 50,
     "unit": "ml",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "sonstiges"
    },
    {
@@ -6611,7 +6611,7 @@
     "name": "Eier (Ajitsuke Tamago)",
     "amount": 4,
     "unit": "Stück",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "kuehl"
    },
    {
@@ -6631,7 +6631,7 @@
     "name": "Nori-Blätter, Bambussprossen, Sesam",
     "amount": null,
     "unit": "",
-    "pantry_basic": true,
+    "pantry_basic": false,
     "shop_category": "trocken"
    },
    {
