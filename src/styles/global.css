@@ -750,6 +750,14 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 .heute__note::before { width: 54px; height: 16px; margin-left: -27px; top: -8px; }
 .heute__h2 { margin: 0; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: var(--grey); }
 .heute__row { display: flex; gap: 10px; align-items: baseline; }
+/* Antippbare Zeile: ruhig wie Text, beim Tippen kurz leicht abgedunkelt */
+.heute__tap {
+  display: flex; gap: 10px; align-items: baseline; flex: 1; min-width: 0; min-height: 44px;
+  background: transparent; border: none; padding: 0; margin: 0; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  border-radius: 6px; transition: background-color 0.12s;
+}
+.heute__tap:active { background: rgba(31, 42, 68, 0.1); }
+:root[data-theme="dark"] .heute__tap:active { background: rgba(233, 225, 207, 0.14); }
 .heute__time { flex: none; width: 40px; font-size: 15px; font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; display: flex; justify-content: flex-start; }
 .heute__dot { width: 8px; height: 8px; border-radius: 4px; background: var(--navy-line); display: inline-block; transform: translateY(-2px); margin-left: 4px; }
 .heute__dot--gold { background: var(--gold); }

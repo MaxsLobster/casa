@@ -8,10 +8,13 @@ import { dailyText, moonPhase, readDailyChoice, sunTimes, writeDailyChoice, type
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import { BAND_END as T_END, BAND_START as T_START, goldSegments, navySegments, pct, toH } from '../lib/band'
 import { Check } from '../components/ui'
-import type { Task } from '../lib/types'
+import type { Event, Slot, Task } from '../lib/types'
 import { wantsStagger } from '../state/splash'
 import { PotIcon } from '../mila/icons'
 import { Takeover } from './Takeover'
+import { EventEditor } from './EventEditor'
+import { SlotEditor } from './SlotEditor'
+import { TaskEditor } from './TaskEditor'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 
@@ -28,6 +31,9 @@ interface Row {
   sub: string
   task?: Task
   isNew?: boolean
+  /** Antippen: Ereignis/Termin bearbeiten, Abweichung für den Tag, Aufgabe bearbeiten */
+  event?: string // base_id
+  slots?: Slot[]
 }
 
 type Slide = null | 'out-left' | 'out-right' | 'enter-left' | 'enter-right'
@@ -150,6 +156,10 @@ export function Heute() {
   // Heute: nur, was noch kommt. Anderer Tag: der ganze Tag.
   const nowH = isToday ? now.getHours() + now.getMinutes() / 60 : -1
   const [takeover, setTakeover] = useState(false)
+  const [editEvent, setEditEvent] = useState<Event | null>(null)
+  const [editSlots, setEditSlots] = useState<Slot[] | null>(null)
+  const [editTask, setEditTask] = useState<Task | null>(null)
+  const present = (slots: Slot[]) => slots.filter((x) => day[x])
 
   const whoEvent = (o: Occurrence) => {
     if (o.person_id) return people.find((p) => p.id === o.person_id)?.name ?? ''
@@ -163,16 +173,16 @@ export function Heute() {
   const vw = fx.valerieWeg
   if (vw) {
     const pn = personName(vw, people)
-    rows.push({ key: 'fxv', sort: -3, time: null, kind: 'valerie', title: pn ? `Valerie bei ${pn}` : vw.title, sub: spanLabel(vw.occ_date, vw.occ_end), isNew: isNew('event', vw) })
+    rows.push({ key: 'fxv', sort: -3, time: null, kind: 'valerie', title: pn ? `Valerie bei ${pn}` : vw.title, sub: spanLabel(vw.occ_date, vw.occ_end), isNew: isNew('event', vw), event: vw.base_id })
     if (fx.isFirst && vw.dropoff_by && (!vw.dropoff_at || nowH < toH(vw.dropoff_at, 0))) {
-      rows.push({ key: 'fxd', sort: vw.dropoff_at ? toH(vw.dropoff_at, 0) : -2, time: vw.dropoff_at ? hhmm(vw.dropoff_at) : null, kind: 'valerie', title: `${cap(verb(vw.dropoff_by, voice, 'bringst', 'bringt'))} Valerie ${pn ? `zu ${pn}` : 'hin'}`, sub: 'Übergabe' })
+      rows.push({ key: 'fxd', sort: vw.dropoff_at ? toH(vw.dropoff_at, 0) : -2, time: vw.dropoff_at ? hhmm(vw.dropoff_at) : null, kind: 'valerie', title: `${cap(verb(vw.dropoff_by, voice, 'bringst', 'bringt'))} Valerie ${pn ? `zu ${pn}` : 'hin'}`, sub: 'Übergabe', event: vw.base_id })
     }
     if (fx.isLast && vw.pickup_by && (!vw.pickup_at || nowH < toH(vw.pickup_at, 0))) {
-      rows.push({ key: 'fxp', sort: vw.pickup_at ? toH(vw.pickup_at, 0) : -2, time: vw.pickup_at ? hhmm(vw.pickup_at) : null, kind: 'valerie', title: `${cap(verb(vw.pickup_by, voice, 'holst', 'holt'))} Valerie ${pn ? `bei ${pn} ` : ''}ab`, sub: 'Übergabe' })
+      rows.push({ key: 'fxp', sort: vw.pickup_at ? toH(vw.pickup_at, 0) : -2, time: vw.pickup_at ? hhmm(vw.pickup_at) : null, kind: 'valerie', title: `${cap(verb(vw.pickup_by, voice, 'holst', 'holt'))} Valerie ${pn ? `bei ${pn} ` : ''}ab`, sub: 'Übergabe', event: vw.base_id })
     }
   }
   for (const a of fx.away) {
-    rows.push({ key: 'fxa' + a.member.id, sort: -1, time: null, kind: 'plan', title: a.member.id === me?.id ? 'Du bist weg' : `${a.member.display_name} ist weg`, sub: spanLabel(a.occ.occ_date, a.occ.occ_end), isNew: isNew('event', a.occ) })
+    rows.push({ key: 'fxa' + a.member.id, sort: -1, time: null, kind: 'plan', title: a.member.id === me?.id ? 'Du bist weg' : `${a.member.display_name} ist weg`, sub: spanLabel(a.occ.occ_date, a.occ.occ_end), isNew: isNew('event', a.occ), event: a.occ.base_id })
   }
   // Termine, heute nur die noch nicht vorbei sind
   for (const o of occDay) {
@@ -180,31 +190,31 @@ export function Heute() {
     if (isToday && eventEnd({ date, start_time: o.start_time, end_time: o.end_time }) <= now) continue
     const parts = [whoEvent(o)]
     if (o.end_time) parts.push(`bis ${uhr(o.end_time)}`)
-    rows.push({ key: 'e' + o.id + o.occ_date, sort: o.start_time ? toH(o.start_time, 0) : -1, time: o.start_time ? hhmm(o.start_time) : null, kind: 'event', title: o.title + (o.is_repeat || o.repeat ? ' ↻' : ''), sub: parts.join(' · '), isNew: isNew('event', o) })
+    rows.push({ key: 'e' + o.id + o.occ_date, sort: o.start_time ? toH(o.start_time, 0) : -1, time: o.start_time ? hhmm(o.start_time) : null, kind: 'event', title: o.title + (o.is_repeat || o.repeat ? ' ↻' : ''), sub: parts.join(' · '), isNew: isNew('event', o), event: o.base_id })
   }
   // Normalwoche, heute solange es noch kommt; offene Slots nur als Chip (an anderen Tagen)
   const b = day.valerie_bringen
-  if (b?.value && !b.is_open && nowH < 9) rows.push({ key: 'vb', sort: 8, time: b.at ? hhmm(b.at) : null, kind: 'valerie', title: `${cap(verb(b.value, voice, 'bringst', 'bringt'))} Valerie`, sub: 'Valerie' })
+  if (b?.value && !b.is_open && nowH < 9) rows.push({ key: 'vb', sort: 8, time: b.at ? hhmm(b.at) : null, kind: 'valerie', title: `${cap(verb(b.value, voice, 'bringst', 'bringt'))} Valerie`, sub: 'Valerie', slots: present(['valerie_bringen', 'valerie_holen', 'valerie_tag']) })
   const h = day.valerie_holen
   if (h?.value && !h.is_open) {
     const hh = toH(h.at, 14)
-    if (nowH < hh) rows.push({ key: 'vh', sort: hh, time: h.at ? hhmm(h.at) : null, kind: 'valerie', title: `${cap(verb(h.value, voice, 'holst', 'holt'))} Valerie`, sub: h.note && h.overridden ? h.note : 'Valerie' })
+    if (nowH < hh) rows.push({ key: 'vh', sort: hh, time: h.at ? hhmm(h.at) : null, kind: 'valerie', title: `${cap(verb(h.value, voice, 'holst', 'holt'))} Valerie`, sub: h.note && h.overridden ? h.note : 'Valerie', slots: present(['valerie_bringen', 'valerie_holen', 'valerie_tag']) })
   }
   const tg = day.valerie_tag
   if (tg?.value && !tg.is_open && nowH < 18) {
-    rows.push({ key: 'vt', sort: 8.5, time: null, kind: 'valerie', title: `Valerie tagsüber bei ${/^beide$/i.test(tg.value) ? 'euch beiden' : whoName(tg.value, voice) === 'du' ? 'dir' : tg.value}`, sub: 'Valerie' })
+    rows.push({ key: 'vt', sort: 8.5, time: null, kind: 'valerie', title: `Valerie tagsüber bei ${/^beide$/i.test(tg.value) ? 'euch beiden' : whoName(tg.value, voice) === 'du' ? 'dir' : tg.value}`, sub: 'Valerie', slots: present(['valerie_bringen', 'valerie_holen', 'valerie_tag']) })
   }
   const nm = day.nachmittag
-  if (nm?.value && nowH < 18) rows.push({ key: 'nm', sort: 15, time: null, kind: 'plan', title: nm.value, sub: 'Nachmittag' })
+  if (nm?.value && nowH < 18) rows.push({ key: 'nm', sort: 15, time: null, kind: 'plan', title: nm.value, sub: 'Nachmittag', slots: ['nachmittag'] })
   const es = day.abend_essen
   if (es?.value && !es.is_open && nowH < 19.5) {
     const person = isPersonName(es.value, members, people)
-    rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: person ? cap(verb(es.value, voice, 'kochst', 'kocht')) : `Essen ${es.value}`, sub: 'Abend' })
+    rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: person ? cap(verb(es.value, voice, 'kochst', 'kocht')) : `Essen ${es.value}`, sub: 'Abend', slots: present(['abend_essen', 'abend_bett']) })
   }
   const bt = day.abend_bett
-  if (bt?.value && !bt.is_open && nowH < 20.5) rows.push({ key: 'bt', sort: 19.5, time: null, kind: 'plan', title: cap(verb(bt.value, voice, 'bringst ins Bett', 'bringt ins Bett')), sub: 'Abend' })
+  if (bt?.value && !bt.is_open && nowH < 20.5) rows.push({ key: 'bt', sort: 19.5, time: null, kind: 'plan', title: cap(verb(bt.value, voice, 'bringst ins Bett', 'bringt ins Bett')), sub: 'Abend', slots: present(['abend_essen', 'abend_bett']) })
   const we = day.wochenende
-  if (we?.value && !we.is_open && nowH < 20) rows.push({ key: 'we', sort: 9, time: null, kind: 'plan', title: we.value, sub: 'Wochenende' })
+  if (we?.value && !we.is_open && nowH < 20) rows.push({ key: 'we', sort: 9, time: null, kind: 'plan', title: we.value, sub: 'Wochenende', slots: ['wochenende'] })
   // Nur meine Aufgaben, nur genau an dem Tag fällig (Überfälliges steht unter To-Dos bei „Liegt noch")
   for (const t of tasks) {
     if (t.status === 'erledigt' || t.due_date !== date || t.owner_member_id !== me?.id) continue
@@ -323,19 +333,13 @@ export function Heute() {
           <section className="stack" style={{ gap: 12 }}>
             <h2 className={'heute__h2' + rc} style={rs(4)}>{isToday ? 'Heute noch' : 'An diesem Tag'}</h2>
             {rows.length === 0 && chips.length === 0 && <p className={'hint' + rc} style={rs(5)}>{isToday ? 'Nichts mehr für heute. Schön.' : 'Nichts eingetragen.'}</p>}
-            {rows.map((r, idx) => (
-              <div className={'heute__row' + rc} style={rs(5 + idx)} key={r.key}>
-                <span className="heute__time">
-                  {r.kind === 'task' && r.task ? (
-                    <span style={{ transform: 'scale(0.8)', transformOrigin: 'center', marginLeft: 10 }}>
-                      <Check done={false} onToggle={() => setTaskDone(r.task!.id, true)} label={`${r.title} abhaken`} />
-                    </span>
-                  ) : r.time ? (
-                    r.time
-                  ) : (
-                    <span className={'heute__dot' + (r.kind === 'valerie' ? ' heute__dot--gold' : '')} />
-                  )}
-                </span>
+            {rows.map((r, idx) => {
+              const open = () => {
+                if (r.task) setEditTask(r.task)
+                else if (r.event) setEditEvent(events.find((x) => x.id === r.event) ?? null)
+                else if (r.slots?.length) setEditSlots(r.slots)
+              }
+              const text = (
                 <div className="stack" style={{ gap: 0, minWidth: 0, flex: 1 }}>
                   <span className="hand hand--navy" style={{ lineHeight: 1.1 }}>
                     {r.title}
@@ -343,8 +347,27 @@ export function Heute() {
                   </span>
                   {r.sub && <span className="heute__sub">{r.sub}</span>}
                 </div>
-              </div>
-            ))}
+              )
+              return (
+                <div className={'heute__row' + rc} style={rs(5 + idx)} key={r.key}>
+                  {r.kind === 'task' && r.task ? (
+                    <>
+                      <span className="heute__time">
+                        <span style={{ transform: 'scale(0.8)', transformOrigin: 'center', marginLeft: 10 }}>
+                          <Check done={false} onToggle={() => setTaskDone(r.task!.id, true)} label={`${r.title} abhaken`} />
+                        </span>
+                      </span>
+                      <button type="button" className="heute__tap" onClick={open}>{text}</button>
+                    </>
+                  ) : (
+                    <button type="button" className="heute__tap" onClick={open}>
+                      <span className="heute__time">{r.time ? r.time : <span className={'heute__dot' + (r.kind === 'valerie' ? ' heute__dot--gold' : '')} />}</span>
+                      {text}
+                    </button>
+                  )}
+                </div>
+              )
+            })}
             {chips.length > 0 && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {chips.map((c) => (
@@ -391,6 +414,9 @@ export function Heute() {
       </div>
 
       {takeover && <Takeover date={date} state={day} fx={fx} onClose={() => setTakeover(false)} />}
+      {editEvent && <EventEditor event={editEvent} onClose={() => setEditEvent(null)} />}
+      {editSlots && <SlotEditor slots={editSlots} date={date} state={day} onClose={() => setEditSlots(null)} />}
+      {editTask && <TaskEditor task={editTask} onClose={() => setEditTask(null)} />}
     </div>
   )
 }
