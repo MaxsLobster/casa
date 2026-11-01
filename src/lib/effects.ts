@@ -133,13 +133,7 @@ export function effectLines(date: ISODate, fx: DayEffects, v: Voice, people: Per
     if (fx.isLast && vw.pickup_by) text += `, ${verb(vw.pickup_by, v, 'holst', 'holt')} sie ab${vw.pickup_at ? ` um ${uhr(vw.pickup_at)}` : ''}`
     out.push({ label: 'Valerie', text, occ: vw })
   }
-  const kz = fx.kitaZu
-  // Ist Valerie weg, gilt das ohnehin; die Kita-Zeile wäre nur Doppelung
-  if (kz && !vw) {
-    const span = spanLabel(kz.occ_date, kz.occ_end)
-    const custom = kz.title.trim().toLowerCase() !== 'kita zu'
-    out.push({ label: 'Kita', text: `Zu (${span})` + (custom ? ` · ${kz.title}` : ''), occ: kz })
-  }
+  // „Kita zu" ist Hintergrundwissen und bekommt keine eigene Zeile (nur die kleine Bearbeiten-Zeile in der Woche)
   for (const a of fx.away) {
     const span = spanLabel(a.occ.occ_date, a.occ.occ_end)
     const custom = a.occ.title.trim().toLowerCase() !== `${a.member.display_name.toLowerCase()} weg`
@@ -152,4 +146,25 @@ export function effectLines(date: ISODate, fx: DayEffects, v: Voice, people: Per
 /** Ist das Mitglied an diesem Tag laut Ereignis „… ist weg"? */
 export function awayOn(events: Event[], memberId: string, date: ISODate): boolean {
   return occurrences(events.filter((e) => e.effect === 'eltern_weg' && e.member_id === memberId), date, date).some((o) => o.occ_date <= date && o.occ_end >= date)
+}
+
+/** Offene Chips eines Tages (Woche-Details und Heute an anderen Tagen) */
+export function openChips(state: DayState, fx: DayEffects): { key: string; label: string }[] {
+  const chips: { key: string; label: string }[] = []
+  const ho = handoverOpen(fx)
+  if (ho.dropoff) chips.push({ key: 'dropoff', label: 'Wer bringt sie hin? · übernehmen' })
+  if (ho.pickup) chips.push({ key: 'pickup', label: 'Wer holt sie ab? · übernehmen' })
+  if (state.valerie_tag?.is_open) chips.push({ key: 'tag', label: 'Valerie tagsüber · wer?' })
+  const vb = state.valerie_bringen
+  const vh = state.valerie_holen
+  if (vb?.is_open && vh?.is_open) chips.push({ key: 'valerie', label: 'Bringen und Holen offen · übernehmen' })
+  else if (vb?.is_open) chips.push({ key: 'bringen', label: 'Bringen offen · übernehmen' })
+  else if (vh?.is_open) chips.push({ key: 'holen', label: 'Holen offen · übernehmen' })
+  const es = state.abend_essen
+  const bt = state.abend_bett
+  if (es?.is_open && bt?.is_open) chips.push({ key: 'abend', label: 'Abend offen · übernehmen' })
+  else if (es?.is_open) chips.push({ key: 'essen', label: 'Essen offen · übernehmen' })
+  else if (bt?.is_open) chips.push({ key: 'bett', label: 'Bettgehen offen · übernehmen' })
+  if (state.wochenende?.is_open) chips.push({ key: 'familientag', label: 'Familientag? · festlegen' })
+  return chips
 }

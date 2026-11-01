@@ -38,10 +38,11 @@ function clip(segs: Seg[]): Seg[] {
 }
 
 /**
- * Gold: Valerie ist versorgt.
+ * Gold: Valerie ist versorgt, aber nur, wenn das etwas über meinen Tag aussagt.
  * Kita ab 8 bis zum Abholen; holt Oma oder Theresa, bleibt es gold bis 18 Uhr.
- * „Valerie ist weg" (bei Oma …): der ganze Tag; am ersten Tag ab der Hinbring-Zeit, am letzten bis zur Abholzeit.
- * „Kita zu" mit Oma/Theresa tagsüber: 8–18 Uhr. Eintägige Termine mit Person: deren Zeit.
+ * „Valerie ist weg": ganzer Tag weg = kein Gold (der Strahl bleibt frei für meinen Tag).
+ *   Erster Tag: ab der Hinbring-Zeit; letzter Tag: bis zur Abholzeit; ohne Zeit kein Gold (nur der Chip).
+ * „Kita zu" mit Oma/Theresa tagsüber: 8–18 Uhr. Eintägige Termine mit Person und Uhrzeit: deren Zeit.
  * Erwartet den Tageszustand NACH applyEffects (entfallene Einträge sind dann schon weg).
  */
 export function goldSegments(date: ISODate, day: DayState, occ: Occurrence[], members: Member[]): Seg[] {
@@ -59,15 +60,18 @@ export function goldSegments(date: ISODate, day: DayState, occ: Occurrence[], me
   for (const o of occ) {
     if (o.occ_date > date || o.occ_end < date) continue
     if (o.effect === 'valerie_weg') {
-      const from = o.occ_date === date && o.dropoff_at ? toH(o.dropoff_at, BAND_START) : BAND_START
-      const to = o.occ_end === date && o.pickup_at ? toH(o.pickup_at, BAND_END) : BAND_END
+      const first = o.occ_date === date
+      const last = o.occ_end === date
+      if (!first && !last) continue
+      const from = first ? (o.dropoff_at ? toH(o.dropoff_at, BAND_START) : null) : BAND_START
+      const to = last ? (o.pickup_at ? toH(o.pickup_at, BAND_END) : null) : BAND_END
+      if (from === null || to === null) continue
       out.push({ from, to })
       continue
     }
     if (o.effect === 'kita_zu' || o.effect === 'eltern_weg') continue
-    if (!o.person_id) continue
-    if (isMultiDay(o) || !o.start_time) out.push({ from: BAND_START, to: BAND_END })
-    else out.push({ from: toH(o.start_time, 0), to: o.end_time ? toH(o.end_time, 0) : toH(o.start_time, 0) + 1 })
+    if (!o.person_id || isMultiDay(o) || !o.start_time) continue
+    out.push({ from: toH(o.start_time, 0), to: o.end_time ? toH(o.end_time, 0) : toH(o.start_time, 0) + 1 })
   }
   return clip(out)
 }

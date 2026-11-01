@@ -707,7 +707,15 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- Heute (v2) ---------- */
 
-.heute { position: relative; gap: 22px; padding-right: 18px; }
+.heute { position: relative; gap: 22px; padding-right: 18px; transform: none; transition: transform 0.18s ease-out; touch-action: pan-y; }
+/* Wischen: Seite schiebt sich weich zur Seite, die nächste kommt nach (kein Federn) */
+.heute--out-left { transform: translateX(-104%); }
+.heute--out-right { transform: translateX(104%); }
+.heute--enter-left { transform: translateX(104%); transition: none; }
+.heute--enter-right { transform: translateX(-104%); transition: none; }
+.pane { overflow-x: clip; }
+.heute__back { align-self: flex-start; background: transparent; border: none; padding: 0 0 8px; font-size: 13px; letter-spacing: 0.04em; color: var(--grey-2); cursor: pointer; min-height: 32px; }
+button.heute__num { background: transparent; border: none; padding: 0; font-family: inherit; cursor: pointer; }
 .heute__gear {
   position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 2px; width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center; color: var(--grey-2); z-index: 2;
@@ -831,6 +839,7 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 .wk__task { display: flex; align-items: center; gap: 2px; min-height: 40px; }
 .wk__task .check { margin-left: -12px; width: 40px; height: 40px; }
 
+.wk__quiet { align-self: flex-start; background: transparent; border: none; padding: 2px 0; font-size: 12px; letter-spacing: 0.04em; color: var(--grey-2); cursor: pointer; min-height: 32px; }
 .wk__strips { position: absolute; right: 0; top: 0; bottom: 0; width: var(--wk-strip); pointer-events: none; }
 .wk__strip { position: absolute; right: 1px; width: 10px; border-radius: 5px; background: var(--strip); opacity: 0.85; }
 .wk__strip--gold { --strip: var(--gold); }

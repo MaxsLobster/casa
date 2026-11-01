@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import { addDays, dayLabel, eventEnd, fromISO, hhmm, isoWeek, spanLabel, uhr, weekdayLong } from '../lib/dates'
 import { dayState, name as whoName, verb, type Voice } from '../lib/week'
-import { applyEffects, dayEffects, isEffectEvent, personName } from '../lib/effects'
+import { applyEffects, dayEffects, isEffectEvent, openChips, personName } from '../lib/effects'
 import { dailyText, moonPhase, readDailyChoice, sunTimes, writeDailyChoice, type DailyKind } from '../lib/daily'
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import { BAND_END as T_END, BAND_START as T_START, goldSegments, navySegments, pct, toH } from '../lib/band'
@@ -11,9 +11,13 @@ import { Check } from '../components/ui'
 import type { Task } from '../lib/types'
 import { wantsStagger } from '../state/splash'
 import { PotIcon } from '../mila/icons'
+import { Takeover } from './Takeover'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 
+/** Wischen: erst bei deutlicher Bewegung zur Seite, damit Scrollen nicht stört */
+const SWIPE_MIN = 60
+const SLIDE_MS = 180
 
 interface Row {
   key: string
@@ -26,13 +30,85 @@ interface Row {
   isNew?: boolean
 }
 
+type Slide = null | 'out-left' | 'out-right' | 'enter-left' | 'enter-right'
+
 export function Heute() {
   const casa = useCasa()
   const today = useToday()
   const now = useNow()
   const nav = useNavigate()
+  const location = useLocation()
   const { me, partner, members, people, tasks, events, normalWeek, overrides, setTaskDone, isNew, markSeen } = casa
   const voice: Voice = { me, members }
+
+  // ---------- Tag: heute oder (per Wischen) ein späterer Tag ----------
+  const [offset, setOffset] = useState(0)
+  const [slide, setSlide] = useState<Slide>(null)
+  const busyRef = useRef(false)
+  const date = addDays(today, offset)
+  const isToday = offset === 0
+  // Beim Öffnen und beim Tippen auf „Heute" in der Leiste: immer heute
+  useEffect(() => {
+    setOffset(0)
+    setSlide(null)
+  }, [location.key])
+
+  const go = useCallback(
+    (dir: 1 | -1) => {
+      if (busyRef.current) return
+      setOffset((o) => {
+        const next = o + dir
+        if (next < 0) return o
+        busyRef.current = true
+        setSlide(dir > 0 ? 'out-left' : 'out-right')
+        window.setTimeout(() => {
+          setOffset(next)
+          setSlide(dir > 0 ? 'enter-left' : 'enter-right')
+          // Kurz warten, bis die Startposition gezeichnet ist, dann hereinschieben
+          window.setTimeout(() => {
+            setSlide(null)
+            window.setTimeout(() => {
+              busyRef.current = false
+            }, SLIDE_MS)
+          }, 30)
+        }, SLIDE_MS)
+        return o
+      })
+    },
+    [],
+  )
+  // Zurück zu heute: alle Tage auf einmal, nicht einzeln
+  function backToToday() {
+    if (offset === 0 || busyRef.current) return
+    busyRef.current = true
+    setSlide('out-right')
+    window.setTimeout(() => {
+      setOffset(0)
+      setSlide('enter-right')
+      window.setTimeout(() => {
+        setSlide(null)
+        window.setTimeout(() => {
+          busyRef.current = false
+        }, SLIDE_MS)
+      }, 30)
+    }, SLIDE_MS)
+  }
+
+  const touch = useRef<{ x: number; y: number } | null>(null)
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0]
+    touch.current = { x: t.clientX, y: t.clientY }
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const s = touch.current
+    touch.current = null
+    if (!s) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - s.x
+    const dy = t.clientY - s.y
+    if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * 1.5) return
+    go(dx < 0 ? 1 : -1)
+  }
 
   // Kaltstart: Zeilen erscheinen nacheinander (siehe state/splash.ts). Danach Klassen wieder weg.
   const [stagger, setStagger] = useState(wantsStagger)
@@ -45,11 +121,11 @@ export function Heute() {
   const rs = (i: number): CSSProperties | undefined => (stagger ? ({ '--i': Math.min(i, 9) } as CSSProperties) : undefined)
 
   // ---------- Kopf ----------
-  const d = fromISO(today)
-  const sun = useMemo(() => sunTimes(today), [today])
-  const moon = useMemo(() => moonPhase(today), [today])
+  const d = fromISO(date)
+  const sun = useMemo(() => sunTimes(date), [date])
+  const moon = useMemo(() => moonPhase(date), [date])
 
-  // ---------- Satz des Tages ----------
+  // ---------- Satz des Tages (nur heute) ----------
   const [choice, setChoice] = useState(() => readDailyChoice(today))
   useEffect(() => {
     setChoice(readDailyChoice(today))
@@ -65,13 +141,15 @@ export function Heute() {
     setChoice(next)
     writeDailyChoice(next)
   }
-  const shown = choice.chosen && choice.open ? texts[choice.chosen] : null
+  const shown = isToday && choice.chosen && choice.open ? texts[choice.chosen] : null
 
-  // ---------- Heute noch ----------
-  const occToday = useMemo(() => occurrences(events, today, today).filter((o) => o.occ_date <= today && o.occ_end >= today), [events, today])
-  const fx = useMemo(() => dayEffects(today, occToday, members), [today, occToday, members])
-  const day = useMemo(() => applyEffects(dayState(today, normalWeek, overrides), fx), [today, normalWeek, overrides, fx])
-  const nowH = now.getHours() + now.getMinutes() / 60
+  // ---------- Was an dem Tag gilt ----------
+  const occDay = useMemo(() => occurrences(events, date, date).filter((o) => o.occ_date <= date && o.occ_end >= date), [events, date])
+  const fx = useMemo(() => dayEffects(date, occDay, members), [date, occDay, members])
+  const day = useMemo(() => applyEffects(dayState(date, normalWeek, overrides), fx), [date, normalWeek, overrides, fx])
+  // Heute: nur, was noch kommt. Anderer Tag: der ganze Tag.
+  const nowH = isToday ? now.getHours() + now.getMinutes() / 60 : -1
+  const [takeover, setTakeover] = useState(false)
 
   const whoEvent = (o: Occurrence) => {
     if (o.person_id) return people.find((p) => p.id === o.person_id)?.name ?? ''
@@ -81,12 +159,11 @@ export function Heute() {
   }
 
   const rows: Row[] = []
-  // Wirkungs-Ereignisse, die heute gelten: Valerie bei Oma, Kita zu, Max/Anna weg
+  // Wirkungs-Ereignisse, die an dem Tag gelten: Valerie bei Oma, Max/Anna weg („Kita zu" ist Hintergrundwissen)
   const vw = fx.valerieWeg
   if (vw) {
     const pn = personName(vw, people)
-    const where = pn ? `bei ${pn}` : vw.title
-    rows.push({ key: 'fxv', sort: -3, time: null, kind: 'valerie', title: pn ? `Valerie ${where}` : vw.title, sub: spanLabel(vw.occ_date, vw.occ_end), isNew: isNew('event', vw) })
+    rows.push({ key: 'fxv', sort: -3, time: null, kind: 'valerie', title: pn ? `Valerie bei ${pn}` : vw.title, sub: spanLabel(vw.occ_date, vw.occ_end), isNew: isNew('event', vw) })
     if (fx.isFirst && vw.dropoff_by && (!vw.dropoff_at || nowH < toH(vw.dropoff_at, 0))) {
       rows.push({ key: 'fxd', sort: vw.dropoff_at ? toH(vw.dropoff_at, 0) : -2, time: vw.dropoff_at ? hhmm(vw.dropoff_at) : null, kind: 'valerie', title: `${cap(verb(vw.dropoff_by, voice, 'bringst', 'bringt'))} Valerie ${pn ? `zu ${pn}` : 'hin'}`, sub: 'Übergabe' })
     }
@@ -94,30 +171,28 @@ export function Heute() {
       rows.push({ key: 'fxp', sort: vw.pickup_at ? toH(vw.pickup_at, 0) : -2, time: vw.pickup_at ? hhmm(vw.pickup_at) : null, kind: 'valerie', title: `${cap(verb(vw.pickup_by, voice, 'holst', 'holt'))} Valerie ${pn ? `bei ${pn} ` : ''}ab`, sub: 'Übergabe' })
     }
   }
-  const kz = fx.kitaZu
-  if (kz && !vw) {
-    const tag = day.valerie_tag
-    const tagText = tag?.value && !tag.is_open ? `Valerie tagsüber bei ${/^beide$/i.test(tag.value) ? 'euch beiden' : whoName(tag.value, voice) === 'du' ? 'dir' : tag.value}` : null
-    rows.push({ key: 'fxk', sort: -2, time: null, kind: 'plan', title: tagText ?? 'Kita zu', sub: tagText ? `Kita zu · ${spanLabel(kz.occ_date, kz.occ_end)}` : spanLabel(kz.occ_date, kz.occ_end), isNew: isNew('event', kz) })
-  }
   for (const a of fx.away) {
     rows.push({ key: 'fxa' + a.member.id, sort: -1, time: null, kind: 'plan', title: a.member.id === me?.id ? 'Du bist weg' : `${a.member.display_name} ist weg`, sub: spanLabel(a.occ.occ_date, a.occ.occ_end), isNew: isNew('event', a.occ) })
   }
-  // Termine heute, noch nicht vorbei
-  for (const o of occToday) {
+  // Termine, heute nur die noch nicht vorbei sind
+  for (const o of occDay) {
     if (isMultiDay(o) || isEffectEvent(o)) continue
-    if (eventEnd({ date: today, start_time: o.start_time, end_time: o.end_time }) <= now) continue
+    if (isToday && eventEnd({ date, start_time: o.start_time, end_time: o.end_time }) <= now) continue
     const parts = [whoEvent(o)]
     if (o.end_time) parts.push(`bis ${uhr(o.end_time)}`)
     rows.push({ key: 'e' + o.id + o.occ_date, sort: o.start_time ? toH(o.start_time, 0) : -1, time: o.start_time ? hhmm(o.start_time) : null, kind: 'event', title: o.title + (o.is_repeat || o.repeat ? ' ↻' : ''), sub: parts.join(' · '), isNew: isNew('event', o) })
   }
-  // Normalwoche heute, solange es noch kommt; offene Slots gar nicht
+  // Normalwoche, heute solange es noch kommt; offene Slots nur als Chip (an anderen Tagen)
   const b = day.valerie_bringen
-  if (b?.value && nowH < 9) rows.push({ key: 'vb', sort: 8, time: null, kind: 'valerie', title: `${cap(verb(b.value, voice, 'bringst', 'bringt'))} Valerie`, sub: 'Valerie' })
+  if (b?.value && !b.is_open && nowH < 9) rows.push({ key: 'vb', sort: 8, time: b.at ? hhmm(b.at) : null, kind: 'valerie', title: `${cap(verb(b.value, voice, 'bringst', 'bringt'))} Valerie`, sub: 'Valerie' })
   const h = day.valerie_holen
   if (h?.value && !h.is_open) {
     const hh = toH(h.at, 14)
     if (nowH < hh) rows.push({ key: 'vh', sort: hh, time: h.at ? hhmm(h.at) : null, kind: 'valerie', title: `${cap(verb(h.value, voice, 'holst', 'holt'))} Valerie`, sub: h.note && h.overridden ? h.note : 'Valerie' })
+  }
+  const tg = day.valerie_tag
+  if (tg?.value && !tg.is_open && nowH < 18) {
+    rows.push({ key: 'vt', sort: 8.5, time: null, kind: 'valerie', title: `Valerie tagsüber bei ${/^beide$/i.test(tg.value) ? 'euch beiden' : whoName(tg.value, voice) === 'du' ? 'dir' : tg.value}`, sub: 'Valerie' })
   }
   const nm = day.nachmittag
   if (nm?.value && nowH < 18) rows.push({ key: 'nm', sort: 15, time: null, kind: 'plan', title: nm.value, sub: 'Nachmittag' })
@@ -130,19 +205,20 @@ export function Heute() {
   if (bt?.value && !bt.is_open && nowH < 20.5) rows.push({ key: 'bt', sort: 19.5, time: null, kind: 'plan', title: cap(verb(bt.value, voice, 'bringst ins Bett', 'bringt ins Bett')), sub: 'Abend' })
   const we = day.wochenende
   if (we?.value && !we.is_open && nowH < 20) rows.push({ key: 'we', sort: 9, time: null, kind: 'plan', title: we.value, sub: 'Wochenende' })
-  // Nur meine Aufgaben, nur genau heute fällig (Überfälliges steht unter To-Dos bei „Liegt noch")
+  // Nur meine Aufgaben, nur genau an dem Tag fällig (Überfälliges steht unter To-Dos bei „Liegt noch")
   for (const t of tasks) {
-    if (t.status === 'erledigt' || t.due_date !== today || t.owner_member_id !== me?.id) continue
+    if (t.status === 'erledigt' || t.due_date !== date || t.owner_member_id !== me?.id) continue
     const away = fx.away.some((a) => a.member.id === t.owner_member_id)
     rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: away ? 'Du bist weg – trotzdem bei dir lassen?' : '', task: t, isNew: isNew('task', t) })
   }
   rows.sort((a, c) => a.sort - c.sort)
+  const chips = isToday ? [] : openChips(day, fx)
 
-  // ---------- Demnächst ----------
+  // ---------- Demnächst (nur heute) ----------
   const soon = useMemo(() => {
     const to = addDays(today, 7)
-    // Laufende Wirkungs-Ereignisse stehen schon unter „Heute noch"
-    return occurrences(events, today, to).filter((o) => isMultiDay(o) && o.occ_end >= today && !(isEffectEvent(o) && o.occ_date <= today))
+    // Laufende Wirkungs-Ereignisse stehen schon unter „Heute noch"; „Kita zu" ist Hintergrundwissen
+    return occurrences(events, today, to).filter((o) => isMultiDay(o) && o.occ_end >= today && o.effect !== 'kita_zu' && !(isEffectEvent(o) && o.occ_date <= today))
   }, [events, today])
 
   // ---------- Neu von … ----------
@@ -164,14 +240,18 @@ export function Heute() {
 
   // ---------- Zeitstrahl ----------
   // Gleiche Rechnung wie das Mini-Band in der Woche
-  const gold = goldSegments(today, day, occToday, members)
-  const navy = navySegments(occToday, me?.id ?? null)
+  const gold = goldSegments(date, day, occDay, members)
+  const navy = navySegments(occDay, me?.id ?? null)
   const fill = Math.min(Math.max(nowH, T_START), T_END)
   const fillPct = pct(fill)
-  const inRange = nowH >= T_START && nowH <= T_END
+  const inRange = isToday && nowH >= T_START && nowH <= T_END
+  // Stundenzahlen nahe am Jetzt-Etikett ausblenden
+  const nearNow = (hh: number) => inRange && Math.abs(hh - nowH) < 0.75
+
+  const slideCls = slide ? ` heute--${slide}` : ''
 
   return (
-    <div className="page heute">
+    <div className={'page heute' + slideCls} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <Link to="/einstellungen" className="heute__gear" aria-label="Einstellungen">
         <GearIcon />
       </Link>
@@ -180,11 +260,14 @@ export function Heute() {
       </Link>
       {/* ---------- Kopf ---------- */}
       <div className="heute__head">
+        {!isToday && (
+          <button type="button" className="heute__back" onClick={backToToday}>← zurück zu heute</button>
+        )}
         <div className={'heute__date' + rc} style={rs(0)}>
-          <span className="heute__num">{d.getDate()}</span>
+          <button type="button" className="heute__num" onClick={backToToday} aria-label={isToday ? undefined : 'Zurück zu heute'} style={isToday ? { cursor: 'default' } : undefined}>{d.getDate()}</button>
           <div className="stack" style={{ gap: 2, paddingBottom: 4 }}>
-            <span className="heute__wd">{weekdayLong(today)}</span>
-            <span className="kicker" style={{ fontSize: 12 }}>{MONTHS[d.getMonth()]} · KW {isoWeek(today)}</span>
+            <span className="heute__wd">{weekdayLong(date)}</span>
+            <span className="kicker" style={{ fontSize: 12 }}>{MONTHS[d.getMonth()]} · KW {isoWeek(date)}</span>
           </div>
         </div>
         <div className={'heute__tear' + rc} style={rs(1)} />
@@ -197,21 +280,23 @@ export function Heute() {
             <MoonIcon fraction={moon.fraction} waxing={moon.waxing} label={moon.label} />
             {moon.label}
           </span>
-          <span className="heute__cats">
-            {(['weisheit', 'wort', 'heute'] as DailyKind[]).map((k) => {
-              const chosen = choice.chosen === k
-              const locked = (!!choice.chosen && !chosen) || !texts[k]
-              const cls = 'heute__cat' + (chosen && choice.open ? ' heute__cat--open' : '') + (chosen && !choice.open ? ' heute__cat--chosen' : '') + (locked ? ' heute__cat--locked' : '')
-              const aria = { weisheit: 'Weisheit des Tages', wort: 'Wort des Tages', heute: 'Heute vor Jahren' }[k] + (locked ? ' (heute nicht wählbar)' : '')
-              return (
-                <button key={k} type="button" className={cls} aria-label={aria} disabled={locked} onClick={() => pick(k)}>
-                  {k === 'weisheit' && <FeatherIcon />}
-                  {k === 'wort' && <span style={{ fontSize: 14, fontWeight: 600 }}>Aa</span>}
-                  {k === 'heute' && <HourglassIcon />}
-                </button>
-              )
-            })}
-          </span>
+          {isToday && (
+            <span className="heute__cats">
+              {(['weisheit', 'wort', 'heute'] as DailyKind[]).map((k) => {
+                const chosen = choice.chosen === k
+                const locked = (!!choice.chosen && !chosen) || !texts[k]
+                const cls = 'heute__cat' + (chosen && choice.open ? ' heute__cat--open' : '') + (chosen && !choice.open ? ' heute__cat--chosen' : '') + (locked ? ' heute__cat--locked' : '')
+                const aria = { weisheit: 'Weisheit des Tages', wort: 'Wort des Tages', heute: 'Heute vor Jahren' }[k] + (locked ? ' (heute nicht wählbar)' : '')
+                return (
+                  <button key={k} type="button" className={cls} aria-label={aria} disabled={locked} onClick={() => pick(k)}>
+                    {k === 'weisheit' && <FeatherIcon />}
+                    {k === 'wort' && <span style={{ fontSize: 14, fontWeight: 600 }}>Aa</span>}
+                    {k === 'heute' && <HourglassIcon />}
+                  </button>
+                )
+              })}
+            </span>
+          )}
         </div>
         {shown && (
           <figure className={stagger ? 'heute__figure rise' : 'heute__figure fade-in'} style={rs(3)}>
@@ -225,7 +310,7 @@ export function Heute() {
       {/* ---------- Inhalt + Zeitstrahl ---------- */}
       <div className="heute__body">
         <div className="heute__left">
-          {newCount > 0 && (
+          {isToday && newCount > 0 && (
             <button type="button" className={'note heute__note' + rc} onClick={openNew} style={{ textAlign: 'left', width: '100%', cursor: 'pointer', ...rs(3) }}>
               <span className="label label--small" style={{ color: 'var(--brown)' }}>Neu von {partner?.display_name ?? 'Anna'}</span>
               <span className="hand" style={{ fontSize: 24, lineHeight: 1.15 }}>
@@ -236,8 +321,8 @@ export function Heute() {
           )}
 
           <section className="stack" style={{ gap: 12 }}>
-            <h2 className={'heute__h2' + rc} style={rs(4)}>Heute noch</h2>
-            {rows.length === 0 && <p className={'hint' + rc} style={rs(5)}>Nichts mehr für heute. Schön.</p>}
+            <h2 className={'heute__h2' + rc} style={rs(4)}>{isToday ? 'Heute noch' : 'An diesem Tag'}</h2>
+            {rows.length === 0 && chips.length === 0 && <p className={'hint' + rc} style={rs(5)}>{isToday ? 'Nichts mehr für heute. Schön.' : 'Nichts eingetragen.'}</p>}
             {rows.map((r, idx) => (
               <div className={'heute__row' + rc} style={rs(5 + idx)} key={r.key}>
                 <span className="heute__time">
@@ -260,9 +345,16 @@ export function Heute() {
                 </div>
               </div>
             ))}
+            {chips.length > 0 && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {chips.map((c) => (
+                  <button key={c.key} type="button" className="wk__chip" onClick={() => setTakeover(true)}>{c.label}</button>
+                ))}
+              </div>
+            )}
           </section>
 
-          {soon.length > 0 && (
+          {isToday && soon.length > 0 && (
             <section className={'stack' + rc} style={{ gap: 8, ...rs(5 + rows.length) }}>
               <h2 className="heute__h2">Demnächst</h2>
               {soon.map((o) => (
@@ -279,14 +371,14 @@ export function Heute() {
 
         <div className={'tl' + rc} style={rs(3)} aria-label="Tagesverlauf">
           {[6, 9, 12, 15, 18, 21].map((hh) => (
-            <span key={hh} className="tl__num" style={{ top: pct(hh) }}>{hh}</span>
+            <span key={hh} className="tl__num" style={{ top: pct(hh), opacity: nearNow(hh) ? 0 : 1 }}>{hh}</span>
           ))}
           {Array.from({ length: 17 }, (_, i) => T_START + i).map((hh) => (
             <span key={hh} className="tl__tick" style={{ top: pct(hh) }} />
           ))}
           {inRange && <span className="tl__now" style={{ top: fillPct }}>{`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`}</span>}
           <div className="tl__tube">
-            <div className="tl__fill" style={{ height: fillPct }} />
+            {isToday && <div className="tl__fill" style={{ height: fillPct }} />}
             {inRange && <div className="tl__knob" style={{ top: fillPct }} />}
             {gold.map((g, i) => (
               <div key={'g' + i} className="tl__seg tl__seg--gold" style={{ top: pct(g.from), height: `calc(${pct(g.to)} - ${pct(g.from)})` }} />
@@ -297,6 +389,8 @@ export function Heute() {
           </div>
         </div>
       </div>
+
+      {takeover && <Takeover date={date} state={day} fx={fx} onClose={() => setTakeover(false)} />}
     </div>
   )
 }
