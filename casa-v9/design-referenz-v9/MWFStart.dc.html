@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – MWF Hub</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{color:inherit;text-decoration:none} button{font:inherit;color:inherit}</style>
+</helmet>
+<div style="{{pageStyle}}">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="mInk" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="4" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="0.9" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter>
+  </svg>
+
+  <div style="{{bandStyle}}">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <span style="font-size: 13px; color: rgba(233,225,207,0.75)">‹ Casa</span>
+      <span style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #D9AE62">Arbeitstag</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 14px">
+      <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(233,225,207,0.7)">Munich Watch Fair</span>
+      <span style="display: flex; align-items: baseline; gap: 12px">
+        <span style="font-family: 'Caveat', cursive; font-size: 40px; line-height: 1; color: #F2EDE2">So 8. Nov</span>
+        <span style="font-size: 14px; color: #D9AE62">noch 6 Tage</span>
+      </span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; margin-top: 12px">
+      <div style="flex: 1; height: 6px; border-radius: 3px; background: rgba(233,225,207,0.18); overflow: hidden"><div style="width: 64%; height: 100%; background: #D9AE62; border-radius: 3px"></div></div>
+      <span style="font-size: 12px; color: rgba(233,225,207,0.8)">9 von 14</span>
+    </div>
+  </div>
+  <div style="{{bandEdge}}"></div>
+
+  <main style="flex: 1; overflow-y: auto; padding: 18px 22px 20px 40px; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <span style="{{caps}}">Für dich</span>
+      <button type="button" onClick="{{swap}}" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A857A; background: transparent; border: 1px solid rgba(29,29,27,0.15); border-radius: 999px; padding: 4px 10px; cursor: pointer">Ansicht {{who}}</button>
+    </div>
+    <div style="display: flex; flex-direction: column">
+      <sc-for list="{{mine}}" as="t" hint-placeholder-count="2">
+        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(29,29,27,0.08)">
+          <span style="flex: none; width: 18px; height: 18px; margin-top: 6px; border-radius: 9px; border: 1.5px solid #243150; box-sizing: border-box"></span>
+          <span style="flex: 1; display: flex; flex-direction: column">
+            <span style="{{hand}} font-size: 24px; line-height: 1.12">{{t.title}}</span>
+            <span style="font-size: 12px; color: #5F5B52">{{t.when}}</span>
+          </span>
+        </div>
+      </sc-for>
+    </div>
+    <span style="font-size: 12px; color: #8A857A">{{doneLine}}</span>
+
+    <div style="flex: 1"></div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+      <sc-for list="{{pins}}" as="c" hint-placeholder-count="2">
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #3F3C36; border: 1px solid rgba(29,29,27,0.15); border-radius: 999px; padding: 5px 11px; background: rgba(255,255,255,0.45)"><span style="color: #B08A45">⚓︎</span>{{c}}</span>
+      </sc-for>
+    </div>
+  </main>
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.13); display: flex; align-items: center; padding: 0 6px 14px; box-sizing: border-box">
+    <span style="{{navA}}">Hub</span>
+    <span style="{{navI}}">Checkliste</span>
+    <span style="flex: 1; display: flex; justify-content: center"><span style="width: 52px; height: 52px; border-radius: 26px; background: #1F2A44; color: #D9AE62; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span></span>
+    <span style="{{navI}}">To-Dos</span>
+    <span style="{{navI}}">Anker</span>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { who: 'Max' }; }
+  renderVals() {
+    function svgUrl(w, h, inner) { var s = "<svg xmlns='http://www.w3.org/2000/svg' width='" + w + "' height='" + h + "'>" + inner + "</svg>"; return 'url("data:image/svg+xml,' + encodeURIComponent(s) + '")'; }
+    function noise(id, f, o, seed, m, w, h) { return svgUrl(w, h, "<filter id='" + id + "' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='" + f + "' numOctaves='" + o + "' seed='" + seed + "' stitchTiles='stitch'/><feColorMatrix type='matrix' values='" + m + "'/></filter><rect width='100%' height='100%' filter='url(#" + id + ")'/>"); }
+    var grain = noise('g', '0.9', 3, 3, '0 0 0 0 0.30  0 0 0 0 0.24  0 0 0 0 0.16  0 0 0 0.42 -0.20', 240, 240);
+    var grainD = noise('d', '0.9', 3, 5, '0 0 0 0 0.95  0 0 0 0 0.92  0 0 0 0 0.85  0 0 0 0.40 -0.15', 240, 240);
+    var linen = noise('l', '0.02 0.6', 2, 8, '0 0 0 0 0.9  0 0 0 0 0.9  0 0 0 0 0.95  0 0 0 0.16 -0.05', 300, 300);
+    var hole = 'rgba(60,48,30,0.30)', hi = 'rgba(255,255,255,0.7)';
+    var hand = "font-family:'Caveat',cursive;color:#243150;filter:url(#mInk);text-shadow:0 0 0.6px rgba(36,49,80,0.5);";
+    var self = this;
+    var isMax = this.state.who !== 'Anna';
+    var data = isMax
+      ? { mine: [{ title: 'Rechnungen vorbereiten', when: 'bis Do' }, { title: 'iPads vorbereiten', when: 'Sa' }], done: '3 erledigt diese Runde', pins: ['Version 2.0 / 2027', 'GmbH-Umwandlung'] }
+      : { mine: [{ title: 'SumUp, Wechselgeld, Kasse', when: 'Sa' }, { title: 'Marktfestsetzung', when: 'bis 31.12. · Jahr' }], done: '1 erledigt diese Runde', pins: ['Version 2.0 / 2027'] };
+    return {
+      mine: data.mine, doneLine: data.done, pins: data.pins, hand: hand, who: isMax ? 'Max' : 'Anna',
+      swap: function () { self.setState({ who: isMax ? 'Anna' : 'Max' }); },
+      caps: 'font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#5F5B52;font-weight:600;',
+      pageStyle: "position:relative;width:390px;height:844px;box-sizing:border-box;background-color:#F5F1E8;background-image:" + grain + ",radial-gradient(circle at 1px 1px,rgba(29,29,27,0.15) 1px,transparent 1.4px);background-size:240px 240px,19px 19px;background-position:0 0,6px 8px;color:#243150;font-family:'Newsreader',Georgia,serif;font-weight:500;display:flex;flex-direction:column;overflow:hidden;",
+      bandStyle: 'flex:none;padding:56px 22px 18px 40px;background-color:#1F2A44;background-image:' + grainD + ',' + linen + ';background-size:240px 240px,300px 300px;',
+      bandEdge: 'flex:none;height:6px;background-color:#F5F1E8;background-image:radial-gradient(circle at 3px 0px,#1F2A44 2.2px,transparent 2.6px);background-size:8px 6px;background-repeat:repeat-x;',
+      navA: "flex:1;text-align:center;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:12px 0;font-weight:600;color:#243150;box-shadow:inset 0 -2px 0 #B08A45;",
+      navI: "flex:1;text-align:center;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:12px 0;color:#5F5B52;"
+    };
+  }
+}
+</script>
+</body>
+</html>

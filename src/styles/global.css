@@ -1049,3 +1049,21 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 /* Sonntagsrunde */
 .ank__round { display: flex; gap: 8px; flex-wrap: wrap; }
 .ank__progress { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--grey); font-weight: 600; }
+
+/* ---------- MWF in Casa (Kürzel, Einstieg, Statusleiste im Bereich) ---------- */
+:root { --mwf-band: #1F2A44; }
+.edge--navy { background-color: var(--mwf-band); background-image: none; }
+.mwf__running {
+  display: block; width: 16px; height: 16px; margin: 4px; border-radius: 8px; box-sizing: border-box;
+  border: 1.5px dashed var(--navy);
+}
+/* Kürzel in Casa */
+.mwf__tag {
+  display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--navy);
+  border: 1px solid var(--navy-line-strong); border-radius: 4px; padding: 1px 4px; line-height: 1.2; vertical-align: middle; white-space: nowrap;
+}
+.mwf__entry {
+  align-self: center; display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 8px 12px; min-height: 40px;
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--grey-2); text-decoration: none;
+}
+.heute__mwf { right: 90px; }

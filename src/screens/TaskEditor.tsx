@@ -18,7 +18,7 @@ export function TaskEditor({ task, onClose }: { task: Task; onClose: () => void 
   const [title, setTitle] = useState(task.title)
   const [owner, setOwner] = useState<string>(task.owner_member_id ?? 'offen')
   const [anchor, setAnchor] = useState<string>(task.anchor_id ?? 'keiner')
-  const anchorOptions = anchors.filter((a) => !a.archived_at || a.id === task.anchor_id)
+  const anchorOptions = anchors.filter((a) => a.area === task.area && (!a.archived_at || a.id === task.anchor_id))
   const [due, setDue] = useState<string | null>(task.due_date)
   const [status, setStatus] = useState<TaskStatus>(task.status)
   const [note, setNote] = useState(task.note ?? '')
@@ -49,6 +49,13 @@ export function TaskEditor({ task, onClose }: { task: Task; onClose: () => void 
       </div>
 
       <HandInput value={title} onChange={setTitle} placeholder="Was ist zu tun?" />
+      {task.area === 'mwf' && (
+        <span className="hint">
+          <span className="mwf__tag" style={{ marginRight: 6 }}>MWF</span>
+          {task.fair_id ? 'Punkt der Messe-Runde.' : task.is_yearly ? 'Jahres-Checkliste.' : 'Aufgabe der Firma.'}
+          {task.is_running && ' Laufend bis zum Messetag, kein Abhaken.'}
+        </span>
+      )}
 
       <div className="stack">
         <span className="label">Wer kümmert sich?</span>

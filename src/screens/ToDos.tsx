@@ -6,6 +6,8 @@ import { Check, Chevron, Collapse } from '../components/ui'
 import { TaskEditor } from './TaskEditor'
 import { awayOn } from '../lib/effects'
 import { dueLabel } from '../lib/anchors'
+import { useArea } from '../state/area'
+import { IdeenGruppe } from '../mwf/Ideen'
 
 type GroupId = 'offen' | 'liegt' | 'neu' | 'heute' | 'woche' | 'spaeter' | 'geschafft'
 const GROUP_ORDER: GroupId[] = ['offen', 'liegt', 'neu', 'heute', 'woche', 'spaeter', 'geschafft']
@@ -25,7 +27,9 @@ function readOpen(): Record<GroupId, boolean> {
 }
 
 export function ToDos() {
-  const { me, members, tasks, events, anchors, setTaskDone, takeTask, isNew, markSeen } = useCasa()
+  const { me, members, tasks: allTasks, events, anchors, setTaskDone, takeTask, isNew, markSeen } = useCasa()
+  const area = useArea()
+  const tasks = useMemo(() => allTasks.filter((t) => t.area === area), [allTasks, area])
   const anchorName = (id: string | null) => (id ? anchors.find((a) => a.id === id)?.title ?? null : null)
   const today = useToday()
   const now = useNow()
@@ -119,6 +123,8 @@ export function ToDos() {
     <div className="page" style={{ gap: 6 }}>
       <h1 className="h1" style={{ marginBottom: 8 }}>To-Dos</h1>
 
+      {area === 'mwf' && <IdeenGruppe />}
+
       {total === 0 && <p className="hint" style={{ paddingTop: 8 }}>Nichts offen. Schön.</p>}
 
       {GROUP_ORDER.map((k) =>
@@ -145,12 +151,14 @@ export function ToDos() {
                   const done = t.status === 'erledigt'
                   return (
                     <div className="todo" key={t.id}>
-                      <Check done={done} onToggle={() => setTaskDone(t.id, !done)} label={done ? 'Wieder öffnen' : 'Erledigt'} />
+                      {t.is_running ? <span className="check" aria-hidden><span className="mwf__running" /></span> : <Check done={done} onToggle={() => setTaskDone(t.id, !done)} label={done ? 'Wieder öffnen' : 'Erledigt'} />}
                       <button type="button" className="task__body" onClick={() => setEditing(t)}>
                         <span className={'task__title' + (done ? ' task__title--done' : '')} style={{ lineHeight: 1.1 }}>{t.title}</span>
                         <span className="task__meta" style={{ flexWrap: 'wrap' }}>
                           <span className="heute__sub">{meta(t, done)}</span>
                           {t.anchor_id && anchorName(t.anchor_id) && <span className="ank__tag">{anchorName(t.anchor_id)}</span>}
+                          {t.fair_id && <span className="mwf__tag">Runde</span>}
+                          {t.is_yearly && <span className="mwf__tag">Jahr</span>}
                           {!done && newIds.has(t.id) && <span className="stamp stamp--new">Neu</span>}
                           {!done && t.owner_member_id && awayOn(events, t.owner_member_id, t.due_date) && (
                             <span className="hint hint--brown" style={{ width: '100%' }}>{mine(t) ? 'Du bist da weg' : `${nameOf(t.owner_member_id)} ist da weg`} – trotzdem {mine(t) ? 'bei dir' : 'dort'} lassen?</span>

@@ -4,6 +4,7 @@ import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import { addDays, eventEnd, fromISO, hhmm, isoWeek, shortDate, spanLabel, startOfWeek, weekDates, weekRange, weekday, weekdayShort, weekdayShortByIndex, type ISODate } from '../lib/dates'
 import { dayLines, daySummary, dayState, hasOpen, hasOverride, openHints, templateState, type DayState, type Voice } from '../lib/week'
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
+import { isFairEvent } from '../lib/mwf'
 import { BAND_START, BAND_END, goldSegments, navySegments, pct, widthPct, type Seg } from '../lib/band'
 import { applyEffects, dayEffects, effectLines, handoverOpen, isEffectEvent, openChips, type DayEffects, type EffectLine } from '../lib/effects'
 import type { Event, Slot, Task } from '../lib/types'
@@ -50,7 +51,8 @@ function weekOffset(date: ISODate, today: ISODate): number {
 }
 
 export function Woche() {
-  const { me, members, people, normalWeek, overrides, events, tasks, settings, isNew, markSeen, setTaskDone, updateSettings } = useCasa()
+  const { me, members, people, normalWeek, overrides, events, tasks: allTasks, settings, isNew, markSeen, setTaskDone, updateSettings } = useCasa()
+  const tasks = useMemo(() => allTasks.filter((t) => t.area === 'casa'), [allTasks])
   const today = useToday()
   const now = useNow()
   const nav = useNavigate()
@@ -63,6 +65,11 @@ export function Woche() {
   const [askLegend, setAskLegend] = useState(false)
   const [editSlots, setEditSlots] = useState<{ slots: Slot[]; date?: string; weekday?: number; state: DayState } | null>(null)
   const [editEvent, setEditEvent] = useState<Event | null>(null)
+  const openEvent = (id: string) => {
+    const ev = events.find((x) => x.id === id) ?? null
+    if (ev && isFairEvent(ev)) nav('/mwf/hub')
+    else setEditEvent(ev)
+  }
   const [takeover, setTakeover] = useState<{ date: ISODate; state: DayState; fx: DayEffects } | null>(null)
   useEffect(() => {
     if (!jumpTo) return
@@ -325,7 +332,7 @@ export function Woche() {
               <Collapse open={isOpen}>
                 <div className="wk__body">
                   {r.effects.map((l) => (
-                    <button type="button" key={'fx' + l.occ.id} className="day__line day__line--effect" onClick={() => setEditEvent(events.find((x) => x.id === l.occ.base_id) ?? null)}>
+                    <button type="button" key={'fx' + l.occ.id} className="day__line day__line--effect" onClick={() => openEvent(l.occ.base_id)}>
                       <span className="label label--small">{l.label}</span>
                       <span className="hand">
                         {l.text}
@@ -355,7 +362,7 @@ export function Woche() {
                       {termine.map((e) => {
                         const past = !isMultiDay(e) && eventEnd({ date: e.occ_date, start_time: e.start_time, end_time: e.end_time }) <= now
                         return (
-                          <button type="button" key={e.id + e.occ_date} className={'day__line' + (past ? ' day__line--past' : '')} style={{ minHeight: 40, padding: '2px 0' }} onClick={() => setEditEvent(events.find((x) => x.id === e.base_id) ?? null)}>
+                          <button type="button" key={e.id + e.occ_date} className={'day__line' + (past ? ' day__line--past' : '')} style={{ minHeight: 40, padding: '2px 0' }} onClick={() => openEvent(e.base_id)}>
                             <span className="hand" style={{ fontSize: 22 }}>
                               {isMultiDay(e) ? `${spanLabel(e.occ_date, e.occ_end)} · ` : hhmm(e.start_time) ? hhmm(e.start_time) + ' ' : ''}
                               {e.title}

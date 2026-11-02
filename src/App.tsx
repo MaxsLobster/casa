@@ -18,6 +18,7 @@ import { clearRecovery, pendingRecovery } from './lib/auth'
 import { finishSplash, wantsStagger } from './state/splash'
 import { useSplashGone } from './state/splash'
 import { Mila } from './mila/Mila'
+import { Mwf } from './mwf/Mwf'
 
 export default function App() {
   return (
@@ -102,6 +103,8 @@ function Shell() {
 
   // Mila, der Essensplaner: eigener Bereich mit eigener Leiste
   if (loc.pathname.startsWith('/mila')) return <Mila />
+  // Munich Watch Fair: eigener Arbeitsbereich mit Navy-Einband
+  if (loc.pathname.startsWith('/mwf')) return <Mwf />
 
   const isNeu = loc.pathname === '/neu'
 

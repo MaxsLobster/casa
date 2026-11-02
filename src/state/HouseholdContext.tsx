@@ -2,10 +2,11 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { DemoAuth, SupabaseAuth, type Auth, type AuthUser } from '../lib/auth'
 import { LocalStore, SupabaseStore, type Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
-import type { Anchor, AnchorLog, AnchorLogKind, AnchorPhase, AnchorPin, AnchorQuestion, AnchorVisibility, Event, EventEffect, Household, ItemSeen, Member, NormalWeekRow, Person, Settings, Slot, Task, TaskStatus, WeekOverride, TableName, Repeat } from '../lib/types'
+import type { Anchor, AnchorLog, AnchorLogKind, AnchorPhase, AnchorPin, AnchorQuestion, AnchorVisibility, Area, Event, EventEffect, Fair, Household, Idea, ItemSeen, Member, NormalWeekRow, Person, Settings, Slot, Task, TaskStatus, TemplateRow, WeekOverride, TableName, Repeat } from '../lib/types'
 import { addDays, fromISO, toISO, today } from '../lib/dates'
 import { subscribePush, unsubscribePush, type PushKeys } from '../lib/push'
 import { phaseLabel } from '../lib/anchors'
+import { dueFor, fairEvents, nextFair, roundStart } from '../lib/mwf'
 
 export type SeenType = ItemSeen['item_type']
 
@@ -31,13 +32,17 @@ export interface Casa {
   anchorQuestions: AnchorQuestion[]
   /** meine gepinnten Anker (Auf Startseite) */
   pins: Set<string>
+  // MWF
+  fairs: Fair[]
+  template: TemplateRow[]
+  ideas: Idea[]
   error: string | null
 
   /** NEU: vom anderen für mich eingetragen oder geändert und noch nicht angesehen */
   isNew(type: SeenType, item: { id: string; updated_at: string; created_by: string | null; updated_by: string | null; date?: string; end_date?: string | null; occ_end?: string }): boolean
   markSeen(type: SeenType, ids: string[]): Promise<void>
 
-  addTask(input: { title: string; owner_member_id: string | null; due_date: string; note?: string | null; repeat?: Repeat | null; repeat_until?: string | null; anchor_id?: string | null; is_step?: boolean }): Promise<Task>
+  addTask(input: { title: string; owner_member_id: string | null; due_date: string; note?: string | null; repeat?: Repeat | null; repeat_until?: string | null; anchor_id?: string | null; is_step?: boolean; area?: Area; is_yearly?: boolean }): Promise<Task>
   updateTask(id: string, patch: Partial<Pick<Task, 'title' | 'owner_member_id' | 'due_date' | 'status' | 'note' | 'repeat' | 'repeat_until' | 'anchor_id'>>): Promise<void>
   setTaskDone(id: string, done: boolean): Promise<void>
   removeTask(id: string): Promise<void>
@@ -45,7 +50,7 @@ export interface Casa {
   takeTask(id: string): Promise<void>
 
   // Anker
-  addAnchor(input: { title: string; why: string | null; visibility: AnchorVisibility }): Promise<Anchor>
+  addAnchor(input: { title: string; why: string | null; visibility: AnchorVisibility; area?: Area }): Promise<Anchor>
   updateAnchor(id: string, patch: Partial<Pick<Anchor, 'title' | 'why' | 'visibility' | 'notes' | 'ask_next'>>): Promise<void>
   setAnchorPhase(id: string, phase: AnchorPhase): Promise<void>
   archiveAnchor(id: string, archived: boolean): Promise<void>
@@ -57,6 +62,16 @@ export interface Casa {
   reopenQuestion(id: string): Promise<void>
   removeQuestion(id: string): Promise<void>
   setPin(anchorId: string, on: boolean): Promise<void>
+
+  // MWF
+  /** Arbeitstag heute an/aus (pro Person, um Mitternacht automatisch aus) */
+  setWorkday(on: boolean): Promise<void>
+  addIdea(text: string, area: Area): Promise<void>
+  updateIdea(id: string, text: string): Promise<void>
+  removeIdea(id: string): Promise<void>
+  addTemplateRow(input: Pick<TemplateRow, 'title' | 'owner_member_id' | 'section' | 'days_before' | 'is_running'>): Promise<void>
+  updateTemplateRow(id: string, patch: Partial<Pick<TemplateRow, 'title' | 'owner_member_id' | 'section' | 'days_before' | 'is_running' | 'sort'>>): Promise<void>
+  removeTemplateRow(id: string): Promise<void>
 
   addEvent(input: {
     title: string
@@ -82,7 +97,7 @@ export interface Casa {
   clearOverride(date: string, slot: Slot): Promise<void>
   setTemplate(input: { weekday: number; slot: Slot; value: string | null; at?: string | null; is_open: boolean; note?: string | null }): Promise<void>
 
-  updateSettings(patch: Partial<Pick<Settings, 'dark_mode_auto' | 'briefing_time' | 'quiet_enabled' | 'quiet_hours_start' | 'quiet_hours_end' | 'show_legend'>>): Promise<void>
+  updateSettings(patch: Partial<Pick<Settings, 'dark_mode_auto' | 'briefing_time' | 'quiet_enabled' | 'quiet_hours_start' | 'quiet_hours_end' | 'show_legend' | 'workday_on' | 'mwf_notify'>>): Promise<void>
 
   /** Push auf diesem Gerät anmelden (braucht einen Tipp des Nutzers) */
   enablePush(): Promise<void>
@@ -124,6 +139,9 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   const [anchorLog, setAnchorLog] = useState<AnchorLog[]>([])
   const [anchorQuestions, setAnchorQuestions] = useState<AnchorQuestion[]>([])
   const [pinRows, setPinRows] = useState<AnchorPin[]>([])
+  const [fairs, setFairs] = useState<Fair[]>([])
+  const [template, setTemplate] = useState<TemplateRow[]>([])
+  const [ideas, setIdeas] = useState<Idea[]>([])
 
   // --- Anmeldung -----------------------------------------------------------
   useEffect(() => {
@@ -168,7 +186,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
             return
           }
           const hid = mine.household_id
-          const [t, e, n, o, p, sn, an, al, aq, ap] = await Promise.all([
+          const [t, e, n, o, p, sn, an, al, aq, ap, fr, tp, id] = await Promise.all([
             store.select('tasks', { household_id: hid }),
             store.select('events', { household_id: hid }),
             store.select('normal_week', { household_id: hid }),
@@ -179,6 +197,9 @@ export function CasaProvider({ children }: { children: ReactNode }) {
             store.select('anchor_log', { household_id: hid }),
             store.select('anchor_questions', { household_id: hid }),
             store.select('anchor_pins', { member_id: mine.id }),
+            store.select('fairs', { household_id: hid }),
+            store.select('checklist_template', { household_id: hid }),
+            store.select('ideas', { household_id: hid }),
           ])
           setTasks(t)
           setEvents(e)
@@ -190,6 +211,9 @@ export function CasaProvider({ children }: { children: ReactNode }) {
           setAnchorLog(al)
           setAnchorQuestions(aq)
           setPinRows(ap)
+          setFairs(fr)
+          setTemplate(tp)
+          setIdeas(id)
           setDataReady(true)
           return
         }
@@ -205,6 +229,9 @@ export function CasaProvider({ children }: { children: ReactNode }) {
         if (table === 'anchor_log') setAnchorLog(await store.select('anchor_log', { household_id: householdId }))
         if (table === 'anchor_questions') setAnchorQuestions(await store.select('anchor_questions', { household_id: householdId }))
         if (table === 'anchor_pins' && me) setPinRows(await store.select('anchor_pins', { member_id: me.id }))
+        if (table === 'fairs') setFairs(await store.select('fairs', { household_id: householdId }))
+        if (table === 'checklist_template') setTemplate(await store.select('checklist_template', { household_id: householdId }))
+        if (table === 'ideas') setIdeas(await store.select('ideas', { household_id: householdId }))
       } catch (err) {
         setError((err as Error).message)
         setDataReady(true)
@@ -230,6 +257,9 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       setAnchorLog([])
       setAnchorQuestions([])
       setPinRows([])
+      setFairs([])
+      setTemplate([])
+      setIdeas([])
       setSettings(null)
       setHousehold(null)
       return
@@ -240,7 +270,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   // Live: Änderungen (auch vom anderen) nachladen
   useEffect(() => {
     if (!user) return
-    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins'], (t) => loadRef.current(t))
+    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins', 'fairs', 'checklist_template', 'ideas'], (t) => loadRef.current(t))
     const onVisible = () => {
       if (document.visibilityState === 'visible') loadRef.current()
     }
@@ -268,6 +298,38 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     document.addEventListener('visibilitychange', touch)
     return () => document.removeEventListener('visibilitychange', touch)
   }, [me, store])
+
+  // MWF: fehlende Rundenpunkte der laufenden Runde anlegen (idempotent, einmal pro Tag und Sitzung)
+  const generatedRef = useRef('')
+  useEffect(() => {
+    if (!dataReady || !me || fairs.length === 0 || template.length === 0) return
+    const day = today()
+    if (generatedRef.current === day) return
+    generatedRef.current = day
+    const run = async () => {
+      if (!isDemo && supabase) {
+        const { data } = await supabase.rpc('mwf_generate_rounds')
+        if (typeof data === 'number' && data > 0) await loadRef.current('tasks')
+        return
+      }
+      const fair = nextFair(fairs, day)
+      if (!fair) return
+      const start = roundStart(fairs, fair)
+      if (day < start) return
+      let n = 0
+      for (const r of template.filter((x) => x.area === 'mwf')) {
+        if (tasks.some((t) => t.fair_id === fair.id && t.template_id === r.id)) continue
+        await store.insert('tasks', { household_id: me.household_id, area: 'mwf', title: r.title, owner_member_id: r.owner_member_id, due_date: dueFor(r, fair.date, start), status: 'offen', note: null, repeat: null, repeat_until: null, anchor_id: null, is_step: false, fair_id: fair.id, template_id: r.id, is_running: r.is_running, is_yearly: false, created_by: null, updated_by: r.owner_member_id, done_at: null })
+        n++
+      }
+      if (n > 0) await loadRef.current('tasks')
+    }
+    run().catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataReady, me, fairs, template])
+
+  // Messetage als Ereignis „Messe" (nicht gespeichert, nur abgeleitet)
+  const allEvents = useMemo(() => (fairs.length ? [...events, ...fairEvents(fairs)] : events), [events, fairs])
 
   // --- Schreiben -----------------------------------------------------------
   const need = () => {
@@ -320,7 +382,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     people,
     settings,
     tasks,
-    events,
+    events: allEvents,
     normalWeek,
     overrides,
     seen,
@@ -328,6 +390,9 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     anchorLog,
     anchorQuestions,
     pins,
+    fairs,
+    template,
+    ideas,
     error,
 
     isNew(type, item) {
@@ -357,7 +422,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
 
     async addTask(input) {
       const { hid, me } = need()
-      const row = await store.insert('tasks', { household_id: hid, created_by: me.id, updated_by: me.id, status: 'offen', note: input.note ?? null, repeat: input.repeat ?? null, repeat_until: input.repeat_until ?? null, anchor_id: input.anchor_id ?? null, is_step: input.is_step ?? false, ...input })
+      const row = await store.insert('tasks', { household_id: hid, created_by: me.id, updated_by: me.id, status: 'offen', note: input.note ?? null, repeat: input.repeat ?? null, repeat_until: input.repeat_until ?? null, anchor_id: input.anchor_id ?? null, is_step: input.is_step ?? false, area: input.area ?? 'casa', is_yearly: input.is_yearly ?? false, is_running: false, fair_id: null, template_id: null, ...input })
       await load('tasks')
       flushPush()
       return row
@@ -400,6 +465,8 @@ export function CasaProvider({ children }: { children: ReactNode }) {
             note: task.note,
             repeat: task.repeat,
             repeat_until: task.repeat_until,
+            area: task.area,
+            is_yearly: task.is_yearly,
             created_by: task.created_by ?? me.id,
             updated_by: task.owner_member_id, // keine Mitteilung für die automatische Folgeaufgabe
           })
@@ -421,7 +488,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     // --- Anker -------------------------------------------------------------
     async addAnchor(input) {
       const { hid, me } = need()
-      const row = await store.insert('anchors', { household_id: hid, title: input.title, why: input.why, visibility: input.visibility, phase: 'idee', notes: null, ask_next: false, moved_at: new Date().toISOString(), archived_at: null, created_by: me.id, updated_by: me.id })
+      const row = await store.insert('anchors', { household_id: hid, title: input.title, why: input.why, visibility: input.visibility, area: input.area ?? 'casa', phase: 'idee', notes: null, ask_next: false, moved_at: new Date().toISOString(), archived_at: null, created_by: me.id, updated_by: me.id })
       await load('anchors')
       return row
     },
@@ -458,7 +525,8 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       if (existing) {
         await store.update('tasks', { id: existing.id }, { title: input.title, owner_member_id: input.owner_member_id, due_date: input.due_date, updated_by: me.id })
       } else {
-        await store.insert('tasks', { household_id: hid, created_by: me.id, updated_by: me.id, status: 'offen', note: null, repeat: null, repeat_until: null, anchor_id: anchorId, is_step: true, title: input.title, owner_member_id: input.owner_member_id, due_date: input.due_date })
+        const area = anchors.find((a) => a.id === anchorId)?.area ?? 'casa'
+        await store.insert('tasks', { household_id: hid, created_by: me.id, updated_by: me.id, status: 'offen', note: null, repeat: null, repeat_until: null, anchor_id: anchorId, is_step: true, area, is_yearly: false, is_running: false, fair_id: null, template_id: null, title: input.title, owner_member_id: input.owner_member_id, due_date: input.due_date })
       }
       await touchAnchor(anchorId, { ask_next: false })
       await load('tasks')
@@ -495,6 +563,40 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       if (on) await store.upsert('anchor_pins', { member_id: me.id, anchor_id: anchorId }, 'member_id,anchor_id')
       else await store.remove('anchor_pins', { member_id: me.id, anchor_id: anchorId })
       await load('anchor_pins')
+    },
+
+    // --- MWF ---------------------------------------------------------------
+    async setWorkday(on) {
+      const { me } = need()
+      await store.upsert('settings', { member_id: me.id, workday_on: on ? today() : null }, 'member_id')
+      await load('settings')
+    },
+    async addIdea(text, area) {
+      const { hid, me } = need()
+      await store.insert('ideas', { household_id: hid, area, text, created_by: me.id })
+      await load('ideas')
+    },
+    async updateIdea(id, text) {
+      await store.update('ideas', { id }, { text })
+      await load('ideas')
+    },
+    async removeIdea(id) {
+      await store.remove('ideas', { id })
+      await load('ideas')
+    },
+    async addTemplateRow(input) {
+      const { hid } = need()
+      const sort = template.reduce((m, r) => Math.max(m, r.sort), 0) + 1
+      await store.insert('checklist_template', { household_id: hid, area: 'mwf', sort, ...input })
+      await load('checklist_template')
+    },
+    async updateTemplateRow(id, patch) {
+      await store.update('checklist_template', { id }, patch)
+      await load('checklist_template')
+    },
+    async removeTemplateRow(id) {
+      await store.remove('checklist_template', { id })
+      await load('checklist_template')
     },
 
     async addEvent(input) {

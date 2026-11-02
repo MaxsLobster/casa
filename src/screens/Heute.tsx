@@ -16,6 +16,8 @@ import { EventEditor } from './EventEditor'
 import { SlotEditor } from './SlotEditor'
 import { TaskEditor } from './TaskEditor'
 import { isResting } from '../lib/anchors'
+import { isFairEvent, isWorkday } from '../lib/mwf'
+import { MwfIcon } from '../mwf/MwfIcon'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 
@@ -34,6 +36,8 @@ interface Row {
   isNew?: boolean
   /** gehört zu einem Anker */
   anchor?: string | null
+  /** Arbeit (MWF) */
+  mwf?: boolean
   /** Antippen: Ereignis/Termin bearbeiten, Abweichung für den Tag, Aufgabe bearbeiten */
   event?: string // base_id
   slots?: Slot[]
@@ -47,7 +51,11 @@ export function Heute() {
   const now = useNow()
   const nav = useNavigate()
   const location = useLocation()
-  const { me, partner, members, people, tasks, events, normalWeek, overrides, anchors, pins, setTaskDone, takeTask, isNew, markSeen } = casa
+  const { me, partner, members, people, tasks: allTasks, events, normalWeek, overrides, anchors: allAnchors, pins, settings, setTaskDone, takeTask, isNew, markSeen } = casa
+  // Casa zeigt nur den Bereich casa; bei Arbeitstag an zusätzlich meine heute fälligen MWF-Aufgaben
+  const workday = isWorkday(settings, today)
+  const tasks = useMemo(() => allTasks.filter((t) => t.area === 'casa' || (workday && t.owner_member_id === me?.id && t.due_date === today && !t.is_running)), [allTasks, workday, me?.id, today])
+  const anchors = useMemo(() => allAnchors.filter((a) => a.area === 'casa'), [allAnchors])
   const anchorName = (id: string | null) => (id ? anchors.find((a) => a.id === id)?.title ?? null : null)
   const voice: Voice = { me, members }
 
@@ -185,7 +193,11 @@ export function Heute() {
       rows.push({ key: 'fxp', sort: vw.pickup_at ? toH(vw.pickup_at, 0) : -2, time: vw.pickup_at ? hhmm(vw.pickup_at) : null, kind: 'valerie', title: `${cap(verb(vw.pickup_by, voice, 'holst', 'holt'))} Valerie ${pn ? `bei ${pn} ` : ''}ab`, sub: 'Übergabe', event: vw.base_id })
     }
   }
+  if (fx.messe) {
+    rows.push({ key: 'fxm', sort: -1, time: null, kind: 'plan', title: 'Messe', sub: 'Munich Watch Fair · ihr seid beide weg', event: fx.messe.base_id })
+  }
   for (const a of fx.away) {
+    if (a.occ.effect === 'messe') continue
     rows.push({ key: 'fxa' + a.member.id, sort: -1, time: null, kind: 'plan', title: a.member.id === me?.id ? 'Du bist weg' : `${a.member.display_name} ist weg`, sub: spanLabel(a.occ.occ_date, a.occ.occ_end), isNew: isNew('event', a.occ), event: a.occ.base_id })
   }
   // Termine, heute nur die noch nicht vorbei sind
@@ -223,12 +235,12 @@ export function Heute() {
   for (const t of tasks) {
     if (t.status === 'erledigt' || t.due_date !== date || t.owner_member_id !== me?.id) continue
     const away = fx.away.some((a) => a.member.id === t.owner_member_id)
-    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: away ? 'Du bist weg – trotzdem bei dir lassen?' : '', task: t, isNew: isNew('task', t), anchor: anchorName(t.anchor_id) })
+    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: away && t.area === 'casa' ? 'Du bist weg – trotzdem bei dir lassen?' : '', task: t, isNew: isNew('task', t), anchor: anchorName(t.anchor_id), mwf: t.area === 'mwf' })
   }
   rows.sort((a, c) => a.sort - c.sort)
   const chips = isToday ? [] : openChips(day, fx)
   // Offene Aufgaben (noch niemand): heute fällig oder überfällig, an anderen Tagen genau an dem Tag
-  const openTasks = tasks.filter((t) => t.status !== 'erledigt' && t.owner_member_id === null && (isToday ? t.due_date <= today : t.due_date === date)).sort((a, c) => a.due_date.localeCompare(c.due_date))
+  const openTasks = tasks.filter((t) => t.area === 'casa' && t.status !== 'erledigt' && t.owner_member_id === null && (isToday ? t.due_date <= today : t.due_date === date)).sort((a, c) => a.due_date.localeCompare(c.due_date))
   // Meine gepinnten Anker (nur heute)
   const pinned = isToday ? anchors.filter((a) => pins.has(a.id) && !a.archived_at).sort((a, c) => a.title.localeCompare(c.title)) : []
 
@@ -276,6 +288,11 @@ export function Heute() {
       <Link to="/mila/woche" className="heute__gear heute__pot" aria-label="Mila, der Essensplaner">
         <PotIcon />
       </Link>
+      {workday && (
+        <Link to="/mwf/hub" className="heute__gear heute__mwf" aria-label="Munich Watch Fair">
+          <MwfIcon />
+        </Link>
+      )}
       {/* ---------- Kopf ---------- */}
       <div className="heute__head">
         {!isToday && (
@@ -344,8 +361,11 @@ export function Heute() {
             {rows.map((r, idx) => {
               const open = () => {
                 if (r.task) setEditTask(r.task)
-                else if (r.event) setEditEvent(events.find((x) => x.id === r.event) ?? null)
-                else if (r.slots?.length) setEditSlots(r.slots)
+                else if (r.event) {
+                  const ev = events.find((x) => x.id === r.event) ?? null
+                  if (ev && isFairEvent(ev)) nav('/mwf/hub')
+                  else setEditEvent(ev)
+                } else if (r.slots?.length) setEditSlots(r.slots)
               }
               const text = (
                 <div className="stack" style={{ gap: 0, minWidth: 0, flex: 1 }}>
@@ -353,8 +373,9 @@ export function Heute() {
                     {r.title}
                     {r.isNew && <span className="stamp stamp--new" style={{ marginLeft: 8, verticalAlign: 'middle' }}>Neu</span>}
                   </span>
-                  {(r.sub || r.anchor) && (
+                  {(r.sub || r.anchor || r.mwf) && (
                     <span className="heute__sub">
+                      {r.mwf && <span className="mwf__tag" style={{ marginRight: r.sub || r.anchor ? 8 : 0 }}>MWF</span>}
                       {r.sub}
                       {r.anchor && <span className="ank__tag" style={{ marginLeft: r.sub ? 8 : 0 }}>{r.anchor}</span>}
                     </span>

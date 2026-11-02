@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – MWF Checkliste</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} button{font:inherit;color:inherit}</style>
+</helmet>
+<div style="{{pageStyle}}">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="cInk" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="4" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="0.9" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter>
+  </svg>
+
+  <div style="{{bandStyle}}">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(233,225,207,0.7)">Checkliste</span>
+        <span style="font-family: 'Caveat', cursive; font-size: 34px; line-height: 1; color: #F2EDE2">Messe So 8. Nov</span>
+      </div>
+      <button type="button" onClick="{{toggle}}" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #D9AE62; background: transparent; border: 1px solid rgba(217,174,98,0.5); border-radius: 999px; padding: 5px 11px; cursor: pointer">{{toggleLabel}}</button>
+    </div>
+  </div>
+  <div style="{{bandEdge}}"></div>
+
+  <main style="flex: 1; overflow-y: auto; padding: 14px 18px 24px 22px">
+    <button type="button" onClick="{{toggleDone}}" style="margin: 0 0 4px 98px; font-size: 12px; color: #8A857A; background: transparent; border: none; padding: 6px 0; cursor: pointer">{{doneLabel}}</button>
+    <div style="position: relative">
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="12">
+        <div style="{{r.wrap}}">
+          <span style="{{r.dateStyle}}">{{r.date}}</span>
+          <span style="position: relative; flex: none; width: 26px; align-self: stretch; display: flex; justify-content: center">
+            <span style="{{r.lineStyle}}"></span>
+            <span style="{{r.node}}">{{r.nodeText}}</span>
+          </span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; padding: 2px 0 2px 6px">
+            <span style="{{r.titleStyle}}">{{r.title}}</span>
+            <sc-if value="{{r.meta}}" hint-placeholder-val="{{true}}"><span style="{{r.metaStyle}}">{{r.meta}}</span></sc-if>
+          </span>
+        </div>
+      </sc-for>
+    </div>
+  </main>
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.13); display: flex; align-items: center; padding: 0 6px 14px; box-sizing: border-box">
+    <span style="{{navI}}">Hub</span>
+    <span style="{{navA}}">Checkliste</span>
+    <span style="flex: 1; display: flex; justify-content: center"><span style="width: 52px; height: 52px; border-radius: 26px; background: #1F2A44; color: #D9AE62; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span></span>
+    <span style="{{navI}}">To-Dos</span>
+    <span style="{{navI}}">Anker</span>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { all: true, showDone: false }; }
+  renderVals() {
+    var self = this;
+    var all = this.state.all;
+    function svgUrl(w, h, inner) { var s = "<svg xmlns='http://www.w3.org/2000/svg' width='" + w + "' height='" + h + "'>" + inner + "</svg>"; return 'url("data:image/svg+xml,' + encodeURIComponent(s) + '")'; }
+    function noise(id, f, o, seed, m, w, h) { return svgUrl(w, h, "<filter id='" + id + "' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='" + f + "' numOctaves='" + o + "' seed='" + seed + "' stitchTiles='stitch'/><feColorMatrix type='matrix' values='" + m + "'/></filter><rect width='100%' height='100%' filter='url(#" + id + ")'/>"); }
+    var grain = noise('g', '0.9', 3, 3, '0 0 0 0 0.30  0 0 0 0 0.24  0 0 0 0 0.16  0 0 0 0.42 -0.20', 240, 240);
+    var grainD = noise('d', '0.9', 3, 5, '0 0 0 0 0.95  0 0 0 0 0.92  0 0 0 0 0.85  0 0 0 0.40 -0.15', 240, 240);
+    var linen = noise('l', '0.02 0.6', 2, 8, '0 0 0 0 0.9  0 0 0 0 0.9  0 0 0 0 0.95  0 0 0 0.16 -0.05', 300, 300);
+    var hand = "font-family:'Caveat',cursive;filter:url(#cInk);";
+
+    // k: phase | item | today | fair ; past: before today
+    var R = [
+      { k: 'phase', d: 'Mo 5.10.', t: 'Ab Montag nach der letzten Messe', past: true },
+      { k: 'item', t: 'Kassenbuch, Zählprotokoll, Bank', w: 'Anna', done: true, past: true },
+      { k: 'item', t: 'Rechnungsnummern vergeben', w: 'Anna', done: true, past: true },
+      { k: 'item', t: 'Offene Zahlungen nachfassen', w: 'Anna', done: true, past: true },
+      { k: 'item', t: 'Kurze Nachbesprechung', w: 'beide', done: true, past: true },
+      { k: 'item', t: 'Online-Shop freischalten', w: 'Anna', m: 'spätestens 25.10.', done: true, past: true },
+      { k: 'item', t: 'Instagram-Post, sobald Tickets online', w: 'Max', done: true, past: true },
+      { k: 'item', t: 'Standplan-Tabelle + Saalplan-App umstellen', w: 'Max', done: true, past: true },
+      { k: 'item', t: 'Saalplan groß oder klein', w: 'Max', done: true, past: true },
+      { k: 'phase', d: 'laufend', t: 'Bis zur Messe', past: true },
+      { k: 'item', t: 'Anfragen beantworten, Plätze vergeben', w: 'Max', m: 'laufend', done: false, past: true, running: true },
+      { k: 'item', t: 'Halbjahres- und Jahresbucher eintragen', w: 'Max', done: true, past: true },
+      { k: 'phase', d: '29.10.', t: '10 Tage vorher', past: true },
+      { k: 'item', t: 'Eintrittskarten und Bänder bestellen', w: 'Max', done: true, past: true },
+      { k: 'today', d: '2.11.', t: 'Heute · noch 6 Tage' },
+      { k: 'phase', d: 'Do 5.11.', t: '3 Tage vorher', past: false },
+      { k: 'item', t: 'Rechnungen vorbereiten', w: 'Max', done: false, past: false },
+      { k: 'phase', d: 'Sa 7.11.', t: 'Tag davor', past: false },
+      { k: 'item', t: 'iPads vorbereiten', w: 'Max', done: false, past: false },
+      { k: 'item', t: 'SumUp, Wechselgeld, Kasse', w: 'Anna', done: false, past: false },
+      { k: 'fair', d: 'So 8.11.', t: 'Messe', past: false },
+      { k: 'item', t: 'Check-in, Rechnungen, wer hat bezahlt', w: 'Anna', done: false, past: false },
+      { k: 'end', t: 'Runde abgeschlossen. Ab Mo 9.11. startet die nächste.' }
+    ];
+    var showDone = this.state.showDone;
+    var vis = R.filter(function (r) { return all || r.k !== 'item' || r.w !== 'Anna'; });
+    var hiddenCount = vis.filter(function (r) { return r.k === 'item' && r.done; }).length;
+    if (!showDone) {
+      vis = vis.filter(function (r) { return !(r.k === 'item' && r.done); });
+      vis = vis.filter(function (r, i) {
+        if (r.k !== 'phase') return true;
+        var n = vis[i + 1];
+        return n && n.k === 'item';
+      });
+    }
+    var rows = vis.map(function (r) {
+      var mine = r.w === 'Max' || r.w === 'beide';
+      var line = 'position:absolute;top:0;bottom:0;left:12px;width:0;' + (r.past || r.k === 'today' ? 'border-left:2px solid #243150;' : 'border-left:2px dashed rgba(36,49,80,0.35);');
+      var o = { date: '', title: r.t, meta: '', nodeText: '', lineStyle: line,
+        wrap: 'display:flex;align-items:flex-start;min-height:34px;',
+        dateStyle: 'flex:none;width:64px;text-align:right;padding:6px 8px 0 0;font-size:11px;color:#8A857A;line-height:1.2;',
+        node: '', titleStyle: '', metaStyle: 'font-size:12px;color:#5F5B52;' };
+      if (r.k === 'phase') {
+        o.date = r.d;
+        o.pad = 12;
+        o.node = 'position:relative;z-index:1;margin-top:19px;width:10px;height:10px;border-radius:5px;background:#F5F1E8;border:2px solid #243150;box-sizing:border-box;';
+        o.titleStyle = 'font-size:11px;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;color:#5F5B52;padding-top:17px;';
+        o.dateStyle += 'font-weight:600;color:#5F5B52;padding-top:18px;';
+      } else if (r.k === 'today') {
+        o.date = r.d;
+        o.node = 'position:relative;z-index:1;margin-top:16px;width:16px;height:16px;border-radius:8px;background:#6B5222;box-shadow:0 0 0 4px rgba(107,82,34,0.18);';
+        o.titleStyle = "font-family:'Caveat',cursive;font-size:22px;color:#6B5222;line-height:1.1;padding-top:12px;padding-bottom:4px;";
+        o.dateStyle += 'color:#6B5222;font-weight:600;padding-top:18px;';
+      } else if (r.k === 'end') {
+        o.lineStyle = 'position:absolute;top:0;height:14px;left:12px;width:0;border-left:2px dashed rgba(36,49,80,0.35);';
+        o.node = 'position:relative;z-index:1;margin-top:14px;width:18px;height:3px;border-radius:2px;background:#243150;';
+        o.titleStyle = 'font-size:12px;font-style:italic;color:#8A857A;padding-top:6px;';
+      } else if (r.k === 'fair') {
+        o.date = r.d;
+        o.node = 'position:relative;z-index:1;margin-top:12px;width:24px;height:24px;border-radius:12px;background:#B08A45;color:#F5F1E8;font-size:12px;display:flex;align-items:center;justify-content:center;';
+        o.nodeText = '★';
+        o.titleStyle = "font-family:'Caveat',cursive;font-size:30px;line-height:1;color:#243150;padding-top:12px;";
+        o.dateStyle += 'font-weight:600;color:#243150;padding-top:18px;';
+      } else {
+        o.meta = (r.w === 'Max' ? '' : r.w) + (r.m ? (r.w === 'Max' ? '' : ' · ') + r.m : '');
+        o.node = 'position:relative;z-index:1;margin-top:6px;width:16px;height:16px;border-radius:8px;box-sizing:border-box;font-size:10px;display:flex;align-items:center;justify-content:center;' +
+          (r.done ? 'background:#243150;color:#F5F1E8;' : (r.running ? 'background:#F5F1E8;border:1.5px dashed #243150;' : 'background:#F5F1E8;border:1.5px solid #243150;'));
+        o.nodeText = r.done ? '✓' : '';
+        if (mine) {
+          o.titleStyle = hand + 'font-size:23px;line-height:1.1;' + (r.done ? 'color:#8A857A;text-decoration:line-through;text-decoration-thickness:1.5px;' : 'color:#243150;');
+        } else {
+          o.titleStyle = 'font-size:14px;line-height:1.3;padding-top:4px;' + (r.done ? 'color:#A39D8C;text-decoration:line-through;' : 'color:#8A857A;');
+          o.metaStyle = 'font-size:11px;color:#A39D8C;';
+        }
+      }
+      return o;
+    });
+    return {
+      rows: rows,
+      toggleLabel: all ? 'Nur meine' : 'Alle zeigen',
+      doneLabel: (showDone ? '▾ ' : '▸ ') + hiddenCount + ' erledigt' + (showDone ? ' ausblenden' : ''),
+      toggleDone: function () { self.setState({ showDone: !showDone }); },
+      toggle: function () { self.setState({ all: !all }); },
+      pageStyle: "position:relative;width:390px;height:844px;box-sizing:border-box;background-color:#F5F1E8;background-image:" + grain + ",radial-gradient(circle at 1px 1px,rgba(29,29,27,0.15) 1px,transparent 1.4px);background-size:240px 240px,19px 19px;background-position:0 0,6px 8px;color:#243150;font-family:'Newsreader',Georgia,serif;font-weight:500;display:flex;flex-direction:column;overflow:hidden;",
+      bandStyle: 'flex:none;padding:56px 22px 16px 26px;background-color:#1F2A44;background-image:' + grainD + ',' + linen + ';background-size:240px 240px,300px 300px;',
+      bandEdge: 'flex:none;height:6px;background-color:#F5F1E8;background-image:radial-gradient(circle at 3px 0px,#1F2A44 2.2px,transparent 2.6px);background-size:8px 6px;background-repeat:repeat-x;',
+      navA: "flex:1;text-align:center;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:12px 0;font-weight:600;color:#243150;box-shadow:inset 0 -2px 0 #B08A45;",
+      navI: "flex:1;text-align:center;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:12px 0;color:#5F5B52;"
+    };
+  }
+}
+</script>
+</body>
+</html>

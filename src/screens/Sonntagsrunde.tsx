@@ -4,11 +4,15 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import { groupOf, logDate, phaseLabel, stepMeta, stepOf } from '../lib/anchors'
 import { AnchorIcon, PhaseBars, PhasePicker, StepForm } from './AnkerTeile'
+import { areaBase, useArea } from '../state/area'
 
 type Mode = null | 'step' | 'phase' | 'note'
 
 export function Sonntagsrunde() {
-  const { anchors, anchorLog, tasks, members, setAnchorPhase, addAnchorLog } = useCasa()
+  const { anchors: allAnchors, anchorLog, tasks, members, setAnchorPhase, addAnchorLog } = useCasa()
+  const area = useArea()
+  const base = areaBase(area)
+  const anchors = useMemo(() => allAnchors.filter((a) => a.area === area), [allAnchors, area])
   const today = useToday()
   const now = useNow()
   const nav = useNavigate()
@@ -47,7 +51,7 @@ export function Sonntagsrunde() {
   if (order.length === 0) {
     return (
       <div className="page" style={{ gap: 16 }}>
-        <Link to="/anker" className="ank__back">‹ Alle Anker</Link>
+        <Link to={base + '/anker'} className="ank__back">‹ Alle Anker</Link>
         <h1 className="h1">Sonntagsrunde</h1>
         <p className="hint">Es gibt noch keine gemeinsamen Anker.</p>
       </div>
@@ -57,11 +61,11 @@ export function Sonntagsrunde() {
   if (!anchor) {
     return (
       <div className="page" style={{ gap: 16 }}>
-        <Link to="/anker" className="ank__back">‹ Alle Anker</Link>
+        <Link to={base + '/anker'} className="ank__back">‹ Alle Anker</Link>
         <h1 className="h1">Sonntagsrunde</h1>
         <p className="hand hand--navy" style={{ fontSize: 30, lineHeight: 1.15 }}>Fertig – bis nächsten Sonntag.</p>
         <p className="hint">{order.length === 1 ? 'Ein Anker besprochen.' : `${order.length} Anker besprochen.`} Jeder hat einen Eintrag im Verlauf bekommen.</p>
-        <button type="button" className="btn" style={{ alignSelf: 'flex-start', width: 'auto', padding: '10px 22px' }} onClick={() => nav('/anker')}>Zu den Ankern</button>
+        <button type="button" className="btn" style={{ alignSelf: 'flex-start', width: 'auto', padding: '10px 22px' }} onClick={() => nav(base + '/anker')}>Zu den Ankern</button>
       </div>
     )
   }
@@ -69,7 +73,7 @@ export function Sonntagsrunde() {
   return (
     <div className="page" style={{ gap: 16 }}>
       <div className="between">
-        <Link to="/anker" className="ank__back">‹ Abbrechen</Link>
+        <Link to={base + '/anker'} className="ank__back">‹ Abbrechen</Link>
         <span className="ank__progress">{pos + 1} von {order.length}</span>
       </div>
       <header className="stack" style={{ gap: 6 }}>

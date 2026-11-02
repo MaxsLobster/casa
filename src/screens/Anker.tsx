@@ -1,16 +1,21 @@
 // Anker-Übersicht: In Bewegung · Ruht · Läuft
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import type { Anchor } from '../lib/types'
 import { GROUP_TITLE, groupOf, isResting, movedLabel, stepMeta, stepOf, type AnchorGroup } from '../lib/anchors'
 import { AnchorIcon, AnchorSheet, PhaseBars } from './AnkerTeile'
 import { Chevron, Collapse } from '../components/ui'
+import { areaBase, useArea } from '../state/area'
+import { MwfIcon } from '../mwf/MwfIcon'
 
 const ORDER: AnchorGroup[] = ['bewegung', 'ruht', 'laeuft']
 
 export function Anker() {
-  const { anchors, tasks, members, pins, archiveAnchor } = useCasa()
+  const { anchors: allAnchors, tasks, members, pins, archiveAnchor } = useCasa()
+  const area = useArea()
+  const base = areaBase(area)
+  const anchors = useMemo(() => allAnchors.filter((a) => a.area === area), [allAnchors, area])
   const today = useToday()
   const now = useNow()
   const nav = useNavigate()
@@ -34,11 +39,11 @@ export function Anker() {
     <div className="page" style={{ gap: 6 }}>
       <header className="between" style={{ alignItems: 'flex-end', marginBottom: 6 }}>
         <div className="stack" style={{ gap: 2 }}>
-          <span className="kicker" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>Was uns wichtig ist</span>
+          <span className="kicker" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{area === 'mwf' ? 'Was der Firma wichtig ist' : 'Was uns wichtig ist'}</span>
           <h1 className="h1">Anker</h1>
         </div>
         {shared.length > 0 && (
-          <button type="button" className="ank__sunday" onClick={() => nav('/anker/runde')}>Sonntagsrunde</button>
+          <button type="button" className="ank__sunday" onClick={() => nav(base + '/anker/runde')}>Sonntagsrunde</button>
         )}
       </header>
 
@@ -59,7 +64,7 @@ export function Anker() {
               const step = stepOf(a.id, tasks)
               const rest = k === 'ruht'
               return (
-                <button type="button" className="ank__item" key={a.id} onClick={() => nav('/anker/' + a.id)}>
+                <button type="button" className="ank__item" key={a.id} onClick={() => nav(base + '/anker/' + a.id)}>
                   <span className="ank__row">
                     <AnchorIcon />
                     <span className="ank__title">{a.title}</span>
@@ -96,7 +101,7 @@ export function Anker() {
               {archived.map((a) => (
                 <div className="row" key={a.id}>
                   <span className="row__mark" style={{ color: 'var(--grey-2)' }}>⚓︎</span>
-                  <button type="button" className="row__text hand" style={{ background: 'transparent', border: 'none', padding: 0, textAlign: 'left', color: 'var(--grey)', fontSize: 22, cursor: 'pointer' }} onClick={() => nav('/anker/' + a.id)}>
+                  <button type="button" className="row__text hand" style={{ background: 'transparent', border: 'none', padding: 0, textAlign: 'left', color: 'var(--grey)', fontSize: 22, cursor: 'pointer' }} onClick={() => nav(base + '/anker/' + a.id)}>
                     {a.title}
                   </button>
                   <button type="button" className="link" onClick={() => archiveAnchor(a.id, false)}>zurückholen</button>
@@ -107,7 +112,14 @@ export function Anker() {
         </div>
       )}
 
-      {creating && <AnchorSheet anchor={null} onClose={() => setCreating(false)} onCreated={(a) => nav('/anker/' + a.id)} />}
+      {area === 'casa' && (
+        <Link to="/mwf/hub" className="mwf__entry" aria-label="Munich Watch Fair">
+          <MwfIcon size={16} />
+          MWF
+        </Link>
+      )}
+
+      {creating && <AnchorSheet anchor={null} onClose={() => setCreating(false)} onCreated={(a) => nav(base + '/anker/' + a.id)} />}
     </div>
   )
 }

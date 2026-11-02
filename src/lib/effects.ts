@@ -20,12 +20,14 @@ export interface DayEffects {
   kitaZu: Occurrence | null
   /** Max und/oder Anna sind an diesem Tag weg */
   away: AwayMember[]
+  /** Messetag (Munich Watch Fair): beide weg */
+  messe: Occurrence | null
   /** erster / letzter Tag von „Valerie ist weg" (Übergabe) */
   isFirst: boolean
   isLast: boolean
 }
 
-export const NO_EFFECTS: DayEffects = { valerieWeg: null, kitaZu: null, away: [], isFirst: false, isLast: false }
+export const NO_EFFECTS: DayEffects = { valerieWeg: null, kitaZu: null, away: [], messe: null, isFirst: false, isLast: false }
 
 export function isEffectEvent(e: { effect?: Event['effect'] }): boolean {
   return !!e.effect && e.effect !== 'termin'
@@ -44,6 +46,11 @@ export function dayEffects(date: ISODate, occ: Occurrence[], members: Member[]):
     } else if (o.effect === 'eltern_weg' && o.member_id) {
       const m = members.find((x) => x.id === o.member_id)
       if (m && !fx.away.some((a) => a.member.id === m.id)) fx.away.push({ member: m, occ: o })
+    } else if (o.effect === 'messe') {
+      fx.messe = o
+      for (const m of members.filter((x) => x.role === 'partner')) {
+        if (!fx.away.some((a) => a.member.id === m.id)) fx.away.push({ member: m, occ: o })
+      }
     }
   }
   if (fx.valerieWeg) {
@@ -134,7 +141,9 @@ export function effectLines(date: ISODate, fx: DayEffects, v: Voice, people: Per
     out.push({ label: 'Valerie', text, occ: vw })
   }
   // „Kita zu" ist Hintergrundwissen und bekommt keine eigene Zeile (nur die kleine Bearbeiten-Zeile in der Woche)
+  if (fx.messe) out.push({ label: 'Messe', text: `Munich Watch Fair (${spanLabel(fx.messe.occ_date, fx.messe.occ_end)}) · ihr seid beide weg`, occ: fx.messe })
   for (const a of fx.away) {
+    if (a.occ.effect === 'messe') continue
     const span = spanLabel(a.occ.occ_date, a.occ.occ_end)
     const custom = a.occ.title.trim().toLowerCase() !== `${a.member.display_name.toLowerCase()} weg`
     out.push({ label: v.me?.id === a.member.id ? 'Du' : a.member.display_name, text: `Weg (${span})` + (custom ? ` · ${a.occ.title}` : ''), occ: a.occ })
@@ -145,7 +154,7 @@ export function effectLines(date: ISODate, fx: DayEffects, v: Voice, people: Per
 
 /** Ist das Mitglied an diesem Tag laut Ereignis „… ist weg"? */
 export function awayOn(events: Event[], memberId: string, date: ISODate): boolean {
-  return occurrences(events.filter((e) => e.effect === 'eltern_weg' && e.member_id === memberId), date, date).some((o) => o.occ_date <= date && o.occ_end >= date)
+  return occurrences(events.filter((e) => (e.effect === 'eltern_weg' && e.member_id === memberId) || e.effect === 'messe'), date, date).some((o) => o.occ_date <= date && o.occ_end >= date)
 }
 
 /** Offene Chips eines Tages (Woche-Details und Heute an anderen Tagen) */

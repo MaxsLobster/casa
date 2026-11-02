@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useCasa } from '../state/HouseholdContext'
-import { Toggle } from '../components/ui'
+import { useCasa, useToday } from '../state/HouseholdContext'
+import { Chips, Toggle } from '../components/ui'
+import { isWorkday } from '../lib/mwf'
 import { setPaper, usePaper } from '../state/paper'
 import { SetPassword } from './SetPassword'
 import { currentPushSubscription, isIOS, isStandalone, permissionState, pushSupported } from '../lib/push'
 
 export function Einstellungen() {
-  const { me, user, settings, updateSettings, signOut, isDemo, household, enablePush, disablePush, sendTestPush } = useCasa()
+  const { me, user, settings, updateSettings, setWorkday, signOut, isDemo, household, enablePush, disablePush, sendTestPush } = useCasa()
+  const today = useToday()
   const darkAuto = settings?.dark_mode_auto ?? true
   const paper = usePaper()
   const [pwOpen, setPwOpen] = useState(false)
@@ -152,6 +154,30 @@ export function Einstellungen() {
             <input className="input-ui" type="time" value={t5(settings.quiet_hours_end)} onChange={(e) => e.target.value && updateSettings({ quiet_hours_end: e.target.value })} style={{ minWidth: 120 }} aria-label="Ruhe bis" />
           </div>
         )}
+      </div>
+
+      {/* ---------- Munich Watch Fair ---------- */}
+      <div className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 4 }}>
+        <Toggle
+          on={isWorkday(settings, today)}
+          onChange={(v) => setWorkday(v)}
+          label="Arbeitstag heute"
+          hint="An: das MWF-Symbol steht auf der Startseite, deine heute fälligen MWF-Aufgaben unter „Heute noch“. Um Mitternacht wieder aus."
+        />
+        <div className="stack" style={{ paddingTop: 4 }}>
+          <span className="label">MWF-Mitteilungen</span>
+          <Chips
+            variant="date"
+            options={[
+              { value: 'aus', label: 'aus' },
+              { value: 'briefing', label: 'nur im Morgenbriefing' },
+              { value: 'sofort', label: 'sofort' },
+            ]}
+            value={settings?.mwf_notify ?? 'aus'}
+            onChange={(v) => updateSettings({ mwf_notify: v })}
+          />
+          <p className="hint">Gilt für Aufgaben der Firma, die der andere für dich einträgt. Rundenpunkte aus der Vorlage lösen nie eine Mitteilung aus.</p>
+        </div>
       </div>
 
       {/* ---------- Dunkelmodus ---------- */}

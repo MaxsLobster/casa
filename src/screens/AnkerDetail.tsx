@@ -8,10 +8,12 @@ import { AnchorIcon, AnchorSheet, PhasePicker, StepForm } from './AnkerTeile'
 import { Check, HandInput, Sheet } from '../components/ui'
 import { TaskEditor } from './TaskEditor'
 import { dueLabel } from '../lib/anchors'
+import { areaBase, useArea } from '../state/area'
 
 export function AnkerDetail() {
   const { id } = useParams()
   const nav = useNavigate()
+  const base = areaBase(useArea())
   const today = useToday()
   const { anchors, anchorLog, anchorQuestions, tasks, members, me, pins, setPin, setAnchorPhase, updateAnchor, addAnchorLog, addQuestion, resolveQuestion, reopenQuestion, removeQuestion, setTaskDone, archiveAnchor } = useCasa()
   const anchor = anchors.find((a) => a.id === id) ?? null
@@ -51,7 +53,7 @@ export function AnkerDetail() {
   if (!anchor) {
     return (
       <div className="page">
-        <Link to="/anker" className="ank__back">‹ Alle Anker</Link>
+        <Link to={base + '/anker'} className="ank__back">‹ Alle Anker</Link>
         <p className="hint">Diesen Anker gibt es nicht (mehr).</p>
       </div>
     )
@@ -80,7 +82,7 @@ export function AnkerDetail() {
 
   return (
     <div className="page" style={{ gap: 18 }}>
-      <Link to="/anker" className="ank__back">‹ Alle Anker</Link>
+      <Link to={base + '/anker'} className="ank__back">‹ Alle Anker</Link>
 
       {/* ---------- Kopf ---------- */}
       <header className="stack" style={{ gap: 6 }}>
@@ -205,7 +207,7 @@ export function AnkerDetail() {
             </div>
           )
         })}
-        <button type="button" className="link link--hand" style={{ alignSelf: 'flex-start', padding: '4px 0', fontSize: 20 }} onClick={() => nav('/neu', { state: { kind: 'aufgabe', anchor: anchor.id } })}>+ Aufgabe</button>
+        <button type="button" className="link link--hand" style={{ alignSelf: 'flex-start', padding: '4px 0', fontSize: 20 }} onClick={() => nav(base + '/neu', { state: { kind: 'aufgabe', anchor: anchor.id } })}>+ Aufgabe</button>
       </section>
 
       <div className="spacer" />

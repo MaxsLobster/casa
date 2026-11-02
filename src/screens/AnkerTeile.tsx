@@ -6,6 +6,7 @@ import { PHASES, phaseIndex, phaseLabel } from '../lib/anchors'
 import { Chips, HandInput, Sheet } from '../components/ui'
 import { WhenPicker } from './WhenPicker'
 import { addDays, nextWeekdayOnOrAfter } from '../lib/dates'
+import { useArea } from '../state/area'
 
 export function AnchorIcon({ size = 16 }: { size?: number }) {
   return <span className="ank__icon" style={{ fontSize: size, lineHeight: 1 }} aria-hidden>⚓︎</span>
@@ -86,9 +87,10 @@ export function StepForm({ anchorId, step, onDone, onCancel, cancelLabel = 'spä
 }
 
 /** Fenster: neuer Anker oder Titel/Warum/Sichtbarkeit bearbeiten (und archivieren) */
-export function AnchorSheet({ anchor, onClose, onCreated }: { anchor: Anchor | null; onClose: () => void; onCreated?: (a: Anchor) => void }) {
+export function AnchorSheet({ anchor, onClose, onCreated, initialTitle }: { anchor: Anchor | null; onClose: () => void; onCreated?: (a: Anchor) => void; initialTitle?: string }) {
   const { addAnchor, updateAnchor, archiveAnchor } = useCasa()
-  const [title, setTitle] = useState(anchor?.title ?? '')
+  const area = useArea()
+  const [title, setTitle] = useState(anchor?.title ?? initialTitle ?? '')
   const [why, setWhy] = useState(anchor?.why ?? '')
   const [visibility, setVisibility] = useState<AnchorVisibility>(anchor?.visibility ?? 'shared')
   const [busy, setBusy] = useState(false)
@@ -104,7 +106,7 @@ export function AnchorSheet({ anchor, onClose, onCreated }: { anchor: Anchor | n
         await updateAnchor(anchor.id, { title: title.trim(), why: why.trim() || null, visibility })
         onClose()
       } else {
-        const a = await addAnchor({ title: title.trim(), why: why.trim() || null, visibility })
+        const a = await addAnchor({ title: title.trim(), why: why.trim() || null, visibility, area })
         onClose()
         onCreated?.(a)
       }

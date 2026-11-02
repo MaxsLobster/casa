@@ -16,7 +16,10 @@ export type TaskStatus = 'offen' | 'zugesagt' | 'geparkt' | 'erledigt'
 export type Repeat = 'weekly' | 'monthly' | 'yearly'
 
 /** Was ein Ereignis für die Normalwoche bedeutet */
-export type EventEffect = 'termin' | 'valerie_weg' | 'kita_zu' | 'eltern_weg'
+export type EventEffect = 'termin' | 'valerie_weg' | 'kita_zu' | 'eltern_weg' | 'messe'
+
+/** Bereich: Casa (Familie) oder MWF (Munich Watch Fair, Arbeit) */
+export type Area = 'casa' | 'mwf'
 
 export interface Task {
   id: Id
@@ -35,6 +38,49 @@ export interface Task {
   repeat_until: string | null
   anchor_id: Id | null // gehört zu einem Anker
   is_step: boolean // die Aufgabe ist der nächste Schritt des Ankers
+  area: Area
+  fair_id: Id | null // Rundenpunkt dieser Messe
+  template_id: Id | null // aus dieser Vorlagenzeile erzeugt
+  is_running: boolean // laufend: kein Abhaken, endet am Messetag
+  is_yearly: boolean // Jahres-Checkliste
+}
+
+// ---------------------------------------------------------------------------
+// MWF: Messen, Checklisten-Vorlage, Ideen
+// ---------------------------------------------------------------------------
+
+export interface Fair {
+  id: Id
+  household_id: Id
+  date: string
+  note: string | null
+  created_at: string
+}
+
+export type TemplateSection = 'start' | 'until' | 'before' | 'eve' | 'fair'
+
+export interface TemplateRow {
+  id: Id
+  household_id: Id
+  area: Area
+  title: string
+  owner_member_id: Id | null // null = beide
+  section: TemplateSection
+  days_before: number | null // null = Freitag der Startwoche
+  is_running: boolean
+  sort: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Idea {
+  id: Id
+  household_id: Id
+  area: Area
+  text: string
+  created_by: Id | null
+  created_at: string
+  updated_at: string
 }
 
 // ---------------------------------------------------------------------------
@@ -53,6 +99,7 @@ export interface Anchor {
   visibility: AnchorVisibility
   phase: AnchorPhase
   notes: string | null
+  area: Area
   ask_next: boolean // Schritt erledigt, neuer noch nicht festgelegt
   moved_at: string // letzte Bewegung
   archived_at: string | null
@@ -203,6 +250,8 @@ export interface Settings {
   briefing_time: string
   last_opened_at: string | null
   show_legend: boolean
+  workday_on: string | null // Arbeitstag an diesem Datum (sonst aus)
+  mwf_notify: 'aus' | 'briefing' | 'sofort'
   updated_at: string
 }
 
@@ -222,6 +271,9 @@ export type TableName =
   | 'anchor_log'
   | 'anchor_questions'
   | 'anchor_pins'
+  | 'fairs'
+  | 'checklist_template'
+  | 'ideas'
   | MilaTableName
 
 export interface TableRow extends MilaTableRow {
@@ -240,6 +292,9 @@ export interface TableRow extends MilaTableRow {
   anchor_log: AnchorLog
   anchor_questions: AnchorQuestion
   anchor_pins: AnchorPin
+  fairs: Fair
+  checklist_template: TemplateRow
+  ideas: Idea
 }
 
 // ---------------------------------------------------------------------------
