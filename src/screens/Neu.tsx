@@ -16,11 +16,13 @@ export function Neu() {
   const nav = useNavigate()
   const loc = useLocation()
   const today = useToday()
-  const preset = (loc.state ?? {}) as { kind?: Kind; date?: string }
+  const preset = (loc.state ?? {}) as { kind?: Kind; date?: string; anchor?: string }
 
   const [kind, setKind] = useState<Kind>(preset.kind ?? 'aufgabe')
   const [title, setTitle] = useState('')
-  const [who, setWho] = useState<string | null>(null) // member id | 'beide' | 'p:<person id>'
+  const [who, setWho] = useState<string | null>(null) // member id | 'beide' | 'p:<person id>' | 'offen' (Aufgabe ohne Besitzer)
+  const [anchor, setAnchor] = useState<string>(preset.anchor ?? 'keiner')
+  const anchorOptions = casa.anchors.filter((a) => !a.archived_at)
   const [when, setWhen] = useState<string | null>(preset.date ?? null)
   const [time, setTime] = useState('')
   const [multi, setMulti] = useState(false)
@@ -39,7 +41,7 @@ export function Neu() {
       ? fx.effect === 'valerie_weg'
         ? casa.people.map((p) => ({ value: 'p:' + p.id, label: p.name }))
         : [...partners.map((m) => ({ value: m.id, label: m.display_name })), { value: 'beide', label: 'Beide' }, ...casa.people.map((p) => ({ value: 'p:' + p.id, label: p.name }))]
-      : partners.map((m) => ({ value: m.id, label: m.display_name }))
+      : [...partners.map((m) => ({ value: m.id, label: m.display_name })), { value: 'offen', label: 'Offen' }]
   // Bei „Kita zu" und „Max/Anna ist weg" gibt es keine Frage „Wer?"; bei „Valerie ist weg" ist die Person optional
   const askWho = fx.effect === 'termin' || fx.effect === 'valerie_weg'
   const needWho = fx.effect === 'termin'
@@ -52,6 +54,7 @@ export function Neu() {
   function pickKind(k: Kind) {
     setKind(k)
     if (k === 'aufgabe' && (who === 'beide' || who?.startsWith('p:'))) setWho(null)
+    if (k === 'termin' && who === 'offen') setWho(null)
     if (k === 'aufgabe') setMulti(false)
   }
 
@@ -78,7 +81,7 @@ export function Neu() {
     try {
       if (kind === 'aufgabe') {
         if (!who) return
-        await casa.addTask({ title: title.trim(), owner_member_id: who, due_date: when, repeat })
+        await casa.addTask({ title: title.trim(), owner_member_id: who === 'offen' ? null : who, due_date: when, repeat, anchor_id: anchor === 'keiner' ? null : anchor })
       } else {
         const w = who ?? ''
         await casa.addEvent({
@@ -134,6 +137,14 @@ export function Neu() {
           <div className="stack">
             <span className="label">{kind === 'aufgabe' ? 'Wer kümmert sich?' : fx.effect === 'valerie_weg' ? 'Bei wem?' : 'Wer?'}</span>
             <Chips options={people} value={who} onChange={setWho} />
+            {kind === 'aufgabe' && who === 'offen' && <span className="hint">Noch niemand – beide sehen sie, einer übernimmt. Der andere bekommt eine Mitteilung.</span>}
+          </div>
+        )}
+
+        {kind === 'aufgabe' && anchorOptions.length > 0 && (
+          <div className="stack">
+            <span className="label">Anker</span>
+            <Chips variant="date" options={[{ value: 'keiner', label: 'keiner' }, ...anchorOptions.map((a) => ({ value: a.id, label: '⚓︎ ' + a.title }))]} value={anchor} onChange={setAnchor} />
           </div>
         )}
 

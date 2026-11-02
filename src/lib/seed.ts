@@ -5,6 +5,7 @@ import type { Slot } from './types'
 export const DEMO_HOUSEHOLD_ID = '00000000-0000-0000-0000-00000000000a'
 export const DEMO_MAX_ID = '00000000-0000-0000-0000-00000000000b'
 export const DEMO_ANNA_ID = '00000000-0000-0000-0000-00000000000c'
+export const DEMO_ANCHOR_ID = '00000000-0000-0000-0000-00000000000d'
 
 type Row = [number, Slot, string | null, string | null, boolean, string | null]
 
@@ -54,4 +55,40 @@ export function seedLocal(store: LocalStore) {
   for (const [weekday, slot, value, at, is_open, note] of NORMAL_WEEK) {
     store.insertSync('normal_week', { household_id: DEMO_HOUSEHOLD_ID, weekday, slot, value, at, is_open, note })
   }
+  seedAnchor(store)
+}
+
+/** Beispiel-Anker „Externes Büro" (wie in der echten Datenbank) */
+function seedAnchor(store: LocalStore) {
+  const H = DEMO_HOUSEHOLD_ID
+  const A = DEMO_ANCHOR_ID
+  const fri = (() => {
+    const d = new Date()
+    d.setDate(d.getDate() + ((5 - (d.getDay() || 7) + 7) % 7 || 7))
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })()
+  store.insertSync('anchors', {
+    id: A,
+    household_id: H,
+    title: 'Externes Büro',
+    why: 'Raus aus dem Haus, ein Ort mit Struktur zum Arbeiten und Nachdenken.',
+    visibility: 'shared',
+    phase: 'testen',
+    notes: 'Kein 08/15-Bürokomplex, es muss inspirieren. Am liebsten Prien oder Rosenheim. Erst als Test, dann entscheiden.',
+    ask_next: false,
+    moved_at: '2026-10-28T10:00:00.000Z',
+    archived_at: null,
+    created_by: DEMO_MAX_ID,
+    updated_by: DEMO_MAX_ID,
+  })
+  store.insertSync('tasks', { household_id: H, title: 'Selbst einen Vormittag im Coworking arbeiten', owner_member_id: DEMO_MAX_ID, due_date: fri, status: 'offen', note: null, created_by: DEMO_MAX_ID, updated_by: DEMO_MAX_ID, done_at: null, repeat: null, repeat_until: null, anchor_id: A, is_step: true })
+  const logs: [string, string][] = [
+    ['2026-09-01T10:00:00.000Z', 'Idee: lieber Wohnung auf Zeit als Coworking, zum Arbeiten und Übernachten'],
+    ['2026-09-20T10:00:00.000Z', 'Kandidat gefunden: möblierte Wohnung am Samerberg, Anfrage geschickt'],
+    ['2026-10-28T10:00:00.000Z', 'Anna mietet Coworking für einen Monat, für uns beide'],
+  ]
+  for (const [at, text] of logs) store.insertSync('anchor_log', { household_id: H, anchor_id: A, kind: 'note', text, author_member_id: DEMO_MAX_ID, at })
+  const qs = ['Coworking nach dem Monat verlängern?', 'Doch eine eigene Wohnung (Samerberg-Idee)?', 'Wie oft pro Woche will ich raus?']
+  qs.forEach((text, i) => store.insertSync('anchor_questions', { household_id: H, anchor_id: A, text, resolved_at: null, sort: i, created_by: DEMO_MAX_ID }))
+  store.insertSync('anchor_pins', { member_id: DEMO_MAX_ID, anchor_id: A })
 }

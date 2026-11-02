@@ -15,6 +15,7 @@ import { Takeover } from './Takeover'
 import { EventEditor } from './EventEditor'
 import { SlotEditor } from './SlotEditor'
 import { TaskEditor } from './TaskEditor'
+import { isResting } from '../lib/anchors'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 
@@ -31,6 +32,8 @@ interface Row {
   sub: string
   task?: Task
   isNew?: boolean
+  /** gehört zu einem Anker */
+  anchor?: string | null
   /** Antippen: Ereignis/Termin bearbeiten, Abweichung für den Tag, Aufgabe bearbeiten */
   event?: string // base_id
   slots?: Slot[]
@@ -44,7 +47,8 @@ export function Heute() {
   const now = useNow()
   const nav = useNavigate()
   const location = useLocation()
-  const { me, partner, members, people, tasks, events, normalWeek, overrides, setTaskDone, isNew, markSeen } = casa
+  const { me, partner, members, people, tasks, events, normalWeek, overrides, anchors, pins, setTaskDone, takeTask, isNew, markSeen } = casa
+  const anchorName = (id: string | null) => (id ? anchors.find((a) => a.id === id)?.title ?? null : null)
   const voice: Voice = { me, members }
 
   // ---------- Tag: heute oder (per Wischen) ein späterer Tag ----------
@@ -219,10 +223,14 @@ export function Heute() {
   for (const t of tasks) {
     if (t.status === 'erledigt' || t.due_date !== date || t.owner_member_id !== me?.id) continue
     const away = fx.away.some((a) => a.member.id === t.owner_member_id)
-    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: away ? 'Du bist weg – trotzdem bei dir lassen?' : '', task: t, isNew: isNew('task', t) })
+    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: away ? 'Du bist weg – trotzdem bei dir lassen?' : '', task: t, isNew: isNew('task', t), anchor: anchorName(t.anchor_id) })
   }
   rows.sort((a, c) => a.sort - c.sort)
   const chips = isToday ? [] : openChips(day, fx)
+  // Offene Aufgaben (noch niemand): heute fällig oder überfällig, an anderen Tagen genau an dem Tag
+  const openTasks = tasks.filter((t) => t.status !== 'erledigt' && t.owner_member_id === null && (isToday ? t.due_date <= today : t.due_date === date)).sort((a, c) => a.due_date.localeCompare(c.due_date))
+  // Meine gepinnten Anker (nur heute)
+  const pinned = isToday ? anchors.filter((a) => pins.has(a.id) && !a.archived_at).sort((a, c) => a.title.localeCompare(c.title)) : []
 
   // ---------- Demnächst (nur heute) ----------
   const soon = useMemo(() => {
@@ -332,7 +340,7 @@ export function Heute() {
 
           <section className="stack" style={{ gap: 12 }}>
             <h2 className={'heute__h2' + rc} style={rs(4)}>{isToday ? 'Heute noch' : 'An diesem Tag'}</h2>
-            {rows.length === 0 && chips.length === 0 && <p className={'hint' + rc} style={rs(5)}>{isToday ? 'Nichts mehr für heute. Schön.' : 'Nichts eingetragen.'}</p>}
+            {rows.length === 0 && chips.length === 0 && openTasks.length === 0 && <p className={'hint' + rc} style={rs(5)}>{isToday ? 'Nichts mehr für heute. Schön.' : 'Nichts eingetragen.'}</p>}
             {rows.map((r, idx) => {
               const open = () => {
                 if (r.task) setEditTask(r.task)
@@ -345,7 +353,12 @@ export function Heute() {
                     {r.title}
                     {r.isNew && <span className="stamp stamp--new" style={{ marginLeft: 8, verticalAlign: 'middle' }}>Neu</span>}
                   </span>
-                  {r.sub && <span className="heute__sub">{r.sub}</span>}
+                  {(r.sub || r.anchor) && (
+                    <span className="heute__sub">
+                      {r.sub}
+                      {r.anchor && <span className="ank__tag" style={{ marginLeft: r.sub ? 8 : 0 }}>{r.anchor}</span>}
+                    </span>
+                  )}
                 </div>
               )
               return (
@@ -368,10 +381,15 @@ export function Heute() {
                 </div>
               )
             })}
-            {chips.length > 0 && (
+            {(chips.length > 0 || openTasks.length > 0) && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {chips.map((c) => (
                   <button key={c.key} type="button" className="wk__chip" onClick={() => setTakeover(true)}>{c.label}</button>
+                ))}
+                {openTasks.map((t) => (
+                  <button key={t.id} type="button" className="wk__chip" onClick={() => takeTask(t.id)} aria-label={`${t.title} übernehmen`}>
+                    {t.title}{t.due_date < today ? ` · seit ${dayLabel(t.due_date)}` : ''} · übernehmen
+                  </button>
                 ))}
               </div>
             )}
@@ -390,6 +408,18 @@ export function Heute() {
           )}
 
           <div className="spacer" />
+
+          {pinned.length > 0 && (
+            <div className={'ank__chips' + rc} style={{ paddingTop: 16, ...rs(6 + rows.length) }}>
+              {pinned.map((a) => (
+                <Link key={a.id} to={'/anker/' + a.id} className="ank__chip">
+                  <span style={{ color: 'var(--gold)' }} aria-hidden>⚓︎</span>
+                  {a.title}
+                  {isResting(a, now) && <span className="ank__dot" role="img" aria-label="ruht" />}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className={'tl' + rc} style={rs(3)} aria-label="Tagesverlauf">

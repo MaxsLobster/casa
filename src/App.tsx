@@ -9,7 +9,9 @@ import { Heute } from './screens/Heute'
 import { Woche } from './screens/Woche'
 import { ToDos } from './screens/ToDos'
 import { Neu } from './screens/Neu'
-import { Sonntag } from './screens/Sonntag'
+import { Anker } from './screens/Anker'
+import { AnkerDetail } from './screens/AnkerDetail'
+import { Sonntagsrunde } from './screens/Sonntagsrunde'
 import { Einstellungen } from './screens/Einstellungen'
 import { SetPassword } from './screens/SetPassword'
 import { clearRecovery, pendingRecovery } from './lib/auth'
@@ -117,7 +119,10 @@ function Shell() {
             <Route path="/woche" element={<Woche />} />
             <Route path="/todos" element={<ToDos />} />
             <Route path="/offen" element={<Navigate to="/todos" replace />} />
-            <Route path="/sonntag" element={<Sonntag />} />
+            <Route path="/anker" element={<Anker />} />
+            <Route path="/anker/runde" element={<Sonntagsrunde />} />
+            <Route path="/anker/:id" element={<AnkerDetail />} />
+            <Route path="/sonntag" element={<Navigate to="/anker" replace />} />
             <Route path="/einstellungen" element={<Einstellungen />} />
             <Route path="/neu" element={wide ? <Woche /> : <Heute />} />
             <Route path="*" element={<Navigate to="/heute" replace />} />

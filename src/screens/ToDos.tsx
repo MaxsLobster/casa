@@ -5,12 +5,13 @@ import type { Task } from '../lib/types'
 import { Check, Chevron, Collapse } from '../components/ui'
 import { TaskEditor } from './TaskEditor'
 import { awayOn } from '../lib/effects'
+import { dueLabel } from '../lib/anchors'
 
-type GroupId = 'liegt' | 'neu' | 'heute' | 'woche' | 'spaeter' | 'geschafft'
-const GROUP_ORDER: GroupId[] = ['liegt', 'neu', 'heute', 'woche', 'spaeter', 'geschafft']
-const GROUP_TITLE: Record<GroupId, string> = { liegt: 'Liegt noch', neu: 'Neu', heute: 'Heute fällig', woche: 'Diese Woche', spaeter: 'Später', geschafft: 'Geschafft diese Woche' }
+type GroupId = 'offen' | 'liegt' | 'neu' | 'heute' | 'woche' | 'spaeter' | 'geschafft'
+const GROUP_ORDER: GroupId[] = ['offen', 'liegt', 'neu', 'heute', 'woche', 'spaeter', 'geschafft']
+const GROUP_TITLE: Record<GroupId, string> = { offen: 'Offen – wer übernimmt?', liegt: 'Liegt noch', neu: 'Neu', heute: 'Heute fällig', woche: 'Diese Woche', spaeter: 'Später', geschafft: 'Geschafft diese Woche' }
 // Standard: Liegt noch, Neu und Heute offen, der Rest zu. Zustand pro Gerät.
-const DEFAULT_OPEN: Record<GroupId, boolean> = { liegt: true, neu: true, heute: true, woche: false, spaeter: false, geschafft: false }
+const DEFAULT_OPEN: Record<GroupId, boolean> = { offen: true, liegt: true, neu: true, heute: true, woche: false, spaeter: false, geschafft: false }
 const STORAGE_KEY = 'casa.todoGroups'
 
 function readOpen(): Record<GroupId, boolean> {
@@ -24,7 +25,8 @@ function readOpen(): Record<GroupId, boolean> {
 }
 
 export function ToDos() {
-  const { me, members, tasks, events, setTaskDone, isNew, markSeen } = useCasa()
+  const { me, members, tasks, events, anchors, setTaskDone, takeTask, isNew, markSeen } = useCasa()
+  const anchorName = (id: string | null) => (id ? anchors.find((a) => a.id === id)?.title ?? null : null)
   const today = useToday()
   const now = useNow()
   const [editing, setEditing] = useState<Task | null>(null)
@@ -60,8 +62,12 @@ export function ToDos() {
   }, [tasks, me?.id])
 
   const groups = useMemo(() => {
-    const g: Record<GroupId, Task[]> = { liegt: [], neu: [], heute: [], woche: [], spaeter: [], geschafft: [] }
+    const g: Record<GroupId, Task[]> = { offen: [], liegt: [], neu: [], heute: [], woche: [], spaeter: [], geschafft: [] }
     for (const t of tasks) {
+      if (t.status !== 'erledigt' && t.owner_member_id === null) {
+        g.offen.push(t)
+        continue
+      }
       if (t.status === 'erledigt') {
         // Geschafft: meine und die des anderen
         if ((t.done_at ?? '') >= cutoff) g.geschafft.push(t)
@@ -75,7 +81,7 @@ export function ToDos() {
       else g.spaeter.push(t)
     }
     const byDue = (a: Task, b: Task) => a.due_date.localeCompare(b.due_date) || a.created_at.localeCompare(b.created_at)
-    for (const k of ['liegt', 'neu', 'heute', 'woche', 'spaeter'] as GroupId[]) g[k].sort(byDue)
+    for (const k of ['offen', 'liegt', 'neu', 'heute', 'woche', 'spaeter'] as GroupId[]) g[k].sort(byDue)
     g.geschafft.sort((a, b) => (b.done_at ?? '').localeCompare(a.done_at ?? ''))
     return g
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -125,7 +131,17 @@ export function ToDos() {
             </button>
             <Collapse open={open[k]}>
               <div className="stack" style={{ gap: 0, paddingBottom: 6 }}>
-                {groups[k].map((t) => {
+                {k === 'offen' && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '8px 0 4px' }}>
+                    {groups.offen.map((t) => (
+                      <button key={t.id} type="button" className="wk__chip" style={{ textAlign: 'left' }} onClick={() => takeTask(t.id)} aria-label={`${t.title} übernehmen`}>
+                        {t.title} · {dueLabel(t.due_date, today)} · übernehmen
+                        {anchorName(t.anchor_id) && <span className="ank__tag" style={{ marginLeft: 8, fontFamily: 'var(--font-ui)' }}>{anchorName(t.anchor_id)}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {k !== 'offen' && groups[k].map((t) => {
                   const done = t.status === 'erledigt'
                   return (
                     <div className="todo" key={t.id}>
@@ -134,8 +150,9 @@ export function ToDos() {
                         <span className={'task__title' + (done ? ' task__title--done' : '')} style={{ lineHeight: 1.1 }}>{t.title}</span>
                         <span className="task__meta" style={{ flexWrap: 'wrap' }}>
                           <span className="heute__sub">{meta(t, done)}</span>
+                          {t.anchor_id && anchorName(t.anchor_id) && <span className="ank__tag">{anchorName(t.anchor_id)}</span>}
                           {!done && newIds.has(t.id) && <span className="stamp stamp--new">Neu</span>}
-                          {!done && awayOn(events, t.owner_member_id, t.due_date) && (
+                          {!done && t.owner_member_id && awayOn(events, t.owner_member_id, t.due_date) && (
                             <span className="hint hint--brown" style={{ width: '100%' }}>{mine(t) ? 'Du bist da weg' : `${nameOf(t.owner_member_id)} ist da weg`} – trotzdem {mine(t) ? 'bei dir' : 'dort'} lassen?</span>
                           )}
                         </span>

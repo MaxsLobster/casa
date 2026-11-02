@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – Start mit Ankern</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{color:inherit;text-decoration:none} button{font:inherit;color:inherit}</style>
+</helmet>
+<div style="{{pageStyle}}">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="kInk" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="4" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="0.9" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter>
+    <filter id="kRough" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="9" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter>
+  </svg>
+  <div style="{{perfStyle}}"></div>
+
+  <main style="position: relative; flex: 1; overflow-y: auto; padding: 24px 66px 20px 40px; display: flex; flex-direction: column; gap: 12px">
+    <div style="position: absolute; right: 16px; top: 18px; display: flex; gap: 14px; color: #5F5B52">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 11h16v2a7 7 0 0 1-7 7h-2a7 7 0 0 1-7-7z"></path><path d="M9 7c0-1 1-1.5 1-2.5M13 7c0-1 1-1.5 1-2.5"></path></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"></circle><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"></path></svg>
+    </div>
+    <header style="display: flex; align-items: flex-end; gap: 12px; margin-top: 8px">
+      <span style="font-family: 'Newsreader', Georgia, serif; font-weight: 500; font-size: 84px; line-height: 0.85; color: #243150; text-shadow: 0 1px 0 rgba(255,255,255,0.45)">2</span>
+      <span style="display: flex; flex-direction: column; padding-bottom: 8px">
+        <span style="{{hand}} font-size: 36px; line-height: 1">Montag</span>
+        <span style="{{caps}} font-weight: 400">November · KW 45</span>
+      </span>
+    </header>
+    <div style="{{tear}}"></div>
+    <span style="{{caps}} margin-top: 10px">Heute noch</span>
+    <div style="display: flex; align-items: baseline; gap: 12px; min-height: 36px"><span style="flex: none; width: 8px; height: 8px; border-radius: 4px; background: #B08A45; transform: translateY(-3px)"></span><span style="{{hand}} font-size: 24px">Valerie bei Oma</span><span style="{{small}}">bis Di</span></div>
+    <div style="display: flex; align-items: flex-start; gap: 12px; min-height: 40px"><span style="flex: none; width: 18px; height: 18px; margin-top: 6px; border-radius: 9px; border: 1.5px solid #243150; box-sizing: border-box"></span><span style="{{hand}} font-size: 24px; line-height: 1.12">Winterschuhe Valerie</span></div>
+    <div style="flex: 1"></div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+      <a href="AnkerDetail.dc.html" style="{{chip}}"><span style="color: #B08A45">⚓︎</span>Externes Büro</a>
+      <a href="AnkerDetail.dc.html" style="{{chip}}"><span style="color: #B08A45">⚓︎</span>Zweites Standbein<span style="width: 6px; height: 6px; border-radius: 3px; background: #9A6A2A"></span></a>
+    </div>
+    <p style="margin: 18px 0 0; font-style: italic; font-size: 13px; line-height: 1.45; color: #5F5B52">Unten nur die Anker, die du dir ausgewählt hast. Brauner Punkt = ruht seit über 3 Wochen. Antippen öffnet den Anker.</p>
+  </main>
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.13); display: flex; align-items: center; justify-content: space-around; padding: 0 10px 14px; box-sizing: border-box">
+    <a href="StartChips.dc.html" style="{{navA}}">Heute</a>
+    <a href="Woche3.dc.html" style="{{navI}}">Woche</a>
+    <span style="width: 52px; height: 52px; border-radius: 26px; background: #243150; color: #F5F1E8; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+    <a href="ToDos.dc.html" style="{{navI}}">To-Dos</a>
+    <a href="AnkerListe.dc.html" style="{{navI}}">Anker</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = {}; }
+  renderVals() {
+    var self = this;
+    function svgUrl(w, h, inner) { var s = "<svg xmlns='http://www.w3.org/2000/svg' width='" + w + "' height='" + h + "'>" + inner + "</svg>"; return 'url("data:image/svg+xml,' + encodeURIComponent(s) + '")'; }
+    function noise(id, f, o, seed, m, w, h) { return svgUrl(w, h, "<filter id='" + id + "' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='" + f + "' numOctaves='" + o + "' seed='" + seed + "' stitchTiles='stitch'/><feColorMatrix type='matrix' values='" + m + "'/></filter><rect width='100%' height='100%' filter='url(#" + id + ")'/>"); }
+    var grain = noise('g', '0.9', 3, 3, '0 0 0 0 0.30  0 0 0 0 0.24  0 0 0 0 0.16  0 0 0 0.42 -0.20', 240, 240);
+    var mottle = noise('m', '0.007', 2, 21, '0 0 0 0 0.55  0 0 0 0 0.42  0 0 0 0 0.22  0 0 0 0.10 -0.04', 700, 900);
+    var hole = 'rgba(60,48,30,0.30)', hi = 'rgba(255,255,255,0.7)';
+    var hand = "font-family:'Caveat',cursive;color:#243150;filter:url(#kInk);text-shadow:0 0 0.6px rgba(36,49,80,0.5);";
+    var V = {
+      hand: hand,
+      caps: 'font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#5F5B52;font-weight:600;',
+      small: 'font-size:12px;color:#5F5B52;',
+      tear: 'height:6px;flex:none;background-image:radial-gradient(circle at 3px 3px,' + hole + ' 1.5px,' + hi + ' 2px,transparent 2.4px);background-size:8px 6px;background-repeat:repeat-x;',
+      pageStyle: "position:relative;width:390px;height:844px;box-sizing:border-box;background-color:#F5F1E8;background-image:" + grain + ",radial-gradient(circle at 1px 1px,rgba(29,29,27,0.15) 1px,transparent 1.4px)," + mottle + ";background-size:240px 240px,19px 19px,700px 900px;background-position:0 0,6px 8px,0 0;color:#243150;font-family:'Newsreader',Georgia,serif;font-weight:500;display:flex;flex-direction:column;overflow:hidden;",
+      perfStyle: 'position:absolute;left:19px;top:0;bottom:80px;width:6px;background-image:radial-gradient(circle at 3px 3px,' + hole + ' 1.6px,' + hi + ' 2.1px,transparent 2.6px);background-size:6px 9px;background-repeat:repeat-y;',
+      navA: "font-size:12px;letter-spacing:0.12em;text-transform:uppercase;padding:12px 4px;font-weight:600;color:#243150;border-bottom:2px solid #B08A45;",
+      navI: "font-size:12px;letter-spacing:0.12em;text-transform:uppercase;padding:12px 4px;color:#5F5B52;",
+      chip: 'display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#3F3C36;border:1px solid rgba(29,29,27,0.15);border-radius:999px;padding:5px 11px;background:rgba(255,255,255,0.45);'
+    };
+
+    return V;
+  }
+}
+</script>
+</body>
+</html>

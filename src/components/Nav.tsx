@@ -7,7 +7,7 @@ const items = [
 
 const items2 = [
   { to: '/todos', label: 'To-Dos' },
-  { to: '/sonntag', label: 'Sonntag' },
+  { to: '/anker', label: 'Anker' },
 ] as const
 
 export function Nav() {

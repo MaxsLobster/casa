@@ -22,7 +22,7 @@ export interface Task {
   id: Id
   household_id: Id
   title: string
-  owner_member_id: Id
+  owner_member_id: Id | null // null = offen, noch niemand
   due_date: string // YYYY-MM-DD
   status: TaskStatus
   note: string | null
@@ -33,6 +33,61 @@ export interface Task {
   done_at: string | null
   repeat: Repeat | null
   repeat_until: string | null
+  anchor_id: Id | null // gehört zu einem Anker
+  is_step: boolean // die Aufgabe ist der nächste Schritt des Ankers
+}
+
+// ---------------------------------------------------------------------------
+// Anker: laufende Lebensthemen
+// ---------------------------------------------------------------------------
+
+export type AnchorPhase = 'idee' | 'klaeren' | 'testen' | 'entscheiden' | 'laeuft'
+export type AnchorVisibility = 'shared' | 'private'
+export type AnchorLogKind = 'step_done' | 'phase' | 'note' | 'question' | 'sunday'
+
+export interface Anchor {
+  id: Id
+  household_id: Id
+  title: string
+  why: string | null
+  visibility: AnchorVisibility
+  phase: AnchorPhase
+  notes: string | null
+  ask_next: boolean // Schritt erledigt, neuer noch nicht festgelegt
+  moved_at: string // letzte Bewegung
+  archived_at: string | null
+  created_by: Id | null
+  updated_by: Id | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AnchorLog {
+  id: Id
+  household_id: Id
+  anchor_id: Id
+  kind: AnchorLogKind
+  text: string
+  author_member_id: Id | null
+  at: string
+  created_at: string
+}
+
+export interface AnchorQuestion {
+  id: Id
+  household_id: Id
+  anchor_id: Id
+  text: string
+  resolved_at: string | null
+  sort: number
+  created_by: Id | null
+  created_at: string
+}
+
+export interface AnchorPin {
+  member_id: Id
+  anchor_id: Id
+  created_at: string
 }
 
 export interface Event {
@@ -163,6 +218,10 @@ export type TableName =
   | 'push_subscriptions'
   | 'item_seen'
   | 'notifications'
+  | 'anchors'
+  | 'anchor_log'
+  | 'anchor_questions'
+  | 'anchor_pins'
   | MilaTableName
 
 export interface TableRow extends MilaTableRow {
@@ -177,6 +236,10 @@ export interface TableRow extends MilaTableRow {
   push_subscriptions: PushSubscriptionRow
   item_seen: ItemSeen
   notifications: NotificationRow
+  anchors: Anchor
+  anchor_log: AnchorLog
+  anchor_questions: AnchorQuestion
+  anchor_pins: AnchorPin
 }
 
 // ---------------------------------------------------------------------------

@@ -2,9 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { DemoAuth, SupabaseAuth, type Auth, type AuthUser } from '../lib/auth'
 import { LocalStore, SupabaseStore, type Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
-import type { Event, EventEffect, Household, ItemSeen, Member, NormalWeekRow, Person, Settings, Slot, Task, TaskStatus, WeekOverride, TableName, Repeat } from '../lib/types'
+import type { Anchor, AnchorLog, AnchorLogKind, AnchorPhase, AnchorPin, AnchorQuestion, AnchorVisibility, Event, EventEffect, Household, ItemSeen, Member, NormalWeekRow, Person, Settings, Slot, Task, TaskStatus, WeekOverride, TableName, Repeat } from '../lib/types'
 import { addDays, fromISO, toISO, today } from '../lib/dates'
 import { subscribePush, unsubscribePush, type PushKeys } from '../lib/push'
+import { phaseLabel } from '../lib/anchors'
 
 export type SeenType = ItemSeen['item_type']
 
@@ -25,16 +26,37 @@ export interface Casa {
   normalWeek: NormalWeekRow[]
   overrides: WeekOverride[]
   seen: ItemSeen[]
+  anchors: Anchor[]
+  anchorLog: AnchorLog[]
+  anchorQuestions: AnchorQuestion[]
+  /** meine gepinnten Anker (Auf Startseite) */
+  pins: Set<string>
   error: string | null
 
   /** NEU: vom anderen für mich eingetragen oder geändert und noch nicht angesehen */
   isNew(type: SeenType, item: { id: string; updated_at: string; created_by: string | null; updated_by: string | null; date?: string; end_date?: string | null; occ_end?: string }): boolean
   markSeen(type: SeenType, ids: string[]): Promise<void>
 
-  addTask(input: { title: string; owner_member_id: string; due_date: string; note?: string | null; repeat?: Repeat | null; repeat_until?: string | null }): Promise<void>
-  updateTask(id: string, patch: Partial<Pick<Task, 'title' | 'owner_member_id' | 'due_date' | 'status' | 'note' | 'repeat' | 'repeat_until'>>): Promise<void>
+  addTask(input: { title: string; owner_member_id: string | null; due_date: string; note?: string | null; repeat?: Repeat | null; repeat_until?: string | null; anchor_id?: string | null; is_step?: boolean }): Promise<Task>
+  updateTask(id: string, patch: Partial<Pick<Task, 'title' | 'owner_member_id' | 'due_date' | 'status' | 'note' | 'repeat' | 'repeat_until' | 'anchor_id'>>): Promise<void>
   setTaskDone(id: string, done: boolean): Promise<void>
   removeTask(id: string): Promise<void>
+  /** Offene Aufgabe übernehmen: ich werde Besitzer (keine Mitteilung) */
+  takeTask(id: string): Promise<void>
+
+  // Anker
+  addAnchor(input: { title: string; why: string | null; visibility: AnchorVisibility }): Promise<Anchor>
+  updateAnchor(id: string, patch: Partial<Pick<Anchor, 'title' | 'why' | 'visibility' | 'notes' | 'ask_next'>>): Promise<void>
+  setAnchorPhase(id: string, phase: AnchorPhase): Promise<void>
+  archiveAnchor(id: string, archived: boolean): Promise<void>
+  addAnchorLog(id: string, kind: AnchorLogKind, text: string): Promise<void>
+  /** Nächsten Schritt festlegen oder ändern (die Aufgabe des Ankers) */
+  setStep(anchorId: string, input: { title: string; owner_member_id: string | null; due_date: string }): Promise<void>
+  addQuestion(anchorId: string, text: string): Promise<void>
+  resolveQuestion(id: string, answer: string | null): Promise<void>
+  reopenQuestion(id: string): Promise<void>
+  removeQuestion(id: string): Promise<void>
+  setPin(anchorId: string, on: boolean): Promise<void>
 
   addEvent(input: {
     title: string
@@ -98,6 +120,10 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   const [normalWeek, setNormalWeek] = useState<NormalWeekRow[]>([])
   const [overrides, setOverrides] = useState<WeekOverride[]>([])
   const [seen, setSeen] = useState<ItemSeen[]>([])
+  const [anchors, setAnchors] = useState<Anchor[]>([])
+  const [anchorLog, setAnchorLog] = useState<AnchorLog[]>([])
+  const [anchorQuestions, setAnchorQuestions] = useState<AnchorQuestion[]>([])
+  const [pinRows, setPinRows] = useState<AnchorPin[]>([])
 
   // --- Anmeldung -----------------------------------------------------------
   useEffect(() => {
@@ -142,13 +168,17 @@ export function CasaProvider({ children }: { children: ReactNode }) {
             return
           }
           const hid = mine.household_id
-          const [t, e, n, o, p, sn] = await Promise.all([
+          const [t, e, n, o, p, sn, an, al, aq, ap] = await Promise.all([
             store.select('tasks', { household_id: hid }),
             store.select('events', { household_id: hid }),
             store.select('normal_week', { household_id: hid }),
             store.select('week_overrides', { household_id: hid }),
             store.select('people', { household_id: hid }),
             store.select('item_seen', { member_id: mine.id }),
+            store.select('anchors', { household_id: hid }),
+            store.select('anchor_log', { household_id: hid }),
+            store.select('anchor_questions', { household_id: hid }),
+            store.select('anchor_pins', { member_id: mine.id }),
           ])
           setTasks(t)
           setEvents(e)
@@ -156,6 +186,10 @@ export function CasaProvider({ children }: { children: ReactNode }) {
           setOverrides(o)
           setPeople(p.sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name)))
           setSeen(sn)
+          setAnchors(visibleAnchors(an, mine.id))
+          setAnchorLog(al)
+          setAnchorQuestions(aq)
+          setPinRows(ap)
           setDataReady(true)
           return
         }
@@ -167,6 +201,10 @@ export function CasaProvider({ children }: { children: ReactNode }) {
         if (table === 'people') setPeople((await store.select('people', { household_id: householdId })).sort((a, b) => a.sort - b.sort))
         if (table === 'settings' && me) setSettings((await store.select('settings', { member_id: me.id }))[0] ?? null)
         if (table === 'item_seen' && me) setSeen(await store.select('item_seen', { member_id: me.id }))
+        if (table === 'anchors' && me) setAnchors(visibleAnchors(await store.select('anchors', { household_id: householdId }), me.id))
+        if (table === 'anchor_log') setAnchorLog(await store.select('anchor_log', { household_id: householdId }))
+        if (table === 'anchor_questions') setAnchorQuestions(await store.select('anchor_questions', { household_id: householdId }))
+        if (table === 'anchor_pins' && me) setPinRows(await store.select('anchor_pins', { member_id: me.id }))
       } catch (err) {
         setError((err as Error).message)
         setDataReady(true)
@@ -188,6 +226,10 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       setNormalWeek([])
       setOverrides([])
       setSeen([])
+      setAnchors([])
+      setAnchorLog([])
+      setAnchorQuestions([])
+      setPinRows([])
       setSettings(null)
       setHousehold(null)
       return
@@ -198,7 +240,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   // Live: Änderungen (auch vom anderen) nachladen
   useEffect(() => {
     if (!user) return
-    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen'], (t) => loadRef.current(t))
+    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins'], (t) => loadRef.current(t))
     const onVisible = () => {
       if (document.visibilityState === 'visible') loadRef.current()
     }
@@ -245,6 +287,18 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     return m
   }, [seen])
 
+  const pins = useMemo(() => new Set(pinRows.map((p) => p.anchor_id)), [pinRows])
+
+  /** Bewegung am Anker vermerken (für „Ruht" nach 21 Tagen) */
+  async function touchAnchor(id: string, patch: Partial<Anchor> = {}) {
+    const { me } = need()
+    await store.update('anchors', { id }, { ...patch, moved_at: new Date().toISOString(), updated_by: me.id })
+  }
+  async function logAnchor(id: string, kind: AnchorLogKind, text: string) {
+    const { hid, me } = need()
+    await store.insert('anchor_log', { household_id: hid, anchor_id: id, kind, text, author_member_id: me.id, at: new Date().toISOString() })
+  }
+
   function nextDue(due: string, repeat: Repeat): string {
     const d = fromISO(due)
     if (repeat === 'weekly') d.setDate(d.getDate() + 7)
@@ -270,6 +324,10 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     normalWeek,
     overrides,
     seen,
+    anchors,
+    anchorLog,
+    anchorQuestions,
+    pins,
     error,
 
     isNew(type, item) {
@@ -299,9 +357,10 @@ export function CasaProvider({ children }: { children: ReactNode }) {
 
     async addTask(input) {
       const { hid, me } = need()
-      await store.insert('tasks', { household_id: hid, created_by: me.id, updated_by: me.id, status: 'offen', note: input.note ?? null, repeat: input.repeat ?? null, repeat_until: input.repeat_until ?? null, ...input })
+      const row = await store.insert('tasks', { household_id: hid, created_by: me.id, updated_by: me.id, status: 'offen', note: input.note ?? null, repeat: input.repeat ?? null, repeat_until: input.repeat_until ?? null, anchor_id: input.anchor_id ?? null, is_step: input.is_step ?? false, ...input })
       await load('tasks')
       flushPush()
+      return row
     },
     async updateTask(id, patch) {
       const { me } = need()
@@ -316,6 +375,17 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       const task = tasks.find((t) => t.id === id)
       setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status, done_at: doneAt } : t)))
       await store.update('tasks', { id }, { status, done_at: doneAt, updated_by: me.id })
+      // Der nächste Schritt eines Ankers: in den Verlauf, dann „Und der nächste Schritt?"
+      if (task?.is_step && task.anchor_id) {
+        if (done) {
+          await logAnchor(task.anchor_id, 'step_done', `Erledigt: ${task.title}`)
+          await touchAnchor(task.anchor_id, { ask_next: true })
+        } else {
+          await store.update('anchors', { id: task.anchor_id }, { ask_next: false })
+        }
+        await load('anchors')
+        await load('anchor_log')
+      }
       // Wiederholung: nächste Aufgabe anlegen
       if (done && task?.repeat) {
         const next = nextDue(task.due_date, task.repeat)
@@ -340,6 +410,91 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     async removeTask(id) {
       await store.remove('tasks', { id })
       await load('tasks')
+    },
+    async takeTask(id) {
+      const { me } = need()
+      // updated_by = ich = neuer Besitzer, darum keine Mitteilung
+      await store.update('tasks', { id }, { owner_member_id: me.id, updated_by: me.id })
+      await load('tasks')
+    },
+
+    // --- Anker -------------------------------------------------------------
+    async addAnchor(input) {
+      const { hid, me } = need()
+      const row = await store.insert('anchors', { household_id: hid, title: input.title, why: input.why, visibility: input.visibility, phase: 'idee', notes: null, ask_next: false, moved_at: new Date().toISOString(), archived_at: null, created_by: me.id, updated_by: me.id })
+      await load('anchors')
+      return row
+    },
+    async updateAnchor(id, patch) {
+      const { me } = need()
+      await store.update('anchors', { id }, { ...patch, updated_by: me.id })
+      await load('anchors')
+    },
+    async setAnchorPhase(id, phase) {
+      await touchAnchor(id, { phase })
+      await logAnchor(id, 'phase', `Phase: ${phaseLabel(phase)}`)
+      await load('anchors')
+      await load('anchor_log')
+    },
+    async archiveAnchor(id, archived) {
+      const { me } = need()
+      await store.update('anchors', { id }, { archived_at: archived ? new Date().toISOString() : null, updated_by: me.id })
+      if (archived) {
+        // Der offene Schritt geht mit ins Archiv
+        for (const t of tasks.filter((t) => t.anchor_id === id && t.is_step && t.status !== 'erledigt')) await store.remove('tasks', { id: t.id })
+        await load('tasks')
+      }
+      await load('anchors')
+    },
+    async addAnchorLog(id, kind, text) {
+      await logAnchor(id, kind, text)
+      await touchAnchor(id)
+      await load('anchors')
+      await load('anchor_log')
+    },
+    async setStep(anchorId, input) {
+      const { hid, me } = need()
+      const existing = tasks.find((t) => t.anchor_id === anchorId && t.is_step && t.status !== 'erledigt')
+      if (existing) {
+        await store.update('tasks', { id: existing.id }, { title: input.title, owner_member_id: input.owner_member_id, due_date: input.due_date, updated_by: me.id })
+      } else {
+        await store.insert('tasks', { household_id: hid, created_by: me.id, updated_by: me.id, status: 'offen', note: null, repeat: null, repeat_until: null, anchor_id: anchorId, is_step: true, title: input.title, owner_member_id: input.owner_member_id, due_date: input.due_date })
+      }
+      await touchAnchor(anchorId, { ask_next: false })
+      await load('tasks')
+      await load('anchors')
+      flushPush()
+    },
+    async addQuestion(anchorId, text) {
+      const { hid, me } = need()
+      const sort = anchorQuestions.filter((q) => q.anchor_id === anchorId).length
+      await store.insert('anchor_questions', { household_id: hid, anchor_id: anchorId, text, resolved_at: null, sort, created_by: me.id })
+      await load('anchor_questions')
+    },
+    async resolveQuestion(id, answer) {
+      const q = anchorQuestions.find((x) => x.id === id)
+      await store.update('anchor_questions', { id }, { resolved_at: new Date().toISOString() })
+      if (q) {
+        await logAnchor(q.anchor_id, 'question', `Geklärt: ${q.text}${answer ? ` – ${answer}` : ''}`)
+        await touchAnchor(q.anchor_id)
+        await load('anchors')
+        await load('anchor_log')
+      }
+      await load('anchor_questions')
+    },
+    async reopenQuestion(id) {
+      await store.update('anchor_questions', { id }, { resolved_at: null })
+      await load('anchor_questions')
+    },
+    async removeQuestion(id) {
+      await store.remove('anchor_questions', { id })
+      await load('anchor_questions')
+    },
+    async setPin(anchorId, on) {
+      const { me } = need()
+      if (on) await store.upsert('anchor_pins', { member_id: me.id, anchor_id: anchorId }, 'member_id,anchor_id')
+      else await store.remove('anchor_pins', { member_id: me.id, anchor_id: anchorId })
+      await load('anchor_pins')
     },
 
     async addEvent(input) {
@@ -431,6 +586,11 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   }
 
   return <Ctx.Provider value={casa}>{children}</Ctx.Provider>
+}
+
+/** Private Anker nur für den Ersteller (die Datenbank filtert schon, der Demo-Modus nicht) */
+function visibleAnchors(rows: Anchor[], meId: string): Anchor[] {
+  return rows.filter((a) => a.visibility === 'shared' || a.created_by === meId)
 }
 
 /** Heute als Zustand, der um Mitternacht weiterspringt */

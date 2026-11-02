@@ -13,10 +13,12 @@ const STATUS: { value: TaskStatus; label: string }[] = [
 ]
 
 export function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
-  const { members, updateTask, removeTask } = useCasa()
+  const { members, anchors, updateTask, removeTask } = useCasa()
   const today = useToday()
   const [title, setTitle] = useState(task.title)
-  const [owner, setOwner] = useState(task.owner_member_id)
+  const [owner, setOwner] = useState<string>(task.owner_member_id ?? 'offen')
+  const [anchor, setAnchor] = useState<string>(task.anchor_id ?? 'keiner')
+  const anchorOptions = anchors.filter((a) => !a.archived_at || a.id === task.anchor_id)
   const [due, setDue] = useState<string | null>(task.due_date)
   const [status, setStatus] = useState<TaskStatus>(task.status)
   const [note, setNote] = useState(task.note ?? '')
@@ -26,13 +28,13 @@ export function TaskEditor({ task, onClose }: { task: Task; onClose: () => void 
   const close = useCallback(() => onClose(), [onClose])
 
   const partners = members.filter((m) => m.role === 'partner')
-  const ready = title.trim().length > 0 && !!owner && !!due
+  const ready = title.trim().length > 0 && !!due
 
   async function save() {
     if (!ready || !due) return
     setBusy(true)
     try {
-      await updateTask(task.id, { title: title.trim(), owner_member_id: owner, due_date: due, status, note: note.trim() || null, repeat })
+      await updateTask(task.id, { title: title.trim(), owner_member_id: owner === 'offen' ? null : owner, due_date: due, status, note: note.trim() || null, repeat, ...(task.is_step ? {} : { anchor_id: anchor === 'keiner' ? null : anchor }) })
       onClose()
     } finally {
       setBusy(false)
@@ -50,8 +52,18 @@ export function TaskEditor({ task, onClose }: { task: Task; onClose: () => void 
 
       <div className="stack">
         <span className="label">Wer kümmert sich?</span>
-        <Chips options={partners.map((m) => ({ value: m.id, label: m.display_name }))} value={owner} onChange={setOwner} />
+        <Chips options={[...partners.map((m) => ({ value: m.id, label: m.display_name })), { value: 'offen', label: 'Offen' }]} value={owner} onChange={setOwner} />
+        {owner === 'offen' && <span className="hint">Noch niemand – beide sehen sie, einer übernimmt.</span>}
       </div>
+
+      {task.is_step ? (
+        <span className="hint">Das ist der nächste Schritt von <span className="ank__tag">{anchors.find((a) => a.id === task.anchor_id)?.title ?? 'einem Anker'}</span>. Abhaken trägt es dort in den Verlauf ein.</span>
+      ) : anchorOptions.length > 0 && (
+        <div className="stack">
+          <span className="label">Anker</span>
+          <Chips variant="date" options={[{ value: 'keiner', label: 'keiner' }, ...anchorOptions.map((a) => ({ value: a.id, label: '⚓︎ ' + a.title }))]} value={anchor} onChange={setAnchor} />
+        </div>
+      )}
 
       <div className="stack">
         <span className="label">Bis wann?</span>
@@ -74,7 +86,7 @@ export function TaskEditor({ task, onClose }: { task: Task; onClose: () => void 
       </div>
 
       <button type="button" className="btn" disabled={!ready || busy} onClick={save}>
-        {ready ? 'Speichern' : 'Wer und wann fehlen noch'}
+        {ready ? 'Speichern' : 'Was und wann fehlen noch'}
       </button>
 
       {!confirmRemove ? (

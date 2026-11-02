@@ -978,3 +978,74 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 
 /* Plus-Knopf mit etwas Tiefe */
 :root[data-paper="on"] .nav__plus { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 4px rgba(0, 0, 0, 0.15); }
+
+/* ---------- Anker ---------- */
+
+.ank__sunday {
+  font-family: var(--font-hand); font-size: 20px; color: var(--brown); background: transparent;
+  border: 1.2px dashed rgba(107, 82, 34, 0.6); border-radius: 999px; padding: 4px 12px; cursor: pointer; min-height: 38px;
+}
+:root[data-theme="dark"] .ank__sunday { border-color: rgba(210, 176, 122, 0.6); }
+.ank__group { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.ank__item {
+  display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 10px 0; border: none; border-bottom: 1px solid var(--line-soft);
+  background: transparent; text-align: left; cursor: pointer; color: var(--ink); font-family: inherit; border-radius: 6px; transition: background-color 0.12s;
+}
+.ank__item:active { background: rgba(31, 42, 68, 0.1); }
+:root[data-theme="dark"] .ank__item:active { background: rgba(233, 225, 207, 0.14); }
+.ank__row { display: flex; align-items: center; gap: 8px; }
+.ank__icon { color: var(--gold); flex: none; }
+.ank__title { font-size: 17px; font-weight: 600; color: var(--ink); flex: 1; min-width: 0; }
+.ank__pinned { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--grey-2); flex: none; }
+.ank__in { padding-left: 22px; }
+.ank__bars { display: flex; gap: 4px; align-items: center; }
+.ank__bar { width: 22px; height: 5px; border-radius: 3px; background: var(--line-soft); }
+.ank__bar--on { background: var(--gold); opacity: 0.55; }
+.ank__bar--cur { background: var(--gold); opacity: 1; }
+.ank__phasename { margin-left: 8px; font-size: 12px; color: var(--grey); }
+.ank__step { font-family: var(--font-hand); font-size: 22px; line-height: 1.1; color: var(--navy); overflow-wrap: anywhere; }
+.ank__step--none { color: var(--grey-2); }
+.ank__small { font-size: 12px; color: var(--grey); }
+.ank__moved { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--grey-2); }
+.ank__moved--rest { color: #9A6A2A; }
+:root[data-theme="dark"] .ank__moved--rest { color: #D2B07A; }
+
+/* Detail */
+.ank__back { font-size: 12px; color: var(--grey); background: transparent; border: none; padding: 0; cursor: pointer; align-self: flex-start; text-decoration: none; min-height: 32px; display: flex; align-items: center; }
+.ank__h1 { display: flex; align-items: center; gap: 8px; background: transparent; border: none; padding: 0; text-align: left; cursor: pointer; font-family: inherit; color: var(--ink); }
+.ank__why { font-style: italic; font-size: 16px; line-height: 1.4; color: var(--ink-soft); }
+.ank__phases { display: flex; gap: 4px; }
+.ank__phase { flex: 1; display: flex; flex-direction: column; gap: 5px; background: transparent; border: none; padding: 6px 0; cursor: pointer; min-height: 44px; font-family: inherit; }
+.ank__phase .ank__bar { width: auto; height: 6px; }
+.ank__phase span:last-child { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--grey-2); }
+.ank__phase--cur span:last-child { color: var(--brown); font-weight: 600; }
+.ank__note { display: flex; flex-direction: column; gap: 4px; }
+.ank__note .label--small { color: var(--brown); font-weight: 600; letter-spacing: 0.14em; }
+.ank__notebtn {
+  font-family: var(--font-hand); font-size: 19px; color: var(--brown); background: transparent;
+  border: 1.2px solid rgba(107, 82, 34, 0.55); border-radius: 999px; padding: 2px 12px; cursor: pointer; min-height: 36px;
+}
+.ank__q { font-family: var(--font-hand); font-size: 23px; line-height: 1.15; color: var(--navy); background: transparent; border: none; padding: 4px 0; text-align: left; cursor: pointer; min-height: 40px; overflow-wrap: anywhere; }
+.ank__q--done { color: var(--grey-2); text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.ank__log { display: flex; gap: 12px; align-items: baseline; }
+.ank__logdate { flex: none; width: 52px; font-size: 12px; color: var(--grey-2); }
+.ank__logtext { font-size: 15px; line-height: 1.4; color: var(--ink-soft); overflow-wrap: anywhere; }
+.ank__logwho { font-size: 11px; color: var(--grey-2); margin-left: 6px; }
+.ank__body { font-size: 15px; line-height: 1.45; color: var(--ink-soft); white-space: pre-wrap; background: transparent; border: none; padding: 0; text-align: left; cursor: pointer; font-family: inherit; width: 100%; }
+.ank__notes { font-size: 15px; line-height: 1.45; color: var(--ink-soft); background: transparent; border: none; border-bottom: 1px solid var(--line-soft); padding: 4px 0; width: 100%; resize: none; font-family: inherit; }
+.ank__notes:focus { outline: none; border-bottom-color: var(--navy-line-strong); }
+
+/* Etiketten auf der Startseite */
+.ank__chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.ank__chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-soft); border: 1px solid var(--line);
+  border-radius: 999px; padding: 6px 12px; min-height: 36px; background: rgba(255, 255, 255, 0.5); cursor: pointer; font-family: inherit; text-decoration: none;
+}
+:root[data-theme="dark"] .ank__chip { background: rgba(255, 255, 255, 0.06); }
+.ank__dot { width: 6px; height: 6px; border-radius: 3px; background: #9A6A2A; }
+.ank__tag { font-size: 12px; color: var(--grey-2); white-space: nowrap; }
+.ank__tag::before { content: '⚓︎ '; color: var(--gold); }
+
+/* Sonntagsrunde */
+.ank__round { display: flex; gap: 8px; flex-wrap: wrap; }
+.ank__progress { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--grey); font-weight: 600; }
