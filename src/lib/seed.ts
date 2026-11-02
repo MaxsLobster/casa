@@ -83,7 +83,7 @@ function seedAnchor(store: LocalStore) {
     created_by: DEMO_MAX_ID,
     updated_by: DEMO_MAX_ID,
   })
-  store.insertSync('tasks', { household_id: H, title: 'Selbst einen Vormittag im Coworking arbeiten', owner_member_id: DEMO_MAX_ID, due_date: fri, status: 'offen', note: null, created_by: DEMO_MAX_ID, updated_by: DEMO_MAX_ID, done_at: null, repeat: null, repeat_until: null, anchor_id: A, is_step: true, area: 'casa', fair_id: null, template_id: null, is_running: false, is_yearly: false })
+  store.insertSync('tasks', { household_id: H, title: 'Selbst einen Vormittag im Coworking arbeiten', owner_member_id: DEMO_MAX_ID, due_date: fri, status: 'offen', note: null, created_by: DEMO_MAX_ID, updated_by: DEMO_MAX_ID, done_at: null, repeat: null, repeat_until: null, anchor_id: A, is_step: true, area: 'casa', fair_id: null, template_id: null, is_running: false, is_yearly: false, is_skipped: false })
   const logs: [string, string][] = [
     ['2026-09-01T10:00:00.000Z', 'Idee: lieber Wohnung auf Zeit als Coworking, zum Arbeiten und Übernachten'],
     ['2026-09-20T10:00:00.000Z', 'Kandidat gefunden: möblierte Wohnung am Samerberg, Anfrage geschickt'],
@@ -141,7 +141,7 @@ function seedMwf(store: LocalStore) {
   TEMPLATE.forEach(([title, w, section, days_before, is_running], i) =>
     store.insertSync('checklist_template', { household_id: H, area: 'mwf', title, owner_member_id: who(w), section, days_before, is_running, sort: i + 1 }),
   )
-  store.insertSync('tasks', { household_id: H, title: 'Marktfestsetzung', owner_member_id: DEMO_ANNA_ID, due_date: '2026-12-31', status: 'offen', note: null, created_by: DEMO_MAX_ID, updated_by: DEMO_ANNA_ID, done_at: null, repeat: null, repeat_until: null, anchor_id: null, is_step: false, area: 'mwf', fair_id: null, template_id: null, is_running: false, is_yearly: true })
+  store.insertSync('tasks', { household_id: H, title: 'Marktfestsetzung', owner_member_id: DEMO_ANNA_ID, due_date: '2026-12-31', status: 'offen', note: null, created_by: DEMO_MAX_ID, updated_by: DEMO_ANNA_ID, done_at: null, repeat: null, repeat_until: null, anchor_id: null, is_step: false, area: 'mwf', fair_id: null, template_id: null, is_running: false, is_yearly: true, is_skipped: false })
   const stepDue = (() => {
     const d = new Date()
     d.setDate(d.getDate() + 14)
@@ -149,7 +149,7 @@ function seedMwf(store: LocalStore) {
   })()
   for (const a of MWF_ANCHORS) {
     const row = store.insertSync('anchors', { household_id: H, title: a.title, why: a.why, visibility: 'shared', area: 'mwf', phase: a.phase, notes: a.notes, ask_next: false, moved_at: new Date().toISOString(), archived_at: null, created_by: DEMO_MAX_ID, updated_by: DEMO_MAX_ID })
-    store.insertSync('tasks', { household_id: H, title: a.step, owner_member_id: who(a.who), due_date: stepDue, status: 'offen', note: null, created_by: DEMO_MAX_ID, updated_by: DEMO_MAX_ID, done_at: null, repeat: null, repeat_until: null, anchor_id: row.id, is_step: true, area: 'mwf', fair_id: null, template_id: null, is_running: false, is_yearly: false })
+    store.insertSync('tasks', { household_id: H, title: a.step, owner_member_id: who(a.who), due_date: stepDue, status: 'offen', note: null, created_by: DEMO_MAX_ID, updated_by: DEMO_MAX_ID, done_at: null, repeat: null, repeat_until: null, anchor_id: row.id, is_step: true, area: 'mwf', fair_id: null, template_id: null, is_running: false, is_yearly: false, is_skipped: false })
     a.questions.forEach((text, i) => store.insertSync('anchor_questions', { household_id: H, anchor_id: row.id, text, resolved_at: null, sort: i, created_by: DEMO_MAX_ID }))
     if (a.pinMax) store.insertSync('anchor_pins', { member_id: DEMO_MAX_ID, anchor_id: row.id })
   }

@@ -6,6 +6,7 @@ import { Check, Chevron, Collapse } from '../components/ui'
 import { TaskEditor } from './TaskEditor'
 import { awayOn } from '../lib/effects'
 import { dueLabel } from '../lib/anchors'
+import { isShared } from '../lib/mwf'
 import { useArea } from '../state/area'
 import { IdeenGruppe } from '../mwf/Ideen'
 
@@ -51,7 +52,8 @@ export function ToDos() {
 
   const cutoff = useMemo(() => lastSundayCutoff(now).toISOString(), [now])
   const sunday = addDays(startOfWeek(today), 6)
-  const mine = (t: Task) => t.owner_member_id === me?.id
+  // Gemeinsame Rundenpunkte („beide") gelten für beide als eigene
+  const mine = (t: Task) => t.owner_member_id === me?.id || isShared(t)
   const nameOf = (id: string | null) => members.find((m) => m.id === id)?.display_name ?? ''
 
   // NEU bleibt sichtbar, solange die Liste offen ist
@@ -68,13 +70,13 @@ export function ToDos() {
   const groups = useMemo(() => {
     const g: Record<GroupId, Task[]> = { offen: [], liegt: [], neu: [], heute: [], woche: [], spaeter: [], geschafft: [] }
     for (const t of tasks) {
-      if (t.status !== 'erledigt' && t.owner_member_id === null) {
+      if (t.status !== 'erledigt' && t.owner_member_id === null && !isShared(t)) {
         g.offen.push(t)
         continue
       }
       if (t.status === 'erledigt') {
-        // Geschafft: meine und die des anderen
-        if ((t.done_at ?? '') >= cutoff) g.geschafft.push(t)
+        // Geschafft: meine und die des anderen, nur echte Erledigungen (keine Altlasten)
+        if (!t.is_skipped && (t.done_at ?? '') >= cutoff) g.geschafft.push(t)
         continue
       }
       if (!mine(t)) continue
@@ -92,7 +94,7 @@ export function ToDos() {
   }, [tasks, me?.id, today, sunday, cutoff, newIds])
 
   const archive = useMemo(() => {
-    const old = tasks.filter((t) => t.status === 'erledigt' && t.done_at && t.done_at < cutoff)
+    const old = tasks.filter((t) => t.status === 'erledigt' && !t.is_skipped && t.done_at && t.done_at < cutoff)
     const map = new Map<string, Task[]>()
     for (const t of old) {
       const monday = startOfWeek(toISO(new Date(t.done_at!)))
@@ -105,10 +107,12 @@ export function ToDos() {
   const meta = (t: Task, done: boolean) => {
     if (done) {
       const parts = [t.done_at ? weekdayShort(toISO(new Date(t.done_at))) : 'erledigt']
-      if (!mine(t)) parts.push(nameOf(t.owner_member_id))
+      if (isShared(t)) parts.push('beide')
+      else if (!mine(t)) parts.push(nameOf(t.owner_member_id))
       return parts.join(' · ')
     }
     const parts = [relativeLabel(t.due_date, today)]
+    if (isShared(t)) parts.push('beide')
     if (t.status === 'zugesagt') parts.unshift('zugesagt')
     if (t.status === 'geparkt') parts.unshift('geparkt')
     const actor = t.updated_by ?? t.created_by
@@ -160,7 +164,7 @@ export function ToDos() {
                           {t.fair_id && <span className="mwf__tag">Runde</span>}
                           {t.is_yearly && <span className="mwf__tag">Jahr</span>}
                           {!done && newIds.has(t.id) && <span className="stamp stamp--new">Neu</span>}
-                          {!done && t.owner_member_id && awayOn(events, t.owner_member_id, t.due_date) && (
+                          {!done && t.owner_member_id && awayOn(events, t.owner_member_id, t.due_date, t.area) && (
                             <span className="hint hint--brown" style={{ width: '100%' }}>{mine(t) ? 'Du bist da weg' : `${nameOf(t.owner_member_id)} ist da weg`} – trotzdem {mine(t) ? 'bei dir' : 'dort'} lassen?</span>
                           )}
                         </span>

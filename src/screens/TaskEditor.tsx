@@ -59,8 +59,8 @@ export function TaskEditor({ task, onClose }: { task: Task; onClose: () => void 
 
       <div className="stack">
         <span className="label">Wer kümmert sich?</span>
-        <Chips options={[...partners.map((m) => ({ value: m.id, label: m.display_name })), { value: 'offen', label: 'Offen' }]} value={owner} onChange={setOwner} />
-        {owner === 'offen' && <span className="hint">Noch niemand – beide sehen sie, einer übernimmt.</span>}
+        <Chips options={[...partners.map((m) => ({ value: m.id, label: m.display_name })), { value: 'offen', label: task.area === 'mwf' && task.fair_id ? 'Beide' : 'Offen' }]} value={owner} onChange={setOwner} />
+        {owner === 'offen' && <span className="hint">{task.area === 'mwf' && task.fair_id ? 'Gemeinsam – beide sehen den Punkt, wer abhakt, erledigt ihn für beide.' : 'Noch niemand – beide sehen sie, einer übernimmt.'}</span>}
       </div>
 
       {task.is_step ? (

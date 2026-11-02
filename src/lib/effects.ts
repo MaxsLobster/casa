@@ -2,7 +2,7 @@
 // Die Normalwoche selbst bleibt unverändert; hier wird nur der Tageszustand (DayState)
 // für die Anzeige umgebaut: Einträge entfallen oder werden zu offenen Slots.
 
-import type { Member, Event, Person } from './types'
+import type { Area, Member, Event, Person } from './types'
 import type { DayState, SlotState, Voice } from './week'
 import { SLOT_ORDER, verb } from './week'
 import { occurrences, type Occurrence } from './recur'
@@ -152,9 +152,9 @@ export function effectLines(date: ISODate, fx: DayEffects, v: Voice, people: Per
   return out
 }
 
-/** Ist das Mitglied an diesem Tag laut Ereignis „… ist weg"? */
-export function awayOn(events: Event[], memberId: string, date: ISODate): boolean {
-  return occurrences(events.filter((e) => (e.effect === 'eltern_weg' && e.member_id === memberId) || e.effect === 'messe'), date, date).some((o) => o.occ_date <= date && o.occ_end >= date)
+/** Ist das Mitglied an diesem Tag laut Ereignis „… ist weg"? Der Messetag zählt nur für Casa, nicht für MWF-Aufgaben. */
+export function awayOn(events: Event[], memberId: string, date: ISODate, area: Area = 'casa'): boolean {
+  return occurrences(events.filter((e) => (e.effect === 'eltern_weg' && e.member_id === memberId) || (e.effect === 'messe' && area === 'casa')), date, date).some((o) => o.occ_date <= date && o.occ_end >= date)
 }
 
 /** Offene Chips eines Tages (Woche-Details und Heute an anderen Tagen) */

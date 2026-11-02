@@ -69,10 +69,20 @@ export function roundTasks(tasks: Task[], fairId: string): Task[] {
   return tasks.filter((t) => t.fair_id === fairId)
 }
 
-/** Fortschritt der ganzen Runde, laufende Punkte zählen nicht mit */
+/** Fortschritt der ganzen Runde: laufende Punkte und Altlasten zählen nicht mit */
 export function roundProgress(tasks: Task[]): { done: number; total: number } {
-  const counted = tasks.filter((t) => !t.is_running)
+  const counted = tasks.filter((t) => !t.is_running && !t.is_skipped)
   return { done: counted.filter((t) => t.status === 'erledigt').length, total: counted.length }
+}
+
+/** Wirklich erledigt (keine Altlast) */
+export function isDone(t: Pick<Task, 'status' | 'is_skipped'>): boolean {
+  return t.status === 'erledigt' && !t.is_skipped
+}
+
+/** Gemeinsamer Rundenpunkt („beide"): beide sehen ihn, wer abhakt, erledigt ihn für beide. Kein „übernehmen". */
+export function isShared(t: Pick<Task, 'area' | 'owner_member_id' | 'fair_id'>): boolean {
+  return t.area === 'mwf' && t.owner_member_id === null && t.fair_id !== null
 }
 
 // ---------------------------------------------------------------------------

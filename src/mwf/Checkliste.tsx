@@ -55,13 +55,14 @@ export function Checkliste() {
     return all
   }, [fair, start, tasks, template, members, me?.id, today])
 
-  // Filter: nur meine, erledigte eingeklappt; Abschnitte ohne Zeilen fallen weg
-  const { visible, hiddenDone } = useMemo(() => {
+  // Filter: nur meine, erledigte und Altlasten eingeklappt; Abschnitte ohne Zeilen fallen weg
+  const { visible, hiddenDone, hiddenSkipped } = useMemo(() => {
     let vis = rows.filter((r) => r.kind !== 'item' || !onlyMine || r.mine)
-    const hidden = vis.filter((r) => r.kind === 'item' && r.task?.status === 'erledigt').length
+    const items = vis.filter((r) => r.kind === 'item' && r.task?.status === 'erledigt')
+    const skipped = items.filter((r) => r.kind === 'item' && r.task?.is_skipped).length
     if (!showDone) vis = vis.filter((r) => !(r.kind === 'item' && r.task?.status === 'erledigt'))
     vis = vis.filter((r, i) => r.kind !== 'phase' || vis[i + 1]?.kind === 'item')
-    return { visible: vis, hiddenDone: hidden }
+    return { visible: vis, hiddenDone: items.length - skipped, hiddenSkipped: skipped }
   }, [rows, onlyMine, showDone])
 
   // Wischen: vorherige / nächste Runde
@@ -108,9 +109,11 @@ export function Checkliste() {
 
         {fair && rows.length > 0 && (
           <>
-            {hiddenDone > 0 && (
+            {hiddenDone + hiddenSkipped > 0 && (
               <button type="button" className="mwf__donebtn" onClick={() => setShowDone((v) => !v)} aria-expanded={showDone}>
-                {showDone ? '▾ ' : '▸ '}{hiddenDone} erledigt{showDone ? ' ausblenden' : ''}
+                {showDone ? '▾ ' : '▸ '}
+                {[hiddenDone > 0 ? `${hiddenDone} erledigt` : '', hiddenSkipped > 0 ? `${hiddenSkipped} übersprungen` : ''].filter(Boolean).join(' · ')}
+                {showDone ? ' ausblenden' : ''}
               </button>
             )}
             {!isCurrent && !isPast && <p className="hint" style={{ margin: '0 0 6px 70px', fontSize: 13 }}>Noch nicht gestartet. Vorschau aus der Vorlage.</p>}
@@ -152,7 +155,8 @@ export function Checkliste() {
                     </div>
                   )
                 const t = r.task
-                const done = t?.status === 'erledigt'
+                const skipped = !!t?.is_skipped // Altlast: zählt nicht, antippen öffnet wieder
+                const done = t?.status === 'erledigt' && !skipped
                 const running = t ? t.is_running : !!r.preview?.is_running
                 return (
                   <div className="tl2__row" key={r.key}>
@@ -160,16 +164,16 @@ export function Checkliste() {
                     <span className="tl2__col">
                       <span className={line} />
                       {t && !running ? (
-                        <button type="button" className={'tl2__circle' + (done ? ' tl2__circle--done' : '')} onClick={() => setTaskDone(t.id, !done)} aria-pressed={done} aria-label={done ? `${t.title} wieder öffnen` : `${t.title} abhaken`}>
-                          {done ? '✓' : ''}
+                        <button type="button" className={'tl2__circle' + (done ? ' tl2__circle--done' : skipped ? ' tl2__circle--skipped' : '')} onClick={() => setTaskDone(t.id, !done && !skipped)} aria-pressed={done} aria-label={done || skipped ? `${t.title} wieder öffnen` : `${t.title} abhaken`}>
+                          {done ? '✓' : skipped ? '–' : ''}
                         </button>
                       ) : (
                         <span className={'tl2__circle' + (running ? ' tl2__circle--running' : ' tl2__circle--preview')} aria-hidden />
                       )}
                     </span>
                     <button type="button" className="tl2__text" disabled={!t} onClick={() => t && setEditing(t)}>
-                      <span className={(r.mine ? 'tl2__title' : 'tl2__title--other') + (done ? ' tl2__title--done' : '')}>{t ? t.title : r.preview?.title}</span>
-                      {r.meta && <span className={r.mine ? 'tl2__meta' : 'tl2__meta--other'}>{r.meta}</span>}
+                      <span className={(r.mine && !skipped ? 'tl2__title' : 'tl2__title--other') + (done ? ' tl2__title--done' : '')}>{t ? t.title : r.preview?.title}</span>
+                      {(r.meta || skipped) && <span className={r.mine && !skipped ? 'tl2__meta' : 'tl2__meta--other'}>{[r.meta, skipped ? 'übersprungen' : ''].filter(Boolean).join(' · ')}</span>}
                     </button>
                   </div>
                 )

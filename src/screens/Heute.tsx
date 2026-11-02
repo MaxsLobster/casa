@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import { addDays, dayLabel, eventEnd, fromISO, hhmm, isoWeek, spanLabel, uhr, weekdayLong } from '../lib/dates'
 import { dayState, name as whoName, verb, type Voice } from '../lib/week'
-import { applyEffects, dayEffects, isEffectEvent, openChips, personName } from '../lib/effects'
+import { applyEffects, awayOn, dayEffects, isEffectEvent, openChips, personName } from '../lib/effects'
 import { dailyText, moonPhase, readDailyChoice, sunTimes, writeDailyChoice, type DailyKind } from '../lib/daily'
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import { BAND_END as T_END, BAND_START as T_START, goldSegments, navySegments, pct, toH } from '../lib/band'
@@ -16,7 +16,7 @@ import { EventEditor } from './EventEditor'
 import { SlotEditor } from './SlotEditor'
 import { TaskEditor } from './TaskEditor'
 import { isResting } from '../lib/anchors'
-import { isFairEvent, isWorkday } from '../lib/mwf'
+import { isFairEvent, isShared, isWorkday } from '../lib/mwf'
 import { MwfIcon } from '../mwf/MwfIcon'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
@@ -54,7 +54,7 @@ export function Heute() {
   const { me, partner, members, people, tasks: allTasks, events, normalWeek, overrides, anchors: allAnchors, pins, settings, setTaskDone, takeTask, isNew, markSeen } = casa
   // Casa zeigt nur den Bereich casa; bei Arbeitstag an zusätzlich meine heute fälligen MWF-Aufgaben
   const workday = isWorkday(settings, today)
-  const tasks = useMemo(() => allTasks.filter((t) => t.area === 'casa' || (workday && t.owner_member_id === me?.id && t.due_date === today && !t.is_running)), [allTasks, workday, me?.id, today])
+  const tasks = useMemo(() => allTasks.filter((t) => t.area === 'casa' || (workday && (t.owner_member_id === me?.id || isShared(t)) && t.due_date === today && !t.is_running)), [allTasks, workday, me?.id, today])
   const anchors = useMemo(() => allAnchors.filter((a) => a.area === 'casa'), [allAnchors])
   const anchorName = (id: string | null) => (id ? anchors.find((a) => a.id === id)?.title ?? null : null)
   const voice: Voice = { me, members }
@@ -233,9 +233,10 @@ export function Heute() {
   if (we?.value && !we.is_open && nowH < 20) rows.push({ key: 'we', sort: 9, time: null, kind: 'plan', title: we.value, sub: 'Wochenende', slots: ['wochenende'] })
   // Nur meine Aufgaben, nur genau an dem Tag fällig (Überfälliges steht unter To-Dos bei „Liegt noch")
   for (const t of tasks) {
-    if (t.status === 'erledigt' || t.due_date !== date || t.owner_member_id !== me?.id) continue
-    const away = fx.away.some((a) => a.member.id === t.owner_member_id)
-    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: away && t.area === 'casa' ? 'Du bist weg – trotzdem bei dir lassen?' : '', task: t, isNew: isNew('task', t), anchor: anchorName(t.anchor_id), mwf: t.area === 'mwf' })
+    if (t.status === 'erledigt' || t.due_date !== date || !(t.owner_member_id === me?.id || isShared(t))) continue
+    // Weg: in Casa zählt auch der Messetag, bei MWF-Aufgaben nur echte Abwesenheit
+    const away = !!t.owner_member_id && (t.area === 'mwf' ? awayOn(events, t.owner_member_id, date, 'mwf') : fx.away.some((a) => a.member.id === t.owner_member_id))
+    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: away ? 'Du bist weg – trotzdem bei dir lassen?' : isShared(t) ? 'beide' : '', task: t, isNew: isNew('task', t), anchor: anchorName(t.anchor_id), mwf: t.area === 'mwf' })
   }
   rows.sort((a, c) => a.sort - c.sort)
   const chips = isToday ? [] : openChips(day, fx)

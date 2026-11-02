@@ -5,7 +5,7 @@ import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import type { Task } from '../lib/types'
 import { addDays } from '../lib/dates'
 import { dueLabel, isResting } from '../lib/anchors'
-import { fairLabel, MWF_NAME, nextFair, roundProgress, roundTasks, untilLabel } from '../lib/mwf'
+import { fairLabel, isDone, MWF_NAME, nextFair, roundProgress, roundTasks, untilLabel } from '../lib/mwf'
 import { Check } from '../components/ui'
 import { TaskEditor } from '../screens/TaskEditor'
 import { Band } from './Band'
@@ -29,7 +29,8 @@ export function Hub() {
       .filter((t) => (fair && t.fair_id === fair.id) || (t.is_yearly ? t.due_date <= horizon : !t.fair_id && (!fair || t.due_date <= fair.date)))
       .sort((a, b) => (a.is_running ? 1 : 0) - (b.is_running ? 1 : 0) || a.due_date.localeCompare(b.due_date) || a.created_at.localeCompare(b.created_at))
   }, [tasks, me?.id, fair, today])
-  const doneCount = round.filter((t) => t.status === 'erledigt' && (t.owner_member_id === me?.id || t.owner_member_id === null)).length
+  // Nur echte Erledigungen, keine Altlasten
+  const doneCount = round.filter((t) => isDone(t) && (t.owner_member_id === me?.id || t.owner_member_id === null)).length
 
   const pinned = anchors.filter((a) => a.area === 'mwf' && pins.has(a.id) && !a.archived_at).sort((a, b) => a.title.localeCompare(b.title))
 

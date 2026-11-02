@@ -43,6 +43,7 @@ export interface Task {
   template_id: Id | null // aus dieser Vorlagenzeile erzeugt
   is_running: boolean // laufend: kein Abhaken, endet am Messetag
   is_yearly: boolean // Jahres-Checkliste
+  is_skipped: boolean // Altlast: bei der Ersteinrichtung übersprungen, zählt weder als erledigt noch als offen
 }
 
 // ---------------------------------------------------------------------------

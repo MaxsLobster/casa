@@ -429,7 +429,10 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     },
     async updateTask(id, patch) {
       const { me } = need()
-      await store.update('tasks', { id }, { ...patch, updated_by: me.id })
+      // Wer eine Altlast wieder öffnet, macht sie zur normalen Aufgabe
+      const cur = tasks.find((t) => t.id === id)
+      const unskip = cur?.is_skipped && patch.status && patch.status !== 'erledigt' ? { is_skipped: false } : {}
+      await store.update('tasks', { id }, { ...patch, ...unskip, updated_by: me.id })
       await load('tasks')
       flushPush()
     },
@@ -438,8 +441,9 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       const status: TaskStatus = done ? 'erledigt' : 'offen'
       const doneAt = done ? new Date().toISOString() : null
       const task = tasks.find((t) => t.id === id)
-      setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status, done_at: doneAt } : t)))
-      await store.update('tasks', { id }, { status, done_at: doneAt, updated_by: me.id })
+      setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status, done_at: doneAt, is_skipped: false } : t)))
+      // Altlast wird durch Antippen wieder eine normale Aufgabe
+      await store.update('tasks', { id }, { status, done_at: doneAt, ...(task?.is_skipped ? { is_skipped: false } : {}), updated_by: me.id })
       // Der nächste Schritt eines Ankers: in den Verlauf, dann „Und der nächste Schritt?"
       if (task?.is_step && task.anchor_id) {
         if (done) {
