@@ -153,4 +153,8 @@ function seedMwf(store: LocalStore) {
     a.questions.forEach((text, i) => store.insertSync('anchor_questions', { household_id: H, anchor_id: row.id, text, resolved_at: null, sort: i, created_by: DEMO_MAX_ID }))
     if (a.pinMax) store.insertSync('anchor_pins', { member_id: DEMO_MAX_ID, anchor_id: row.id })
   }
+  // Zurufe: einer von Anna an Max (ungelesen), einer von Max an Anna (gelesen)
+  const ago = (h: number) => new Date(Date.now() - h * 3600000).toISOString()
+  store.insertSync('shouts', { household_id: H, area: 'mwf', from_member_id: DEMO_ANNA_ID, to_member_id: DEMO_MAX_ID, text: 'Hey, der Meier kommt nächsten Sonntag', reply_to: null, read_at: null, archived_at: null, created_at: ago(2) })
+  store.insertSync('shouts', { household_id: H, area: 'mwf', from_member_id: DEMO_MAX_ID, to_member_id: DEMO_ANNA_ID, text: 'Tickets sind seit heute online', reply_to: null, read_at: ago(20), archived_at: ago(20), created_at: ago(26) })
 }

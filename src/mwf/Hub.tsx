@@ -1,24 +1,27 @@
-// MWF-Hub: nächste Messe, Fortschritt der Runde, „Für dich", angeheftete Firmen-Anker
+// MWF-Hub: nächste Messe, Zurufe, „Für dich", angeheftete Firmen-Anker
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import type { Task } from '../lib/types'
 import { addDays } from '../lib/dates'
 import { dueLabel, isResting } from '../lib/anchors'
-import { fairLabel, isDone, MWF_NAME, nextFair, roundProgress, roundTasks, untilLabel } from '../lib/mwf'
+import { agoLabel, fairLabel, isDone, MWF_NAME, nextFair, roundTasks, unreadShouts, untilLabel } from '../lib/mwf'
 import { Check } from '../components/ui'
 import { TaskEditor } from '../screens/TaskEditor'
 import { Band } from './Band'
 
 export function Hub() {
-  const { me, tasks, anchors, pins, fairs, setTaskDone } = useCasa()
+  const { me, members, tasks, anchors, pins, fairs, shouts, setTaskDone } = useCasa()
   const today = useToday()
   const now = useNow()
+  const nav = useNavigate()
   const [editing, setEditing] = useState<Task | null>(null)
+  const nameOf = (id: string) => members.find((m) => m.id === id)?.display_name ?? ''
 
   const fair = useMemo(() => nextFair(fairs, today), [fairs, today])
   const round = useMemo(() => (fair ? roundTasks(tasks, fair.id) : []), [tasks, fair])
-  const progress = roundProgress(round)
+  // Zurufe: die neuesten drei ungelesenen an mich
+  const unread = useMemo(() => unreadShouts(shouts, me?.id ?? null).slice(0, 3), [shouts, me?.id])
 
   // Für dich: meine offenen MWF-Aufgaben bis zur Messe, Jahrespunkte der nächsten 30 Tage
   const mine = useMemo(() => {
@@ -48,17 +51,24 @@ export function Hub() {
             <span className="mwf__big">Keine Messe eingetragen</span>
           )}
         </div>
-        {fair && progress.total > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
-            <div className="mwf__bar" role="progressbar" aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={progress.done}>
-              <div className="mwf__bar-fill" style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }} />
-            </div>
-            <span className="mwf__dim">{progress.done} von {progress.total}</span>
-          </div>
-        )}
       </Band>
 
       <main className="page mwf__main">
+        {unread.length > 0 && (
+          <div className="stack" style={{ gap: 0, marginBottom: 14 }}>
+            <span className="todo-group__title">Zuruf</span>
+            {unread.map((z) => (
+              <button type="button" className="mwf__shout" key={z.id} onClick={() => nav('/mwf/zurufe')}>
+                <span className="mwf__dot" aria-label="ungelesen" />
+                <span className="stack" style={{ gap: 2, minWidth: 0 }}>
+                  <span className="mwf__shout-text">{z.text}</span>
+                  <span className="heute__sub">von {nameOf(z.from_member_id)} · {agoLabel(z.created_at, now)}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
         <span className="todo-group__title">Für dich</span>
         <div className="stack" style={{ gap: 0 }}>
           {mine.length === 0 && <p className="hint" style={{ paddingTop: 6 }}>Nichts offen bis zur Messe. Schön.</p>}
@@ -95,6 +105,7 @@ export function Hub() {
             ))}
           </div>
         )}
+        <Link to="/mwf/zurufe" className="link" style={{ alignSelf: 'flex-start', fontSize: 12, paddingTop: 16 }}>Alle Zurufe</Link>
       </main>
 
       {editing && <TaskEditor task={editing} onClose={() => setEditing(null)} />}

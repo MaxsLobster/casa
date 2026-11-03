@@ -1,5 +1,5 @@
 // Munich Watch Fair: Runde, Fälligkeiten aus der Vorlage, Zeitleiste, Messetage als Ereignis
-import type { Event, Fair, Member, Settings, Task, TemplateRow, TemplateSection } from './types'
+import type { Event, Fair, Member, Settings, Shout, Task, TemplateRow, TemplateSection } from './types'
 import { addDays, fromISO, startOfWeek, weekdayShort, type ISODate } from './dates'
 
 export const MWF_NAME = 'Munich Watch Fair'
@@ -213,4 +213,28 @@ export function fairEvents(fairs: Fair[]): Event[] {
 
 export function isFairEvent(e: { id: string }): boolean {
   return e.id.startsWith(FAIR_EVENT_PREFIX)
+}
+
+// ---------------------------------------------------------------------------
+// Zurufe
+// ---------------------------------------------------------------------------
+
+/** Ungelesene Zurufe an mich (nicht archiviert), neueste zuerst */
+export function unreadShouts(shouts: Shout[], meId: string | null): Shout[] {
+  if (!meId) return []
+  return shouts.filter((s) => s.to_member_id === meId && !s.read_at && !s.archived_at).sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+/** „gerade eben" · „vor 5 Min." · „vor 2 Std." · „gestern" · „vor 3 Tagen" · „12.10." */
+export function agoLabel(iso: string, now: Date): string {
+  const min = Math.max(0, Math.round((now.getTime() - new Date(iso).getTime()) / 60000))
+  if (min < 1) return 'gerade eben'
+  if (min < 60) return `vor ${min} Min.`
+  const h = Math.round(min / 60)
+  if (h < 24) return `vor ${h} Std.`
+  const d = Math.round(h / 24)
+  if (d === 1) return 'gestern'
+  if (d < 14) return `vor ${d} Tagen`
+  const t = new Date(iso)
+  return `${t.getDate()}.${t.getMonth() + 1}.`
 }

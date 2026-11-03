@@ -84,6 +84,20 @@ export interface Idea {
   updated_at: string
 }
 
+/** Zuruf: kurze Info von einem an den anderen (keine Aufgabe, nur Text) */
+export interface Shout {
+  id: Id
+  household_id: Id
+  area: Area
+  from_member_id: Id
+  to_member_id: Id
+  text: string
+  reply_to: Id | null // Antwort auf diesen Zuruf
+  read_at: string | null // „gelesen" gedrückt
+  archived_at: string | null
+  created_at: string
+}
+
 // ---------------------------------------------------------------------------
 // Anker: laufende Lebensthemen
 // ---------------------------------------------------------------------------
@@ -275,6 +289,7 @@ export type TableName =
   | 'fairs'
   | 'checklist_template'
   | 'ideas'
+  | 'shouts'
   | MilaTableName
 
 export interface TableRow extends MilaTableRow {
@@ -296,6 +311,7 @@ export interface TableRow extends MilaTableRow {
   fairs: Fair
   checklist_template: TemplateRow
   ideas: Idea
+  shouts: Shout
 }
 
 // ---------------------------------------------------------------------------

@@ -8,11 +8,13 @@ import { AnchorIcon, AnchorSheet, PhaseBars } from './AnkerTeile'
 import { Chevron, Collapse } from '../components/ui'
 import { areaBase, useArea } from '../state/area'
 import { MwfIcon } from '../mwf/MwfIcon'
+import { unreadShouts } from '../lib/mwf'
 
 const ORDER: AnchorGroup[] = ['bewegung', 'ruht', 'laeuft']
 
 export function Anker() {
-  const { anchors: allAnchors, tasks, members, pins, archiveAnchor } = useCasa()
+  const { me, anchors: allAnchors, tasks, members, pins, shouts, archiveAnchor } = useCasa()
+  const hasShouts = unreadShouts(shouts, me?.id ?? null).length > 0
   const area = useArea()
   const base = areaBase(area)
   const anchors = useMemo(() => allAnchors.filter((a) => a.area === area), [allAnchors, area])
@@ -114,7 +116,10 @@ export function Anker() {
 
       {area === 'casa' && (
         <Link to="/mwf/hub" className="mwf__entry" aria-label="Munich Watch Fair">
-          <MwfIcon size={16} />
+          <span style={{ position: 'relative', display: 'inline-flex' }}>
+            <MwfIcon size={16} />
+            {hasShouts && <span className="mwf__dot mwf__dot--icon" aria-label="ungelesene Zurufe" />}
+          </span>
           MWF
         </Link>
       )}

@@ -9,8 +9,9 @@ import { addDays } from '../lib/dates'
 import { EffectChips, EMPTY_HANDOVER, HandoverFields, parseEffect, type EffectChoice, type Handover } from './EffectPicker'
 import { defaultTitle } from '../lib/effects'
 import { useArea } from '../state/area'
+import { SHOUT_HINT } from '../mwf/Zurufe'
 
-type Kind = 'aufgabe' | 'termin' | 'idee'
+type Kind = 'aufgabe' | 'termin' | 'idee' | 'zuruf'
 
 export function Neu() {
   const casa = useCasa()
@@ -18,11 +19,11 @@ export function Neu() {
   const loc = useLocation()
   const today = useToday()
   const area = useArea()
-  const preset = (loc.state ?? {}) as { kind?: Kind; date?: string; anchor?: string; title?: string; idea?: string; yearly?: boolean }
+  const preset = (loc.state ?? {}) as { kind?: Kind; date?: string; anchor?: string; title?: string; idea?: string; yearly?: boolean; who?: string; shout?: string }
 
   const [kind, setKind] = useState<Kind>(preset.kind ?? 'aufgabe')
   const [title, setTitle] = useState(preset.title ?? '')
-  const [who, setWho] = useState<string | null>(null) // member id | 'beide' | 'p:<person id>' | 'offen' (Aufgabe ohne Besitzer)
+  const [who, setWho] = useState<string | null>(preset.who ?? null) // member id | 'beide' | 'p:<person id>' | 'offen' (Aufgabe ohne Besitzer)
   const [anchor, setAnchor] = useState<string>(preset.anchor ?? 'keiner')
   const anchorOptions = casa.anchors.filter((a) => !a.archived_at && a.area === area)
   const [when, setWhen] = useState<string | null>(preset.date ?? null)
@@ -37,6 +38,7 @@ export function Neu() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
 
   const partners = casa.members.filter((m) => m.role === 'partner')
+  const other = partners.find((m) => m.id !== casa.me?.id) ?? null // Empfänger eines Zurufs
   const fx = kind === 'termin' ? parseEffect(effectChoice) : parseEffect('termin')
   const people =
     kind === 'termin'
@@ -50,12 +52,12 @@ export function Neu() {
   const autoTitle = defaultTitle(fx.effect, who?.startsWith('p:') ? (casa.people.find((p) => 'p:' + p.id === who)?.name ?? null) : null, fx.member_id ? (partners.find((m) => m.id === fx.member_id)?.display_name ?? null) : null)
   const finalTitle = title.trim() || autoTitle
 
-  const ready = kind === 'idee' ? title.trim().length > 0 : finalTitle.length > 0 && (!needWho || !!who) && !!when && (!multi || (!!until && until >= when))
+  const ready = kind === 'idee' || kind === 'zuruf' ? title.trim().length > 0 : finalTitle.length > 0 && (!needWho || !!who) && !!when && (!multi || (!!until && until >= when))
   const missing = needWho && !who && !when ? 'Wer und wann fehlen noch' : needWho && !who ? 'Wer fehlt noch' : !when ? 'Wann fehlt noch' : multi && (!until || until < (when ?? '')) ? 'Bis wann fehlt noch' : 'Was fehlt noch'
 
   function pickKind(k: Kind) {
     setKind(k)
-    if (k === 'idee') return
+    if (k === 'idee' || k === 'zuruf') return
     if (k === 'aufgabe' && (who === 'beide' || who?.startsWith('p:'))) setWho(null)
     if (k === 'termin' && who === 'offen') setWho(null)
     if (k === 'aufgabe') setMulti(false)
@@ -79,11 +81,16 @@ export function Neu() {
 
   async function save() {
     if (!ready) return
-    if (kind === 'idee') {
+    if (kind === 'idee' || kind === 'zuruf') {
       setBusy(true)
       setError(null)
       try {
-        await casa.addIdea(title.trim(), area)
+        if (kind === 'zuruf') {
+          if (!other) return
+          await casa.addShout(other.id, title.trim())
+        } else {
+          await casa.addIdea(title.trim(), area)
+        }
         back()
       } catch (err) {
         setError('Konnte nicht speichern: ' + (err as Error).message)
@@ -100,6 +107,7 @@ export function Neu() {
         if (!who) return
         await casa.addTask({ title: title.trim(), owner_member_id: who === 'offen' ? null : who, due_date: when, repeat, anchor_id: anchor === 'keiner' ? null : anchor, area, is_yearly: !!preset.yearly })
         if (preset.idea) await casa.removeIdea(preset.idea)
+        if (preset.shout) await casa.readShout(preset.shout)
       } else {
         const w = who ?? ''
         await casa.addEvent({
@@ -135,6 +143,7 @@ export function Neu() {
 
         <Tabs
           tabs={[
+            ...(area === 'mwf' && other ? [{ value: 'zuruf' as Kind, label: `Zuruf an ${other.display_name}` }] : []),
             { value: 'aufgabe' as Kind, label: 'Aufgabe' },
             ...(area === 'mwf' ? [{ value: 'idee' as Kind, label: 'Idee' }] : []),
             { value: 'termin' as Kind, label: 'Termin' },
@@ -145,12 +154,13 @@ export function Neu() {
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, position: 'relative' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <HandInput value={title} onChange={setTitle} placeholder={kind === 'aufgabe' ? 'Was ist zu tun?' : kind === 'idee' ? 'Was ist die Idee?' : autoTitle || 'Was steht an?'} inputRef={inputRef} autoFocus />
+            <HandInput value={title} onChange={setTitle} placeholder={kind === 'aufgabe' ? 'Was ist zu tun?' : kind === 'idee' ? 'Was ist die Idee?' : kind === 'zuruf' ? 'Kurz zugerufen …' : autoTitle || 'Was steht an?'} inputRef={inputRef} autoFocus />
           </div>
           <MicButton target={inputRef} />
         </div>
 
-        {area === 'mwf' && kind !== 'idee' && <span className="hint"><span className="mwf__tag" style={{ marginRight: 6 }}>MWF</span>{kind === 'aufgabe' ? (preset.yearly ? 'Punkt der Jahres-Checkliste.' : 'Aufgabe der Firma. In Casa nur sichtbar, wenn der Arbeitstag an ist.') : 'Termine stehen immer in der Casa-Woche.'}</span>}
+        {kind === 'zuruf' && <span className="hint">{SHOUT_HINT}</span>}
+        {area === 'mwf' && kind !== 'idee' && kind !== 'zuruf' && <span className="hint"><span className="mwf__tag" style={{ marginRight: 6 }}>MWF</span>{kind === 'aufgabe' ? (preset.yearly ? 'Punkt der Jahres-Checkliste.' : 'Aufgabe der Firma. In Casa nur sichtbar, wenn der Arbeitstag an ist.') : 'Termine stehen immer in der Casa-Woche.'}</span>}
         {kind === 'idee' && <span className="hint">Ohne Besitzer, ohne Datum. Später zur Aufgabe oder zum Anker machen.</span>}
 
         {kind === 'termin' && <EffectChips value={effectChoice} onChange={pickEffect} partners={partners} />}
@@ -170,7 +180,7 @@ export function Neu() {
           </div>
         )}
 
-        {kind !== 'idee' && (
+        {kind !== 'idee' && kind !== 'zuruf' && (
         <div className="stack">
           <span className="label">{kind === 'aufgabe' ? 'Bis wann?' : multi ? 'Von wann?' : 'Wann?'}</span>
           <WhenPicker kind={kind} value={when} onChange={(d) => { setWhen(d); if (multi && !until && d) setUntil(addDays(d, 1)) }} today={today} />
@@ -203,7 +213,7 @@ export function Neu() {
 
         {kind === 'termin' && fx.effect === 'valerie_weg' && <HandoverFields value={handover} onChange={setHandover} me={casa.me} members={casa.members} people={casa.people} />}
 
-        {kind !== 'idee' && (
+        {kind !== 'idee' && kind !== 'zuruf' && (
           <div className="stack">
             <span className="label">Wiederholen?</span>
             <RepeatPicker value={repeat} onChange={setRepeat} />
@@ -215,7 +225,7 @@ export function Neu() {
         <div className="spacer" />
 
         <button type="button" className="btn" disabled={!ready || busy} onClick={save}>
-          {busy ? 'Einen Moment …' : ready ? 'Notieren' : kind === 'idee' ? 'Was fehlt noch' : missing}
+          {busy ? 'Einen Moment …' : ready ? (kind === 'zuruf' ? 'Senden' : 'Notieren') : kind === 'idee' || kind === 'zuruf' ? 'Was fehlt noch' : missing}
         </button>
       </div>
     </div>

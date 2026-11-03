@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { DemoAuth, SupabaseAuth, type Auth, type AuthUser } from '../lib/auth'
 import { LocalStore, SupabaseStore, type Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
-import type { Anchor, AnchorLog, AnchorLogKind, AnchorPhase, AnchorPin, AnchorQuestion, AnchorVisibility, Area, Event, EventEffect, Fair, Household, Idea, ItemSeen, Member, NormalWeekRow, Person, Settings, Slot, Task, TaskStatus, TemplateRow, WeekOverride, TableName, Repeat } from '../lib/types'
+import type { Anchor, AnchorLog, AnchorLogKind, AnchorPhase, AnchorPin, AnchorQuestion, AnchorVisibility, Area, Event, EventEffect, Fair, Household, Idea, ItemSeen, Member, NormalWeekRow, Person, Settings, Shout, Slot, Task, TaskStatus, TemplateRow, WeekOverride, TableName, Repeat } from '../lib/types'
 import { addDays, fromISO, toISO, today } from '../lib/dates'
 import { subscribePush, unsubscribePush, type PushKeys } from '../lib/push'
 import { phaseLabel } from '../lib/anchors'
@@ -36,6 +36,7 @@ export interface Casa {
   fairs: Fair[]
   template: TemplateRow[]
   ideas: Idea[]
+  shouts: Shout[]
   error: string | null
 
   /** NEU: vom anderen für mich eingetragen oder geändert und noch nicht angesehen */
@@ -69,6 +70,10 @@ export interface Casa {
   addIdea(text: string, area: Area): Promise<void>
   updateIdea(id: string, text: string): Promise<void>
   removeIdea(id: string): Promise<void>
+  // Zurufe
+  addShout(to: string, text: string, replyTo?: string | null): Promise<void>
+  /** „gelesen": verschwindet aus der Inbox, ins Archiv */
+  readShout(id: string): Promise<void>
   addTemplateRow(input: Pick<TemplateRow, 'title' | 'owner_member_id' | 'section' | 'days_before' | 'is_running'>): Promise<void>
   updateTemplateRow(id: string, patch: Partial<Pick<TemplateRow, 'title' | 'owner_member_id' | 'section' | 'days_before' | 'is_running' | 'sort'>>): Promise<void>
   removeTemplateRow(id: string): Promise<void>
@@ -142,6 +147,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   const [fairs, setFairs] = useState<Fair[]>([])
   const [template, setTemplate] = useState<TemplateRow[]>([])
   const [ideas, setIdeas] = useState<Idea[]>([])
+  const [shouts, setShouts] = useState<Shout[]>([])
 
   // --- Anmeldung -----------------------------------------------------------
   useEffect(() => {
@@ -186,7 +192,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
             return
           }
           const hid = mine.household_id
-          const [t, e, n, o, p, sn, an, al, aq, ap, fr, tp, id] = await Promise.all([
+          const [t, e, n, o, p, sn, an, al, aq, ap, fr, tp, id, sh] = await Promise.all([
             store.select('tasks', { household_id: hid }),
             store.select('events', { household_id: hid }),
             store.select('normal_week', { household_id: hid }),
@@ -200,6 +206,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
             store.select('fairs', { household_id: hid }),
             store.select('checklist_template', { household_id: hid }),
             store.select('ideas', { household_id: hid }),
+            store.select('shouts', { household_id: hid }),
           ])
           setTasks(t)
           setEvents(e)
@@ -214,6 +221,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
           setFairs(fr)
           setTemplate(tp)
           setIdeas(id)
+          setShouts(sh)
           setDataReady(true)
           return
         }
@@ -232,6 +240,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
         if (table === 'fairs') setFairs(await store.select('fairs', { household_id: householdId }))
         if (table === 'checklist_template') setTemplate(await store.select('checklist_template', { household_id: householdId }))
         if (table === 'ideas') setIdeas(await store.select('ideas', { household_id: householdId }))
+        if (table === 'shouts') setShouts(await store.select('shouts', { household_id: householdId }))
       } catch (err) {
         setError((err as Error).message)
         setDataReady(true)
@@ -260,6 +269,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       setFairs([])
       setTemplate([])
       setIdeas([])
+      setShouts([])
       setSettings(null)
       setHousehold(null)
       return
@@ -270,7 +280,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   // Live: Änderungen (auch vom anderen) nachladen
   useEffect(() => {
     if (!user) return
-    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins', 'fairs', 'checklist_template', 'ideas'], (t) => loadRef.current(t))
+    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins', 'fairs', 'checklist_template', 'ideas', 'shouts'], (t) => loadRef.current(t))
     const onVisible = () => {
       if (document.visibilityState === 'visible') loadRef.current()
     }
@@ -393,6 +403,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     fairs,
     template,
     ideas,
+    shouts,
     error,
 
     isNew(type, item) {
@@ -587,6 +598,19 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     async removeIdea(id) {
       await store.remove('ideas', { id })
       await load('ideas')
+    },
+    async addShout(to, text, replyTo = null) {
+      const { hid, me } = need()
+      await store.insert('shouts', { household_id: hid, area: 'mwf', from_member_id: me.id, to_member_id: to, text, reply_to: replyTo, read_at: null, archived_at: null })
+      await load('shouts')
+      flushPush()
+    },
+    async readShout(id) {
+      const now = new Date().toISOString()
+      setShouts((xs) => xs.map((x) => (x.id === id ? { ...x, read_at: x.read_at ?? now, archived_at: now } : x)))
+      const cur = shouts.find((x) => x.id === id)
+      await store.update('shouts', { id }, { read_at: cur?.read_at ?? now, archived_at: now })
+      await load('shouts')
     },
     async addTemplateRow(input) {
       const { hid } = need()

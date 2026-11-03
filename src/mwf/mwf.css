@@ -60,6 +60,20 @@
 .mwf__row .check { margin-top: 4px; }
 
 
+/* Zurufe */
+.mwf__shout {
+  width: 100%; display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; min-height: 48px;
+  background: transparent; border: none; border-bottom: 1px solid var(--line-soft); text-align: left; cursor: pointer; color: var(--ink); font-family: inherit;
+}
+.mwf__shout--inbox { cursor: default; padding: 10px 0; }
+.mwf__shout--old { cursor: default; }
+.mwf__shout .mwf__dot { flex: none; margin-top: 11px; }
+.mwf__shout-text { font-family: var(--font-hand); font-size: 24px; line-height: 1.12; color: var(--navy); overflow-wrap: anywhere; white-space: pre-wrap; }
+.mwf__shout-text--old { font-size: 20px; color: var(--ink-soft); }
+.mwf__shout-actions { display: flex; gap: 16px; padding-top: 2px; }
+.mwf__act { background: transparent; border: none; padding: 8px 0; min-height: 36px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brown); cursor: pointer; white-space: nowrap; font-family: var(--font-ui); }
+:root[data-paper="on"] .mwf__shout-text { filter: url(#aInk); }
+
 /* Ideen */
 .mwf__idea {
   width: 100%; display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; min-height: 48px;

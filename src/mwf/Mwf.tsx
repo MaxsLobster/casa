@@ -5,6 +5,7 @@ import { useSplashGone } from '../state/splash'
 import { Hub } from './Hub'
 import { Checkliste } from './Checkliste'
 import { Vorlage } from './Vorlage'
+import { Zurufe } from './Zurufe'
 import { Band } from './Band'
 import { ToDos } from '../screens/ToDos'
 import { Anker } from '../screens/Anker'
@@ -38,6 +39,7 @@ function MwfShell() {
             <Route path="/mwf/neu" element={<Hub />} />
             <Route path="/mwf/checkliste" element={<Checkliste />} />
             <Route path="/mwf/vorlage" element={<Vorlage />} />
+            <Route path="/mwf/zurufe" element={<Zurufe />} />
             <Route path="/mwf/todos" element={<ToDos />} />
             <Route path="/mwf/anker" element={<Anker />} />
             <Route path="/mwf/anker/runde" element={<Sonntagsrunde />} />

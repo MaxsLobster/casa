@@ -176,7 +176,7 @@ export function Einstellungen() {
             value={settings?.mwf_notify ?? 'aus'}
             onChange={(v) => updateSettings({ mwf_notify: v })}
           />
-          <p className="hint">Gilt für Aufgaben der Firma, die der andere für dich einträgt. Rundenpunkte aus der Vorlage lösen nie eine Mitteilung aus.</p>
+          <p className="hint">Gilt für Zurufe und für Aufgaben der Firma, die der andere für dich einträgt. Bei „aus“ zeigt nur ein Punkt am MWF-Symbol ungelesene Zurufe. Rundenpunkte aus der Vorlage lösen nie eine Mitteilung aus.</p>
         </div>
       </div>
 

@@ -16,7 +16,7 @@ import { EventEditor } from './EventEditor'
 import { SlotEditor } from './SlotEditor'
 import { TaskEditor } from './TaskEditor'
 import { isResting } from '../lib/anchors'
-import { isFairEvent, isShared, isWorkday } from '../lib/mwf'
+import { isFairEvent, isShared, isWorkday, unreadShouts } from '../lib/mwf'
 import { MwfIcon } from '../mwf/MwfIcon'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
@@ -54,6 +54,7 @@ export function Heute() {
   const { me, partner, members, people, tasks: allTasks, events, normalWeek, overrides, anchors: allAnchors, pins, settings, setTaskDone, takeTask, isNew, markSeen } = casa
   // Casa zeigt nur den Bereich casa; bei Arbeitstag an zusätzlich meine heute fälligen MWF-Aufgaben
   const workday = isWorkday(settings, today)
+  const hasShouts = unreadShouts(casa.shouts, me?.id ?? null).length > 0
   const tasks = useMemo(() => allTasks.filter((t) => t.area === 'casa' || (workday && (t.owner_member_id === me?.id || isShared(t)) && t.due_date === today && !t.is_running)), [allTasks, workday, me?.id, today])
   const anchors = useMemo(() => allAnchors.filter((a) => a.area === 'casa'), [allAnchors])
   const anchorName = (id: string | null) => (id ? anchors.find((a) => a.id === id)?.title ?? null : null)
@@ -292,6 +293,7 @@ export function Heute() {
       {workday && (
         <Link to="/mwf/hub" className="heute__gear heute__mwf" aria-label="Munich Watch Fair">
           <MwfIcon />
+          {hasShouts && <span className="mwf__dot mwf__dot--icon" aria-label="ungelesene Zurufe" />}
         </Link>
       )}
       {/* ---------- Kopf ---------- */}
