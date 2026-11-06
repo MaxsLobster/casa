@@ -333,8 +333,109 @@ export interface MilaRecipe {
   notes: string | null
   valerie_note: string | null
   image_url: string | null
+  meal: MilaMeal
+  label: string | null // Kartenkategorie, leer = alte Kategorie
+  blurb: string | null // ein Satz für die Karte
+  valerie_mag: boolean
+  cook_double: boolean // „doppelt → Mittag“
+  prep_box: boolean // komplett vorbereitbar
   created_by: Id | null
   updated_by: Id | null
+  created_at: string
+  updated_at: string
+}
+
+/** Wofür ein Gericht taugt */
+export type MilaMeal = 'mittag' | 'abend' | 'beides'
+/** Mahlzeit in der Woche */
+export type MealSlot = 'mittag' | 'abend'
+
+export interface MilaPrepStep {
+  id: Id
+  household_id: Id
+  recipe_id: Id
+  position: number
+  text: string
+  duration_min: number | null
+  runs_alongside: boolean
+  box_label: string | null
+  day_before: boolean
+}
+
+export interface MilaSettings {
+  household_id: Id
+  lunches: number
+  dinners: number
+  card_weekday: number
+  card_time: string
+  close_weekday: number
+  close_time: string
+  adopt_weekday: number
+  adopt_time: string
+  shop_weekday: number
+  prep_weekday: number
+  prep_time: string
+  updated_at: string
+}
+
+export type MilaVoteKind = 'nein' | 'ja' | 'joker'
+
+export interface MilaVote {
+  id: Id
+  household_id: Id
+  menu_id: Id
+  member_id: Id
+  recipe_id: Id
+  meal: MealSlot
+  vote: MilaVoteKind
+  created_at: string
+}
+
+/** Eine Mahlzeit der verteilten Woche */
+export interface PlanSlot {
+  date: string
+  meal: MealSlot
+  recipe_id: Id
+  leftover: boolean // Reste vom Vorabend
+  servings: number
+}
+
+export interface PlanHit {
+  recipe_id: Id
+  meal: MealSlot
+  kind: 'treffer' | 'joker' | 'aufgefuellt'
+  joker_by: Id[]
+  points: number
+}
+
+export interface MilaPlan {
+  hits: PlanHit[]
+  reserve: PlanHit[]
+  /** Reihenfolge, die beim Ziehen geändert wird */
+  dinners: Id[]
+  lunches: Id[]
+  slots: PlanSlot[]
+  /** Tage, an denen ihr beide weg seid */
+  skipped: string[]
+  voters: Id[]
+}
+
+export interface MilaMenu {
+  id: Id
+  household_id: Id
+  week: string
+  dinner_ids: Id[]
+  lunch_ids: Id[]
+  opens_at: string
+  closes_at: string
+  adopt_at: string
+  done_by: Id[]
+  revealed_at: string | null
+  plan: MilaPlan | null
+  adopted_at: string | null
+  adopted_by: Id | null
+  prep_done: string[]
+  created_by: Id | null
   created_at: string
   updated_at: string
 }
@@ -374,6 +475,9 @@ export interface MilaWeekDay {
   recipe_id: Id | null
   free_text: string | null
   added_to_list: boolean
+  meal: MealSlot
+  is_leftover: boolean
+  servings: number | null
   created_by: Id | null
   updated_by: Id | null
   created_at: string
@@ -393,10 +497,11 @@ export interface MilaShoppingItem {
   checked: boolean
   checked_by: Id | null
   checked_at: string | null
+  is_stock: boolean // „meist Vorrat“: grau vorab abgehakt
   created_at: string
 }
 
-export type MilaTableName = 'mila_recipes' | 'mila_ingredients' | 'mila_steps' | 'mila_week_days' | 'mila_shopping_items'
+export type MilaTableName = 'mila_recipes' | 'mila_ingredients' | 'mila_steps' | 'mila_week_days' | 'mila_shopping_items' | 'mila_prep_steps' | 'mila_settings' | 'mila_menus' | 'mila_votes'
 
 export interface MilaTableRow {
   mila_recipes: MilaRecipe
@@ -404,4 +509,8 @@ export interface MilaTableRow {
   mila_steps: MilaStep
   mila_week_days: MilaWeekDay
   mila_shopping_items: MilaShoppingItem
+  mila_prep_steps: MilaPrepStep
+  mila_settings: MilaSettings
+  mila_menus: MilaMenu
+  mila_votes: MilaVote
 }

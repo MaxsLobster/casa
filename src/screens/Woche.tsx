@@ -5,6 +5,8 @@ import { addDays, eventEnd, fromISO, hhmm, isoWeek, shortDate, spanLabel, startO
 import { dayLines, daySummary, dayState, hasOpen, hasOverride, openHints, templateState, type DayState, type Voice } from '../lib/week'
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import { isFairEvent } from '../lib/mwf'
+import { isMilaEvent, mealsOn } from '../mila/casa-link'
+import { shortName } from '../mila/engine'
 import { BAND_START, BAND_END, goldSegments, navySegments, pct, widthPct, type Seg } from '../lib/band'
 import { applyEffects, dayEffects, effectLines, handoverOpen, isEffectEvent, openChips, type DayEffects, type EffectLine } from '../lib/effects'
 import type { Event, Slot, Task } from '../lib/types'
@@ -51,7 +53,7 @@ function weekOffset(date: ISODate, today: ISODate): number {
 }
 
 export function Woche() {
-  const { me, members, people, normalWeek, overrides, events, tasks: allTasks, settings, isNew, markSeen, setTaskDone, updateSettings } = useCasa()
+  const { me, members, people, normalWeek, overrides, events, tasks: allTasks, settings, isNew, markSeen, setTaskDone, updateSettings, milaDays, milaRecipe } = useCasa()
   const tasks = useMemo(() => allTasks.filter((t) => t.area === 'casa'), [allTasks])
   const today = useToday()
   const now = useNow()
@@ -68,6 +70,7 @@ export function Woche() {
   const openEvent = (id: string) => {
     const ev = events.find((x) => x.id === id) ?? null
     if (ev && isFairEvent(ev)) nav('/mwf/hub')
+    else if (ev && isMilaEvent(ev)) nav('/mila/prep')
     else setEditEvent(ev)
   }
   const [takeover, setTakeover] = useState<{ date: ISODate; state: DayState; fx: DayEffects } | null>(null)
@@ -354,6 +357,22 @@ export function Woche() {
                       </button>
                     )
                   })}
+                  {(() => {
+                    // Mila: Gericht beim Mittag und Abend, Antippen öffnet den Kochmodus
+                    const m = mealsOn(milaDays, r.date)
+                    return (['mittag', 'abend'] as const).map((meal) => {
+                      const w = m[meal]
+                      const rec = w ? milaRecipe(w.recipe_id) : null
+                      if (!w || !rec) return null
+                      const text = meal === 'mittag' ? (w.is_leftover ? `Reste vom ${shortName(rec.name)}` : `${rec.name} · aus der Box`) : rec.name
+                      return (
+                        <button type="button" key={'mila' + meal} className="day__line" onClick={() => nav(`/mila/kochen/${rec.id}${w.servings ? `?p=${w.servings}` : ''}`)}>
+                          <span className="label label--small">{meal === 'mittag' ? 'Mittag' : 'Gericht'}</span>
+                          <span className="hand">{text}</span>
+                        </button>
+                      )
+                    })
+                  })()}
                   {changed && lines.length === 0 && r.effects.length === 0 && <span className="hint">Abweichung an diesem Tag.</span>}
 
                   {termine.length > 0 && (

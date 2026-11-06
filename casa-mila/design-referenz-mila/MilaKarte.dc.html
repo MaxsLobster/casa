@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – Mila Karte</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} button{font:inherit;color:inherit}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@keyframes cardIn{0%{transform:translateY(14px) rotate(1deg);opacity:0}100%{transform:none;opacity:1}}
+</style>
+</helmet>
+<div style="{{pageStyle}}">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="iInk" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="4" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="0.9" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter>
+  </svg>
+  <div style="{{bandStyle}}">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <span style="font-size: 13px; color: rgba(242,237,226,0.75)">‹ Casa</span>
+      <span style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #E2C98A">Mila</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 12px">
+      <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(242,237,226,0.7)">Sonntag · Essen wählen</span>
+      <span style="font-family: 'Caveat', cursive; font-size: 36px; line-height: 1; color: #F2EDE2">Wochenkarte</span>
+    </div>
+  </div>
+  <div style="{{bandEdge}}"></div>
+
+  <main style="flex: 1; padding: 14px 22px 16px; display: flex; flex-direction: column; gap: 12px; overflow: hidden">
+    <div style="display: flex; gap: 8px">
+      <button type="button" onClick="{{setA}}" style="{{tabA}}">Abendkarte</button>
+      <button type="button" onClick="{{setM}}" style="{{tabM}}">Mittagskarte</button>
+      <span style="flex: 1"></span>
+      <span style="{{small}} align-self: center">{{progress}}</span>
+    </div>
+    <sc-if value="{{hasCard}}" hint-placeholder-val="{{true}}">
+      <div style="position: relative; flex: 1; display: flex; flex-direction: column">
+        <div style="position: absolute; left: 10px; right: 10px; top: 10px; bottom: 74px; background: #EFE4C8; transform: rotate(2.2deg); box-shadow: 0 2px 6px rgba(0,0,0,0.08)"></div>
+        <div style="{{cardStyle}}">
+          <span style="position: absolute; top: -9px; left: 50%; width: 62px; height: 17px; margin-left: -31px; background: rgba(176,138,69,0.38); transform: rotate(-2deg)"></span>
+          <span style="{{caps}} color: #6B5222">{{card.cat}}</span>
+          <span style="{{hand}} font-size: 46px; line-height: 1.02">{{card.name}}</span>
+          <span style="font-style: italic; font-size: 15px; line-height: 1.4; color: #3F3C36">{{card.desc}}</span>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px">
+            <sc-for list="{{card.tags}}" as="t" hint-placeholder-count="3"><span style="{{chip}}">{{t}}</span></sc-for>
+          </div>
+          <div style="flex: 1"></div>
+          <span style="{{small}}">{{card.last}}</span>
+        </div>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 22px; padding-top: 14px">
+          <button type="button" onClick="{{no}}" aria-label="Nein" style="width: 58px; height: 58px; border-radius: 29px; border: 1.5px solid rgba(36,49,80,0.35); background: #F5F1E8; font-size: 22px; color: #5F5B52; cursor: pointer">✕</button>
+          <button type="button" onClick="{{star}}" aria-label="Unbedingt" style="width: 48px; height: 48px; border-radius: 24px; border: 1.5px solid #B08A45; background: #F5F1E8; font-size: 20px; color: #B08A45; cursor: pointer">★</button>
+          <button type="button" onClick="{{yes}}" aria-label="Ja" style="width: 58px; height: 58px; border-radius: 29px; border: none; background: #4E5A34; font-size: 22px; color: #F2EDE2; cursor: pointer">✓</button>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{done}}" hint-placeholder-val="{{false}}">
+      <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; animation: cardIn .4s ease both">
+        <span style="{{hand}} font-size: 38px">Fertig gewählt</span>
+        <span style="font-size: 15px; color: #3F3C36">{{summary}}</span>
+        <span style="font-style: italic; font-size: 14px; color: #8A857A">Anna wählt noch … Aufdeckung, sobald ihr beide fertig seid.</span>
+        <button type="button" onClick="{{reset}}" style="margin-top: 8px; font-family: 'Caveat', cursive; font-size: 20px; color: #6B5222; background: transparent; border: 1.2px dashed rgba(107,82,34,0.6); border-radius: 999px; padding: 4px 14px; cursor: pointer">nochmal von vorn</button>
+      </div>
+    </sc-if>
+    <span style="text-align: center; font-size: 12px; color: #8A857A">✕ nein · ✓ ja · ★ unbedingt (1 Joker pro Karte) · Anna sieht deine Wahl nicht</span>
+  </main>
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.13); display: flex; align-items: center; padding: 0 6px 14px; box-sizing: border-box">
+    <span style="{{navI}}">Woche</span>
+    <span style="{{navA}}">Karte</span>
+    <span style="flex: 1; display: flex; justify-content: center"><span style="width: 52px; height: 52px; border-radius: 26px; background: #4E5A34; color: #F2EDE2; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span></span>
+    <span style="{{navI}}">Einkauf</span>
+    <span style="{{navI}}">Prep</span>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { kart: 'A', idx: { A: 0, M: 0 }, picks: { A: [], M: [] } }; }
+  renderVals() {
+    var self = this; var s = this.state;
+    function svgUrl(w, h, inner) { var t = "<svg xmlns='http://www.w3.org/2000/svg' width='" + w + "' height='" + h + "'>" + inner + "</svg>"; return 'url("data:image/svg+xml,' + encodeURIComponent(t) + '")'; }
+    function noise(id, f, o, seed, m, w, h) { return svgUrl(w, h, "<filter id='" + id + "' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='" + f + "' numOctaves='" + o + "' seed='" + seed + "' stitchTiles='stitch'/><feColorMatrix type='matrix' values='" + m + "'/></filter><rect width='100%' height='100%' filter='url(#" + id + ")'/>"); }
+    var grain = noise('g', '0.9', 3, 3, '0 0 0 0 0.30  0 0 0 0 0.24  0 0 0 0 0.16  0 0 0 0.42 -0.20', 240, 240);
+    var grainD = noise('d', '0.9', 3, 5, '0 0 0 0 0.95  0 0 0 0 0.92  0 0 0 0 0.85  0 0 0 0.35 -0.15', 240, 240);
+    var linen = noise('l', '0.02 0.6', 2, 8, '0 0 0 0 0.9  0 0 0 0 0.9  0 0 0 0 0.85  0 0 0 0.14 -0.05', 300, 300);
+    var hand = "font-family:'Caveat',cursive;color:#243150;filter:url(#iInk);";
+    var V = {
+      hand: hand,
+      caps: 'font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#5F5B52;font-weight:600;',
+      small: 'font-size:12px;color:#5F5B52;',
+      pageStyle: "position:relative;width:390px;height:844px;box-sizing:border-box;background-color:#F5F1E8;background-image:" + grain + ",radial-gradient(circle at 1px 1px,rgba(29,29,27,0.15) 1px,transparent 1.4px);background-size:240px 240px,19px 19px;background-position:0 0,6px 8px;color:#243150;font-family:'Newsreader',Georgia,serif;font-weight:500;display:flex;flex-direction:column;overflow:hidden;",
+      bandStyle: 'flex:none;padding:52px 22px 16px 26px;background-color:#4E5A34;background-image:' + grainD + ',' + linen + ';background-size:240px 240px,300px 300px;',
+      bandEdge: 'flex:none;height:6px;background-color:#F5F1E8;background-image:radial-gradient(circle at 3px 0px,#4E5A34 2.2px,transparent 2.6px);background-size:8px 6px;background-repeat:repeat-x;',
+      navA: "flex:1;text-align:center;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:12px 0;font-weight:600;color:#243150;box-shadow:inset 0 -2px 0 #B08A45;",
+      navI: "flex:1;text-align:center;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:12px 0;color:#5F5B52;",
+      chip: 'display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#3F3C36;border:1px solid rgba(29,29,27,0.15);border-radius:999px;padding:3px 10px;background:rgba(255,255,255,0.5);'
+    };
+
+    var cards = {
+      A: [
+        { name: 'Hähnchen-Curry mit Reis', cat: 'Familie', desc: 'Mild, cremig, Valerie isst es ohne Murren.', tags: ['35 Min', 'Valerie mag’s', 'doppelt → Mittag'], last: 'zuletzt vor 3 Wochen' },
+        { name: 'Lachs vom Egg mit Ofenkartoffeln', cat: 'Grill / BGE', desc: 'Zedernbrett, Zitrone, Dill. Kartoffeln im Prep vorgaren.', tags: ['40 Min', 'BGE'], last: 'zuletzt vor 6 Wochen' },
+        { name: 'Ofengemüse mit Feta', cat: 'Vegetarisch', desc: 'Ein Blech, fertig. Schnippeln im Prep.', tags: ['25 Min', 'Prep-Box'], last: 'zuletzt vor 2 Wochen' },
+        { name: 'Spaghetti Bolognese', cat: 'Familie', desc: 'Großer Topf, hält zwei Tage.', tags: ['45 Min', 'Valerie mag’s', 'doppelt → Mittag'], last: 'zuletzt vor 4 Wochen' },
+        { name: 'Kürbissuppe mit Ingwer', cat: 'Saison', desc: 'Hokkaido, Kokosmilch, geröstete Kerne.', tags: ['30 Min', 'Saison'], last: 'neu' },
+        { name: 'Flammkuchen', cat: 'Schnell', desc: 'Fertigteig, Schmand, Zwiebeln, Speck.', tags: ['20 Min'], last: 'zuletzt vor 5 Wochen' }
+      ],
+      M: [
+        { name: 'Couscous-Bowl', cat: 'Leicht', desc: 'Kichererbsen, Gurke, Minze, Joghurt. Komplett als Prep-Box.', tags: ['10 Min', 'Prep-Box'], last: 'zuletzt vor 3 Wochen' },
+        { name: 'Linsensalat', cat: 'Leicht', desc: 'Belugalinsen, Rucola, Ziegenkäse.', tags: ['15 Min'], last: 'neu' },
+        { name: 'Wraps mit Hähnchen', cat: 'Schnell', desc: 'Reste vom Curry-Hähnchen passen perfekt.', tags: ['10 Min'], last: 'zuletzt vor 1 Woche' },
+        { name: 'Shakshuka', cat: 'Vegetarisch', desc: 'Eier in Tomatensoße, Brot dazu.', tags: ['20 Min'], last: 'zuletzt vor 7 Wochen' }
+      ]
+    };
+    var k = s.kart || 'A';
+    var list = cards[k];
+    var idx = (s.idx && s.idx[k]) || 0;
+    var picks = s.picks || { A: [], M: [] };
+    var cur = list[idx];
+    function next(kind) {
+      var p = { A: picks.A.slice(), M: picks.M.slice() };
+      p[k].push(kind);
+      var ix = Object.assign({ A: 0, M: 0 }, s.idx || {});
+      ix[k] = idx + 1;
+      self.setState({ picks: p, idx: ix });
+    }
+    var tab = function (on) { return "font-family:'Newsreader',Georgia,serif;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;border-radius:999px;padding:6px 12px;cursor:pointer;" + (on ? 'background:#4E5A34;color:#F2EDE2;border:1px solid #4E5A34;' : 'background:transparent;color:#5F5B52;border:1px solid rgba(29,29,27,0.15);'); };
+    V.tabA = tab(k === 'A'); V.tabM = tab(k === 'M');
+    V.setA = function () { self.setState({ kart: 'A' }); };
+    V.setM = function () { self.setState({ kart: 'M' }); };
+    V.hasCard = !!cur; V.done = !cur;
+    V.card = cur || list[0];
+    V.progress = Math.min(idx + 1, list.length) + ' von ' + list.length;
+    V.cardStyle = 'position:relative;flex:1;margin-bottom:60px;background:#FBF8F1;padding:24px 20px 18px;display:flex;flex-direction:column;gap:6px;box-shadow:0 6px 16px rgba(31,42,68,0.14);transform:rotate(-0.8deg);animation:cardIn .35s ease both;';
+    V.no = function () { next('no'); }; V.yes = function () { next('yes'); }; V.star = function () { next('star'); };
+    var y = picks[k].filter(function (x) { return x !== 'no'; }).length;
+    V.summary = y + ' × ja auf der ' + (k === 'A' ? 'Abendkarte' : 'Mittagskarte');
+    V.reset = function () { var ix = Object.assign({ A: 0, M: 0 }, s.idx || {}); ix[k] = 0; var p = { A: picks.A.slice(), M: picks.M.slice() }; p[k] = []; self.setState({ idx: ix, picks: p }); };
+
+    return V;
+  }
+}
+</script>
+</body>
+</html>

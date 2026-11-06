@@ -16,6 +16,8 @@ export interface Store {
   update<T extends TableName>(table: T, key: Filter, patch: Partial<TableRow[T]>): Promise<void>
   upsert<T extends TableName>(table: T, row: Partial<TableRow[T]>, onConflict: string): Promise<TableRow[T]>
   remove<T extends TableName>(table: T, key: Filter): Promise<void>
+  /** Nur ändern, wenn die Zeile noch zum Filter passt (z. B. adopted_at leer); true = ich war es */
+  claim<T extends TableName>(table: T, key: Filter, patch: Partial<TableRow[T]>): Promise<boolean>
   /** Ruft cb auf, wenn sich eine der Tabellen (durch wen auch immer) ändert. */
   onChange(tables: TableName[], cb: (table: TableName) => void): () => void
 }
@@ -64,6 +66,14 @@ export class SupabaseStore implements Store {
     for (const [k, v] of Object.entries(key)) q = q.eq(k, v)
     const { error } = await q
     if (error) throw error
+  }
+
+  async claim<T extends TableName>(table: T, key: Filter, patch: Partial<TableRow[T]>): Promise<boolean> {
+    let q = this.db.from(table).update(patch as never)
+    for (const [k, v] of Object.entries(key)) q = v === null ? q.is(k, null) : q.eq(k, v)
+    const { data, error } = await q.select('*')
+    if (error) throw error
+    return (data ?? []).length > 0
   }
 
   onChange(tables: TableName[], cb: (table: TableName) => void): () => void {
@@ -116,7 +126,7 @@ export class LocalStore implements Store {
   }
 
   private matches(row: Record<string, unknown>, filter: Filter) {
-    return Object.entries(filter).every(([k, v]) => row[k] === v)
+    return Object.entries(filter).every(([k, v]) => (row[k] ?? null) === v)
   }
 
   async select<T extends TableName>(table: T, filter: Filter = {}): Promise<TableRow[T][]> {
@@ -162,6 +172,12 @@ export class LocalStore implements Store {
 
   async remove<T extends TableName>(table: T, key: Filter): Promise<void> {
     this.write(table, this.read(table).filter((r) => !this.matches(r as unknown as Record<string, unknown>, key)))
+  }
+
+  async claim<T extends TableName>(table: T, key: Filter, patch: Partial<TableRow[T]>): Promise<boolean> {
+    const hit = this.read(table).some((r) => this.matches(r as unknown as Record<string, unknown>, key))
+    if (hit) await this.update(table, key, patch)
+    return hit
   }
 
   onChange(tables: TableName[], cb: Listener): () => void {

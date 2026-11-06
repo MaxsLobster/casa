@@ -1,22 +1,31 @@
-// Mila · Einkaufsliste, live geteilt
+// Mila · Einkaufszettel, live geteilt. Aus der übernommenen Woche automatisch, nach Ladengang sortiert.
+// „meist Vorrat“ steht grau vorab abgehakt; Antippen setzt es doch auf den Zettel.
 import { useMemo, useState, type FormEvent } from 'react'
 import { MilaPage } from './Mila'
 import { useMila } from './MilaContext'
 import { SHOP_LABELS, SHOP_ORDER, parseManualInput } from './shopping'
+import { adoptedMenu } from './menu-view'
+import { weekKey } from './week-list'
 import { Collapse } from '../components/ui'
+import { weekdayLongByIndex } from '../lib/dates'
 import type { MilaShoppingItem } from '../lib/types'
 
 export function Liste() {
-  const { items, me, partner, members, addItems, setChecked, finishShopping } = useMila()
+  const { items, me, partner, members, menus, rhythm, addItems, setChecked, setStock, finishShopping } = useMila()
   const [text, setText] = useState('')
   const [showDone, setShowDone] = useState(true)
 
   const nameOf = (id: string | null) => members.find((m) => m.id === id)?.display_name ?? null
   const open = useMemo(() => items.filter((i) => !i.checked).sort(byCreated), [items])
+  const toBuy = open.filter((i) => !i.is_stock)
   const done = useMemo(() => items.filter((i) => i.checked).sort((a, b) => (b.checked_at ?? '').localeCompare(a.checked_at ?? '')), [items])
-  const groups = SHOP_ORDER.map((cat) => ({ cat, label: SHOP_LABELS[cat], items: open.filter((i) => i.category === cat) })).filter((g) => g.items.length)
-  const weeks = [...new Set(open.map((i) => i.source_week).filter(Boolean))] as string[]
-  const kw = weeks.length === 1 ? ' · für KW ' + Number(weeks[0].slice(-2)) : ''
+  const groups = SHOP_ORDER.map((cat) => ({ cat, label: SHOP_LABELS[cat], items: open.filter((i) => i.category === cat).sort((a, b) => Number(a.is_stock) - Number(b.is_stock)) })).filter((g) => g.items.length)
+
+  // Kopf: „6 Mahlzeiten · 3 Personen“ aus der übernommenen Woche, wenn ihre Zeilen auf dem Zettel stehen
+  const menu = adoptedMenu(menus)
+  const fromMenu = menu?.plan && items.some((i) => i.source_week === weekKey(menu.week))
+  const people = menu?.plan ? Math.max(0, ...menu.plan.slots.filter((s) => s.meal === 'abend').map((s) => s.servings)) : 0
+  const meta = fromMenu && menu?.plan ? `${menu.plan.slots.length} Mahlzeiten · ${people} ${people === 1 ? 'Person' : 'Personen'} · ` : ''
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -30,8 +39,9 @@ export function Liste() {
     <MilaPage>
       <header className="m-shop__head">
         <div className="stack stack--tight">
-          <span className="m-title" style={{ fontSize: 40, lineHeight: 0.95 }}>Einkauf</span>
-          <span className="m-hint" style={{ fontSize: 12 }}>{open.length} offen{kw}</span>
+          <span className="m-sub">Großer Einkauf · {weekdayLongByIndex(rhythm.shop_weekday).slice(0, 2)}</span>
+          <span className="m-title" style={{ fontSize: 40, lineHeight: 0.95 }}>Einkaufszettel</span>
+          <span className="m-hint" style={{ fontSize: 12 }}>{meta}{toBuy.length} offen</span>
         </div>
         <span className="m-shop__live">
           <span className="m-initials">
@@ -49,16 +59,33 @@ export function Liste() {
         <input type="text" className="m-add__input" placeholder="Was fehlt noch?" aria-label="Was fehlt noch?" value={text} onChange={(e) => setText(e.target.value)} enterKeyHint="done" autoComplete="off" />
       </form>
 
-      {open.length === 0 && done.length === 0 && <p className="m-hint">Noch nichts auf der Liste. Tipp oben etwas ein, oder schick die Zutaten einer Woche hierher.</p>}
+      {open.length === 0 && done.length === 0 && <p className="m-hint">Noch nichts auf dem Zettel. Er füllt sich, sobald ihr eine Woche übernehmt. Eigenes oben eintippen.</p>}
 
       {groups.map((g) => (
         <section key={g.cat} className="m-group">
           <h2 className="m-group__label">{g.label}</h2>
-          {g.items.map((it) => (
-            <Row key={it.id} item={it} who={it.source_label ? null : nameOf(it.added_by)} mine={it.added_by === me.id} onToggle={() => setChecked(it.id, true)} />
-          ))}
+          {g.items.map((it) =>
+            it.is_stock ? (
+              <button key={it.id} type="button" className="m-item m-item--stock" onClick={() => setStock(it.id, false)} aria-label={`${it.name}: doch kaufen`}>
+                <span className="m-check m-check--stock">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M5 12.5l4.5 4.5L19 7.5" />
+                  </svg>
+                </span>
+                <span className="m-item__name m-item__name--stock">{it.name}</span>
+                <span className="m-item__right">
+                  {it.amount && <span className="m-item__amount">{it.amount}</span>}
+                  <span className="m-item__src">Vorrat</span>
+                </span>
+              </button>
+            ) : (
+              <Row key={it.id} item={it} who={it.source_label ? null : nameOf(it.added_by)} mine={it.added_by === me.id} onToggle={() => setChecked(it.id, true)} />
+            ),
+          )}
         </section>
       ))}
+
+      {open.some((i) => i.is_stock) && <p className="m-hint" style={{ fontSize: 12 }}>Grau = „haben wir schon“ (Vorrat). Antippen setzt es doch auf den Zettel.</p>}
 
       {done.length > 0 && (
         <section className="m-group" style={{ marginTop: 4 }}>

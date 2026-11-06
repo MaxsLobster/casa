@@ -10,6 +10,9 @@ import { Gerichte } from './Gerichte'
 import { Gericht } from './Gericht'
 import { RezeptForm } from './RezeptForm'
 import { Kochen } from './Kochen'
+import { Karte } from './Karte'
+import { Prep } from './Prep'
+import { openMenu } from './menu-view'
 import './mila.css'
 
 export function Mila() {
@@ -32,7 +35,10 @@ function MilaShell() {
         <div className="pane">
           <Routes>
             <Route path="/mila/woche" element={<Woche />} />
-            <Route path="/mila/liste" element={<Liste />} />
+            <Route path="/mila/karte" element={<Karte />} />
+            <Route path="/mila/einkauf" element={<Liste />} />
+            <Route path="/mila/liste" element={<Navigate to="/mila/einkauf" replace />} />
+            <Route path="/mila/prep" element={<Prep />} />
             <Route path="/mila/gerichte" element={<Gerichte />} />
             <Route path="/mila/gerichte/neu" element={<RezeptForm />} />
             <Route path="/mila/gerichte/:id" element={<Gericht />} />
@@ -42,15 +48,26 @@ function MilaShell() {
           </Routes>
         </div>
       </div>
-      {showNav && (
-        <nav className="nav" aria-label="Mila">
-          <NavLink to="/mila/woche" className="nav__item">Woche</NavLink>
-          <NavLink to="/mila/liste" className="nav__item">Liste</NavLink>
-          <NavLink to="/mila/gerichte" className="nav__item">Gerichte</NavLink>
-        </nav>
-      )}
+      {showNav && <MilaNav />}
       {splashGone && <div className="edge" aria-hidden="true" />}
     </div>
+  )
+}
+
+function MilaNav() {
+  const { menus, me } = useMila()
+  const m = openMenu(menus)
+  // Punkt an „Karte“: Karte offen und ich habe noch nicht fertig gewählt, oder aufgedeckt und noch nicht übernommen
+  const dot = !!m && ((!m.revealed_at && !m.done_by.includes(me.id)) || (!!m.revealed_at && !m.adopted_at))
+  return (
+    <nav className="nav" aria-label="Mila">
+      <NavLink to="/mila/woche" className="nav__item">Woche</NavLink>
+      <NavLink to="/mila/karte" className="nav__item">
+        Karte{dot && <span className="m-navdot" aria-label="neu" />}
+      </NavLink>
+      <NavLink to="/mila/einkauf" className="nav__item">Einkauf</NavLink>
+      <NavLink to="/mila/prep" className="nav__item">Prep</NavLink>
+    </nav>
   )
 }
 

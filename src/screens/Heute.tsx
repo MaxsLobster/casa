@@ -18,6 +18,9 @@ import { TaskEditor } from './TaskEditor'
 import { isResting } from '../lib/anchors'
 import { isFairEvent, isShared, isWorkday, unreadShouts } from '../lib/mwf'
 import { MwfIcon } from '../mwf/MwfIcon'
+import { isMilaEvent, mealsOn } from '../mila/casa-link'
+import { minutes } from '../mila/rhythm'
+import { shortName } from '../mila/engine'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 
@@ -41,6 +44,8 @@ interface Row {
   /** Antippen: Ereignis/Termin bearbeiten, Abweichung für den Tag, Aufgabe bearbeiten */
   event?: string // base_id
   slots?: Slot[]
+  /** Antippen öffnet diese Seite (z. B. Kochmodus) */
+  link?: string
 }
 
 type Slide = null | 'out-left' | 'out-right' | 'enter-left' | 'enter-right'
@@ -223,10 +228,24 @@ export function Heute() {
   }
   const nm = day.nachmittag
   if (nm?.value && nowH < 18) rows.push({ key: 'nm', sort: 15, time: null, kind: 'plan', title: nm.value, sub: 'Nachmittag', slots: ['nachmittag'] })
+  // Mila: Gericht am Abend und Mittag; Antippen öffnet den Kochmodus
+  const meals = mealsOn(casa.milaDays, date)
+  const dinner = meals.abend ? casa.milaRecipe(meals.abend.recipe_id) : null
+  const lunch = meals.mittag ? casa.milaRecipe(meals.mittag.recipe_id) : null
+  const cookLink = (id: string, servings: number | null) => `/mila/kochen/${id}${servings ? `?p=${servings}` : ''}`
+  if (lunch && meals.mittag && nowH < 14) {
+    const left = meals.mittag.is_leftover
+    rows.push({ key: 'mm', sort: 12, time: null, kind: 'plan', title: left ? `Mittag: Reste vom ${shortName(lunch.name)}` : `Mittag: ${lunch.name}`, sub: left ? 'aufwärmen' : 'aus der Box', link: cookLink(lunch.id, meals.mittag.servings) })
+  }
+  const dinnerPortions = meals.abend ? (meals.abend.servings ?? 0) + (casa.milaDays.find((x) => x.is_leftover && x.recipe_id === meals.abend!.recipe_id && x.date === addDays(date, 1))?.servings ?? 0) : 0
   const es = day.abend_essen
   if (es?.value && !es.is_open && nowH < 19.5) {
     const person = isPersonName(es.value, members, people)
-    rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: person ? cap(verb(es.value, voice, 'kochst', 'kocht')) : `Essen ${es.value}`, sub: 'Abend', slots: present(['abend_essen', 'abend_bett']) })
+    const who = person ? cap(verb(es.value, voice, 'kochst', 'kocht')) : `Essen ${es.value}`
+    if (dinner) rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: `${who}: ${dinner.name}`, sub: ['Abend', minutes(dinner.time_min)].filter(Boolean).join(' · '), link: cookLink(dinner.id, dinnerPortions || null) })
+    else rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: who, sub: 'Abend', slots: present(['abend_essen', 'abend_bett']) })
+  } else if (dinner && nowH < 19.5) {
+    rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: dinner.name, sub: ['Abend', minutes(dinner.time_min), 'wer kocht? offen'].filter(Boolean).join(' · '), link: cookLink(dinner.id, dinnerPortions || null) })
   }
   const bt = day.abend_bett
   if (bt?.value && !bt.is_open && nowH < 20.5) rows.push({ key: 'bt', sort: 19.5, time: null, kind: 'plan', title: cap(verb(bt.value, voice, 'bringst ins Bett', 'bringt ins Bett')), sub: 'Abend', slots: present(['abend_essen', 'abend_bett']) })
@@ -363,10 +382,12 @@ export function Heute() {
             {rows.length === 0 && chips.length === 0 && openTasks.length === 0 && <p className={'hint' + rc} style={rs(5)}>{isToday ? 'Nichts mehr für heute. Schön.' : 'Nichts eingetragen.'}</p>}
             {rows.map((r, idx) => {
               const open = () => {
-                if (r.task) setEditTask(r.task)
+                if (r.link) nav(r.link)
+                else if (r.task) setEditTask(r.task)
                 else if (r.event) {
                   const ev = events.find((x) => x.id === r.event) ?? null
                   if (ev && isFairEvent(ev)) nav('/mwf/hub')
+                  else if (ev && isMilaEvent(ev)) nav('/mila/prep')
                   else setEditEvent(ev)
                 } else if (r.slots?.length) setEditSlots(r.slots)
               }

@@ -2,11 +2,11 @@
 import { useEffect, useMemo, useRef, useState, type TextareaHTMLAttributes } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { MilaTop } from './Mila'
-import { useMila, type IngredientInput, type StepInput } from './MilaContext'
+import { useMila, type IngredientInput, type PrepInput, type StepInput } from './MilaContext'
 import { CATEGORIES, CATEGORY_LABELS, DEVICES, DEVICE_LABELS } from './portions'
 import { formatNumber } from './shopping'
 import { Toggle } from '../components/ui'
-import type { MilaCategory } from '../lib/types'
+import type { MilaCategory, MilaMeal } from '../lib/types'
 
 interface IngRow { key: string; id?: string; amount: string; unit: string; name: string; pantry_basic: boolean }
 interface StepRow {
@@ -35,6 +35,14 @@ function AutoArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea ref={ref} rows={2} {...props} />
 }
 
+interface PrepRow { key: string; text: string; duration: string; runs_alongside: boolean; box_label: string; day_before: boolean }
+const newPrep = (): PrepRow => ({ key: crypto.randomUUID(), text: '', duration: '', runs_alongside: false, box_label: '', day_before: false })
+const MEALS: { value: MilaMeal; label: string }[] = [
+  { value: 'abend', label: 'Abend' },
+  { value: 'mittag', label: 'Mittag' },
+  { value: 'beides', label: 'Beides' },
+]
+
 const newIng = (): IngRow => ({ key: crypto.randomUUID(), amount: '', unit: '', name: '', pantry_basic: false })
 const newStep = (): StepRow => ({ key: crypto.randomUUID(), title: '', text: '', timer_min: '', is_thermomix: false, tm_min: '', tm_sek: '', tm_temp: '', tm_speed: '', tm_reverse: false, ingredient_keys: [] })
 
@@ -51,7 +59,7 @@ function parseNum(s: string): number | null {
 export function RezeptForm() {
   const { id } = useParams()
   const nav = useNavigate()
-  const { recipeById, ingredientsOf, stepsOf, saveRecipe, ready } = useMila()
+  const { recipeById, ingredientsOf, stepsOf, prepStepsOf, saveRecipe, ready } = useMila()
   const existing = recipeById(id)
 
   const init = useMemo(() => {
@@ -70,7 +78,8 @@ export function RezeptForm() {
       tm_reverse: s.tm_reverse,
       ingredient_keys: s.ingredient_ids,
     }))
-    return { ings, steps }
+    const prep: PrepRow[] = prepStepsOf(existing.id).map((p) => ({ key: p.id, text: p.text, duration: p.duration_min ? String(p.duration_min) : '', runs_alongside: p.runs_alongside, box_label: p.box_label ?? '', day_before: p.day_before }))
+    return { ings, steps, prep }
     // nur beim ersten Aufbau
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existing?.id])
@@ -80,7 +89,13 @@ export function RezeptForm() {
   const [portions, setPortions] = useState(String(existing?.portions ?? 3))
   const [category, setCategory] = useState<MilaCategory>(existing?.category ?? 'schnell')
   const [devices, setDevices] = useState<string[]>(existing?.devices ?? [])
-  const [valerie, setValerie] = useState(existing?.valerie_tauglich ?? false)
+  const [meal, setMeal] = useState<MilaMeal>(existing?.meal ?? 'beides')
+  const [label, setLabel] = useState(existing?.label ?? '')
+  const [blurb, setBlurb] = useState(existing?.blurb ?? '')
+  const [valerieMag, setValerieMag] = useState(existing?.valerie_mag ?? false)
+  const [cookDouble, setCookDouble] = useState(existing?.cook_double ?? false)
+  const [prepBox, setPrepBox] = useState(existing?.prep_box ?? false)
+  const [prep, setPrep] = useState<PrepRow[]>(init?.prep ?? [])
   const [valerieNote, setValerieNote] = useState(existing?.valerie_note ?? '')
   const [notes, setNotes] = useState(existing?.notes ?? '')
   const [ings, setIngs] = useState<IngRow[]>(init?.ings.length ? init.ings : [newIng()])
@@ -94,6 +109,7 @@ export function RezeptForm() {
   const back = existing ? `/mila/gerichte/${existing.id}` : '/mila/gerichte'
   const setIng = (key: string, patch: Partial<IngRow>) => setIngs((xs) => xs.map((x) => (x.key === key ? { ...x, ...patch } : x)))
   const setStep = (key: string, patch: Partial<StepRow>) => setSteps((xs) => xs.map((x) => (x.key === key ? { ...x, ...patch } : x)))
+  const setPrepRow = (key: string, patch: Partial<PrepRow>) => setPrep((xs) => xs.map((x) => (x.key === key ? { ...x, ...patch } : x)))
 
   async function save() {
     if (!name.trim()) {
@@ -123,11 +139,19 @@ export function RezeptForm() {
           ingredient_ids: s.ingredient_keys.map((k) => idOf.get(k)).filter((x): x is string => !!x),
         }
       })
+    const prepInput: PrepInput[] = prep
+      .filter((p) => p.text.trim())
+      .map((p) => ({ text: p.text.trim(), duration_min: parseNum(p.duration) ? Math.round(parseNum(p.duration)!) : null, runs_alongside: p.runs_alongside, box_label: p.box_label.trim() || null, day_before: p.day_before }))
     try {
       const rid = await saveRecipe(
-        { name: name.trim(), category, time_min: parseNum(time) ? Math.round(parseNum(time)!) : null, portions: Math.max(1, Math.round(parseNum(portions) ?? 1)), valerie_tauglich: valerie, devices, notes: notes.trim() || null, valerie_note: valerieNote.trim() || null },
+        {
+          name: name.trim(), category, time_min: parseNum(time) ? Math.round(parseNum(time)!) : null, portions: Math.max(1, Math.round(parseNum(portions) ?? 1)),
+          valerie_tauglich: existing?.valerie_tauglich ?? valerieMag, devices, notes: notes.trim() || null, valerie_note: valerieNote.trim() || null,
+          meal, label: label.trim() || null, blurb: blurb.trim() || null, valerie_mag: valerieMag, cook_double: cookDouble, prep_box: prepBox,
+        },
         ingInput,
         stepInput,
+        prepInput,
         existing?.id,
       )
       nav(`/mila/gerichte/${rid}`, { replace: true })
@@ -180,7 +204,24 @@ export function RezeptForm() {
         </div>
       </div>
 
-      <Toggle on={valerie} onChange={setValerie} label="Valerie-tauglich" />
+      <div className="m-field">
+        <span className="m-group__label">Mahlzeit</span>
+        <div className="m-chips" role="radiogroup">
+          {MEALS.map((m) => (
+            <button key={m.value} type="button" role="radio" aria-checked={meal === m.value} className={'m-chip' + (meal === m.value ? ' m-chip--on' : '')} onClick={() => setMeal(m.value)}>{m.label}</button>
+          ))}
+        </div>
+      </div>
+
+      <label className="m-field">
+        <span className="m-group__label">Auf der Karte</span>
+        <input className="m-input" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={'Kategorie, z. B. Familie, Vegetarisch, Leicht · leer = ' + CATEGORY_LABELS[category]} aria-label="Kategorie auf der Karte" />
+        <AutoArea className="m-input m-textarea" value={blurb} onChange={(e) => setBlurb(e.target.value)} placeholder="Ein Satz für die Karte, z. B. Mild, cremig, Valerie isst es ohne Murren." aria-label="Ein Satz für die Karte" />
+      </label>
+
+      <Toggle on={valerieMag} onChange={setValerieMag} label="Valerie mag’s" />
+      <Toggle on={cookDouble} onChange={setCookDouble} label="doppelt → Mittag" hint="Doppelt kochen, Reste am nächsten Mittag" />
+      <Toggle on={prepBox} onChange={setPrepBox} label="Prep-Box" hint="Lässt sich am Sonntag komplett vorbereiten" />
       <label className="m-field">
         <span className="m-group__label">Für Valerie</span>
         <AutoArea className="m-input m-textarea" value={valerieNote} onChange={(e) => setValerieNote(e.target.value)} placeholder="z. B. vor dem Pfeffer einen Schöpfer abnehmen" />
@@ -246,6 +287,29 @@ export function RezeptForm() {
           </div>
         ))}
         <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => setSteps((xs) => [...xs, newStep()])}>+ Schritt</button>
+      </section>
+
+      {/* ---------- Prep-Schritte ---------- */}
+      <section className="m-field">
+        <span className="m-group__label">Prep-Schritte</span>
+        <span className="m-hint" style={{ fontSize: 12 }}>Was sich in der Prep-Stunde vorbereiten lässt. Ohne Prep-Schritte wird ein Mittagessen komplett vorgekocht.</span>
+        {prep.map((p) => (
+          <div key={p.key} className="m-steprow">
+            <div className="m-ingrow">
+              <input className="m-input m-input--hand" value={p.text} onChange={(e) => setPrepRow(p.key, { text: e.target.value })} placeholder="z. B. Reis kochen, abkühlen lassen" aria-label="Prep-Schritt" />
+              <button type="button" className="m-x" aria-label="Prep-Schritt entfernen" onClick={() => setPrep((xs) => xs.filter((x) => x.key !== p.key))}>×</button>
+            </div>
+            <div className="m-ingrow" style={{ flexWrap: 'wrap' }}>
+              <input className="m-input m-input--xs" inputMode="numeric" value={p.duration} onChange={(e) => setPrepRow(p.key, { duration: e.target.value })} placeholder="Min" aria-label="Dauer in Minuten" />
+              <input className="m-input" style={{ flex: 1, minWidth: 120 }} value={p.box_label} onChange={(e) => setPrepRow(p.key, { box_label: e.target.value })} placeholder="Box-Etikett (optional)" aria-label="Box-Etikett" />
+            </div>
+            <div className="m-chips">
+              <button type="button" className={'m-mini' + (p.runs_alongside ? ' m-mini--on' : '')} aria-pressed={p.runs_alongside} onClick={() => setPrepRow(p.key, { runs_alongside: !p.runs_alongside })}>läuft nebenbei</button>
+              <button type="button" className={'m-mini' + (p.day_before ? ' m-mini--on' : '')} aria-pressed={p.day_before} onClick={() => setPrepRow(p.key, { day_before: !p.day_before })}>erst am Vortag</button>
+            </div>
+          </div>
+        ))}
+        <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => setPrep((xs) => [...xs, newPrep()])}>+ Prep-Schritt</button>
       </section>
 
       <label className="m-field">

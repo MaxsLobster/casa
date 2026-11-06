@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Casa – Mila Einkauf</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} button{font:inherit;color:inherit}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@keyframes cardIn{0%{transform:translateY(14px) rotate(1deg);opacity:0}100%{transform:none;opacity:1}}
+</style>
+</helmet>
+<div style="{{pageStyle}}">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="iInk" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="4" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="0.9" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter>
+  </svg>
+  <div style="{{bandStyle}}">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <span style="font-size: 13px; color: rgba(242,237,226,0.75)">‹ Casa</span>
+      <span style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #E2C98A">Mila</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 12px">
+      <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(242,237,226,0.7)">Großer Einkauf · Sa</span>
+      <span style="font-family: 'Caveat', cursive; font-size: 36px; line-height: 1; color: #F2EDE2">Einkaufszettel</span>
+    </div>
+  </div>
+  <div style="{{bandEdge}}"></div>
+
+  <main style="flex: 1; overflow-y: auto; padding: 14px 22px 20px; display: flex; flex-direction: column; gap: 6px">
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px">
+      <span style="{{chip}}">6 Mahlzeiten · 3 Personen</span><span style="{{chip}}">{{openCount}} offen</span>
+    </div>
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
+      <div style="display: flex; flex-direction: column; margin-top: 8px">
+        <span style="{{caps}} padding-bottom: 4px; border-bottom: 1px solid rgba(29,29,27,0.14)">{{g.name}}</span>
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
+          <button type="button" onClick="{{i.toggle}}" style="display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border: none; border-bottom: 1px solid rgba(29,29,27,0.06); background: transparent; text-align: left; cursor: pointer">
+            <span style="{{i.ring}}">{{i.check}}</span>
+            <span style="{{i.text}}">{{i.name}}</span>
+            <span style="font-size: 12px; color: #5F5B52; white-space: nowrap">{{i.qty}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </sc-for>
+    <span style="margin-top: 10px; font-style: italic; font-size: 13px; color: #8A857A">Grau = „haben wir schon“ (Vorrat). Antippen hakt im Laden ab.</span>
+  </main>
+
+  <nav style="flex: none; height: 80px; border-top: 1px solid rgba(29,29,27,0.13); display: flex; align-items: center; padding: 0 6px 14px; box-sizing: border-box">
+    <span style="{{navI}}">Woche</span>
+    <span style="{{navI}}">Karte</span>
+    <span style="flex: 1; display: flex; justify-content: center"><span style="width: 52px; height: 52px; border-radius: 26px; background: #4E5A34; color: #F2EDE2; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span></span>
+    <span style="{{navA}}">Einkauf</span>
+    <span style="{{navI}}">Prep</span>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { got: {} }; }
+  renderVals() {
+    var self = this; var s = this.state;
+    function svgUrl(w, h, inner) { var t = "<svg xmlns='http://www.w3.org/2000/svg' width='" + w + "' height='" + h + "'>" + inner + "</svg>"; return 'url("data:image/svg+xml,' + encodeURIComponent(t) + '")'; }
+    function noise(id, f, o, seed, m, w, h) { return svgUrl(w, h, "<filter id='" + id + "' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='" + f + "' numOctaves='" + o + "' seed='" + seed + "' stitchTiles='stitch'/><feColorMatrix type='matrix' values='" + m + "'/></filter><rect width='100%' height='100%' filter='url(#" + id + ")'/>"); }
+    var grain = noise('g', '0.9', 3, 3, '0 0 0 0 0.30  0 0 0 0 0.24  0 0 0 0 0.16  0 0 0 0.42 -0.20', 240, 240);
+    var grainD = noise('d', '0.9', 3, 5, '0 0 0 0 0.95  0 0 0 0 0.92  0 0 0 0 0.85  0 0 0 0.35 -0.15', 240, 240);
+    var linen = noise('l', '0.02 0.6', 2, 8, '0 0 0 0 0.9  0 0 0 0 0.9  0 0 0 0 0.85  0 0 0 0.14 -0.05', 300, 300);
+    var hand = "font-family:'Caveat',cursive;color:#243150;filter:url(#iInk);";
+    var V = {
+      hand: hand,
+      caps: 'font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#5F5B52;font-weight:600;',
+      small: 'font-size:12px;color:#5F5B52;',
+      pageStyle: "position:relative;width:390px;height:844px;box-sizing:border-box;background-color:#F5F1E8;background-image:" + grain + ",radial-gradient(circle at 1px 1px,rgba(29,29,27,0.15) 1px,transparent 1.4px);background-size:240px 240px,19px 19px;background-position:0 0,6px 8px;color:#243150;font-family:'Newsreader',Georgia,serif;font-weight:500;display:flex;flex-direction:column;overflow:hidden;",
+      bandStyle: 'flex:none;padding:52px 22px 16px 26px;background-color:#4E5A34;background-image:' + grainD + ',' + linen + ';background-size:240px 240px,300px 300px;',
+      bandEdge: 'flex:none;height:6px;background-color:#F5F1E8;background-image:radial-gradient(circle at 3px 0px,#4E5A34 2.2px,transparent 2.6px);background-size:8px 6px;background-repeat:repeat-x;',
+      navA: "flex:1;text-align:center;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:12px 0;font-weight:600;color:#243150;box-shadow:inset 0 -2px 0 #B08A45;",
+      navI: "flex:1;text-align:center;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:12px 0;color:#5F5B52;",
+      chip: 'display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#3F3C36;border:1px solid rgba(29,29,27,0.15);border-radius:999px;padding:3px 10px;background:rgba(255,255,255,0.5);'
+    };
+
+    var got = s.got || {};
+    var G = [
+      { name: 'Obst & Gemüse', items: [['Paprika', '3'], ['Zwiebeln', '5'], ['Karotten', '2'], ['Staudensellerie', '1 Bund'], ['Gurke', '1'], ['Minze', '1 Bund'], ['Zitronen', '2'], ['Kartoffeln, festkochend', '1 kg']] },
+      { name: 'Fleisch & Fisch', items: [['Hähnchenbrust', '800 g'], ['Rinderhack', '600 g'], ['Lachsfilet', '500 g']] },
+      { name: 'Kühlregal', items: [['Griechischer Joghurt', '500 g'], ['Kokosmilch', '2 Dosen', true], ['Parmesan', '1 Stück', true]] },
+      { name: 'Trocken & Vorrat', items: [['Basmatireis', '500 g', true], ['Couscous', '250 g'], ['Kichererbsen', '1 Dose'], ['Spaghetti', '1 kg'], ['Passierte Tomaten', '2', true], ['Currypaste', '1 Glas']] }
+    ];
+    var open = 0;
+    V.groups = G.map(function (g) {
+      return { name: g.name, items: g.items.map(function (it) {
+        var key = it[0]; var stock = !!it[2]; var d = !!got[key] || stock;
+        if (!d) open++;
+        return { name: it[0], qty: it[1], check: d ? '✓' : '',
+          ring: 'flex:none;width:18px;height:18px;border-radius:9px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:11px;transform:translateY(3px);' + (d ? 'background:' + (stock ? '#A39D8C' : '#4E5A34') + ';color:#F5F1E8;' : 'border:1.5px solid #4E5A34;'),
+          text: "flex:1;font-family:'Caveat',cursive;font-size:22px;line-height:1.1;" + (d ? 'color:#8A857A;text-decoration:line-through;' : 'color:#243150;'),
+          toggle: function () { if (stock) return; var n = Object.assign({}, got); n[key] = !n[key]; self.setState({ got: n }); } };
+      }) };
+    });
+    V.openCount = String(open);
+
+    return V;
+  }
+}
+</script>
+</body>
+</html>

@@ -2,11 +2,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { DemoAuth, SupabaseAuth, type Auth, type AuthUser } from '../lib/auth'
 import { LocalStore, SupabaseStore, type Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
+import type { MilaRecipe, MilaSettings, MilaWeekDay } from '../lib/types'
 import type { Anchor, AnchorLog, AnchorLogKind, AnchorPhase, AnchorPin, AnchorQuestion, AnchorVisibility, Area, Event, EventEffect, Fair, Household, Idea, ItemSeen, Member, NormalWeekRow, Person, Settings, Shout, Slot, Task, TaskStatus, TemplateRow, WeekOverride, TableName, Repeat } from '../lib/types'
 import { addDays, fromISO, toISO, today } from '../lib/dates'
 import { subscribePush, unsubscribePush, type PushKeys } from '../lib/push'
 import { phaseLabel } from '../lib/anchors'
 import { dueFor, fairEvents, nextFair, roundStart } from '../lib/mwf'
+import { prepEvent } from '../mila/casa-link'
+import { DEFAULT_RHYTHM, type Rhythm } from '../mila/engine'
 
 export type SeenType = ItemSeen['item_type']
 
@@ -37,6 +40,12 @@ export interface Casa {
   template: TemplateRow[]
   ideas: Idea[]
   shouts: Shout[]
+  // Mila: die Woche für Heute und Woche
+  milaDays: MilaWeekDay[]
+  milaRecipe(id: string | null | undefined): MilaRecipe | null
+  reloadMila(): Promise<void>
+  milaRhythm: Rhythm
+  saveMilaRhythm(patch: Partial<Rhythm>): Promise<void>
   error: string | null
 
   /** NEU: vom anderen für mich eingetragen oder geändert und noch nicht angesehen */
@@ -148,6 +157,9 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   const [template, setTemplate] = useState<TemplateRow[]>([])
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [shouts, setShouts] = useState<Shout[]>([])
+  const [milaDays, setMilaDays] = useState<MilaWeekDay[]>([])
+  const [milaRecipes, setMilaRecipes] = useState<MilaRecipe[]>([])
+  const [milaSettings, setMilaSettings] = useState<MilaSettings | null>(null)
 
   // --- Anmeldung -----------------------------------------------------------
   useEffect(() => {
@@ -223,6 +235,11 @@ export function CasaProvider({ children }: { children: ReactNode }) {
           setIdeas(id)
           setShouts(sh)
           setDataReady(true)
+          void loadMila(hid)
+          return
+        }
+        if (table === 'mila_week_days' || table === 'mila_settings') {
+          if (householdId) await loadMila(householdId)
           return
         }
         if (!householdId) return
@@ -252,6 +269,22 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   const loadRef = useRef(load)
   loadRef.current = load
 
+  /** Mila-Woche (ohne Fehler für Casa, falls Mila noch fehlt) */
+  async function loadMila(hid: string) {
+    try {
+      const [w, r, st] = await Promise.all([
+        store.select('mila_week_days', { household_id: hid }),
+        store.select('mila_recipes', { household_id: hid }),
+        store.select('mila_settings', { household_id: hid }),
+      ])
+      setMilaDays(w)
+      setMilaRecipes(r)
+      setMilaSettings(st[0] ?? null)
+    } catch {
+      /* Mila noch nicht eingerichtet */
+    }
+  }
+
   useEffect(() => {
     if (!user) {
       setDataReady(false)
@@ -270,6 +303,8 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       setTemplate([])
       setIdeas([])
       setShouts([])
+      setMilaDays([])
+      setMilaRecipes([])
       setSettings(null)
       setHousehold(null)
       return
@@ -280,7 +315,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   // Live: Änderungen (auch vom anderen) nachladen
   useEffect(() => {
     if (!user) return
-    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins', 'fairs', 'checklist_template', 'ideas', 'shouts'], (t) => loadRef.current(t))
+    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins', 'fairs', 'checklist_template', 'ideas', 'shouts', 'mila_week_days', 'mila_settings'], (t) => loadRef.current(t))
     const onVisible = () => {
       if (document.visibilityState === 'visible') loadRef.current()
     }
@@ -339,7 +374,23 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   }, [dataReady, me, fairs, template])
 
   // Messetage als Ereignis „Messe" (nicht gespeichert, nur abgeleitet)
-  const allEvents = useMemo(() => (fairs.length ? [...events, ...fairEvents(fairs)] : events), [events, fairs])
+  // dazu die Prep-Stunde aus Mila (wöchentlich)
+  const allEvents = useMemo(() => {
+    const extra = householdId ? [prepEvent(householdId, milaSettings ? { prep_weekday: milaSettings.prep_weekday, prep_time: milaSettings.prep_time } : DEFAULT_RHYTHM)] : []
+    return [...events, ...fairEvents(fairs), ...extra]
+  }, [events, fairs, householdId, milaSettings])
+  const milaById = useMemo(() => new Map(milaRecipes.map((r) => [r.id, r])), [milaRecipes])
+  const milaRhythm: Rhythm = useMemo(() => {
+    if (!milaSettings) return DEFAULT_RHYTHM
+    const t = (x: string) => x.slice(0, 5)
+    return {
+      lunches: milaSettings.lunches, dinners: milaSettings.dinners,
+      card_weekday: milaSettings.card_weekday, card_time: t(milaSettings.card_time),
+      close_weekday: milaSettings.close_weekday, close_time: t(milaSettings.close_time),
+      adopt_weekday: milaSettings.adopt_weekday, adopt_time: t(milaSettings.adopt_time),
+      shop_weekday: milaSettings.shop_weekday, prep_weekday: milaSettings.prep_weekday, prep_time: t(milaSettings.prep_time),
+    }
+  }, [milaSettings])
 
   // --- Schreiben -----------------------------------------------------------
   const need = () => {
@@ -404,6 +455,17 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     template,
     ideas,
     shouts,
+    milaDays,
+    milaRecipe: (id) => (id ? (milaById.get(id) ?? null) : null),
+    reloadMila: async () => {
+      if (householdId) await loadMila(householdId)
+    },
+    milaRhythm,
+    async saveMilaRhythm(patch) {
+      const { hid } = need()
+      await store.upsert('mila_settings', { household_id: hid, ...milaRhythm, ...patch }, 'household_id')
+      await loadMila(hid)
+    },
     error,
 
     isNew(type, item) {

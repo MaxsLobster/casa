@@ -7,8 +7,28 @@ import { setPaper, usePaper } from '../state/paper'
 import { SetPassword } from './SetPassword'
 import { currentPushSubscription, isIOS, isStandalone, permissionState, pushSupported } from '../lib/push'
 
+const COUNTS = [0, 1, 2, 3, 4, 5].map((n) => ({ value: String(n), label: String(n) }))
+const WD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+
+/** Wochentag (und Uhrzeit) für den Mila-Rhythmus */
+function DayTime({ label, day, time, onChange }: { label: string; day: number; time?: string; onChange: (day: number, time: string) => void }) {
+  return (
+    <div className="between" style={{ justifyContent: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+      <span className="hint" style={{ flex: "1 1 100%" }}>{label}</span>
+      <select className="input-ui" value={day} onChange={(e) => onChange(Number(e.target.value), time ?? '')} aria-label={label + ': Tag'} style={{ minWidth: 76 }}>
+        {WD.map((w, i) => (
+          <option key={w} value={i + 1}>{w}</option>
+        ))}
+      </select>
+      {time !== undefined && (
+        <input className="input-ui" type="time" value={time} onChange={(e) => e.target.value && onChange(day, e.target.value)} aria-label={label + ': Uhrzeit'} style={{ minWidth: 110 }} />
+      )}
+    </div>
+  )
+}
+
 export function Einstellungen() {
-  const { me, user, settings, updateSettings, setWorkday, signOut, isDemo, household, enablePush, disablePush, sendTestPush } = useCasa()
+  const { me, user, settings, updateSettings, setWorkday, signOut, isDemo, household, enablePush, disablePush, sendTestPush, milaRhythm, saveMilaRhythm } = useCasa()
   const today = useToday()
   const darkAuto = settings?.dark_mode_auto ?? true
   const paper = usePaper()
@@ -178,6 +198,23 @@ export function Einstellungen() {
           />
           <p className="hint">Gilt für Zurufe und für Aufgaben der Firma, die der andere für dich einträgt. Bei „aus“ zeigt nur ein Punkt am MWF-Symbol ungelesene Zurufe. Rundenpunkte aus der Vorlage lösen nie eine Mitteilung aus.</p>
         </div>
+      </div>
+
+      {/* ---------- Mila ---------- */}
+      <div className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+        <span className="label">Mila · Wochenkarte</span>
+        <div className="stack" style={{ gap: 6 }}>
+          <span className="hint">Mittagessen pro Woche (Mo–Fr)</span>
+          <Chips variant="date" options={COUNTS} value={String(milaRhythm.lunches)} onChange={(v) => saveMilaRhythm({ lunches: Number(v) })} />
+          <span className="hint">Abendessen pro Woche (Mo–Fr)</span>
+          <Chips variant="date" options={COUNTS} value={String(milaRhythm.dinners)} onChange={(v) => saveMilaRhythm({ dinners: Number(v) })} />
+        </div>
+        <DayTime label="Karte ab" day={milaRhythm.card_weekday} time={milaRhythm.card_time} onChange={(d, t) => saveMilaRhythm({ card_weekday: d, card_time: t })} />
+        <DayTime label="Wahl schließt" day={milaRhythm.close_weekday} time={milaRhythm.close_time} onChange={(d, t) => saveMilaRhythm({ close_weekday: d, close_time: t })} />
+        <DayTime label="Sonst automatisch übernehmen" day={milaRhythm.adopt_weekday} time={milaRhythm.adopt_time} onChange={(d, t) => saveMilaRhythm({ adopt_weekday: d, adopt_time: t })} />
+        <DayTime label="Großer Einkauf" day={milaRhythm.shop_weekday} onChange={(d) => saveMilaRhythm({ shop_weekday: d })} />
+        <DayTime label="Prep-Stunde" day={milaRhythm.prep_weekday} time={milaRhythm.prep_time} onChange={(d, t) => saveMilaRhythm({ prep_weekday: d, prep_time: t })} />
+        <p className="hint">Alles in der Woche davor. Gilt ab der nächsten Karte. Mitteilungen gibt es nur, wenn sie oben an sind: wenn die Karte da ist und wenn die Woche steht.</p>
       </div>
 
       {/* ---------- Dunkelmodus ---------- */}

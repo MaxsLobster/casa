@@ -3,21 +3,23 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { MilaTop } from './Mila'
 import { useMila } from './MilaContext'
-import { RHYTHM, isThermomix, minutes } from './rhythm'
+import { isThermomix, minutes } from './rhythm'
 import { CATEGORY_LABELS, scaleAmount, tileKind } from './portions'
 import { formatAmount } from './shopping'
 import { PlayIcon, TileIcon } from './icons'
 import { Sheet } from '../components/ui'
-import { addDays, fromISO, startOfWeek, today, weekday, weekdayShort } from '../lib/dates'
+import { addDays, fromISO, startOfWeek, today, weekdayShort } from '../lib/dates'
+import type { MealSlot } from '../lib/types'
 
 export function Gericht() {
   const { id } = useParams()
-  const { recipeById, ingredientsOf, weekDays, setWeekDay, ready } = useMila()
+  const { recipeById, ingredientsOf, weekDays, setMeal, ready } = useMila()
   const nav = useNavigate()
   const recipe = recipeById(id)
   const [portions, setPortions] = useState<number | null>(null)
   const [pick, setPick] = useState(false)
   const [placed, setPlaced] = useState<string | null>(null)
+  const [meal, setMealSlot] = useState<MealSlot>('abend')
 
   if (!ready) return <div className="page"><MilaTop /><span className="hint">Einen Moment …</span></div>
   if (!recipe) {
@@ -38,7 +40,7 @@ export function Gericht() {
 
   async function place(date: string) {
     setPick(false)
-    await setWeekDay(date, { recipe_id: recipe!.id, free_text: null })
+    await setMeal(date, meal, recipe!.id)
     setPlaced(date)
   }
 
@@ -58,7 +60,9 @@ export function Gericht() {
             {recipe.time_min ? <span>{minutes(recipe.time_min)}</span> : null}
             {isThermomix(recipe.devices) && <span className="m-tm">TM</span>}
             <span>{CATEGORY_LABELS[recipe.category]}</span>
-            {recipe.valerie_tauglich && <span style={{ color: 'var(--brown)' }}>Valerie-tauglich</span>}
+            {recipe.valerie_mag && <span style={{ color: 'var(--brown)' }}>Valerie mag’s</span>}
+            {recipe.cook_double && <span>doppelt → Mittag</span>}
+            {recipe.prep_box && <span>Prep-Box</span>}
             <Link to={`/mila/gerichte/${recipe.id}/bearbeiten`} className="m-detail__edit">Bearbeiten</Link>
           </div>
         </div>
@@ -112,8 +116,13 @@ export function Gericht() {
         <Sheet onClose={() => setPick(false)} title="Tag wählen">
           <div className="stack" style={{ gap: 4 }}>
             <span className="m-group__label">An welchem Tag?</span>
+            <div className="m-chips" role="radiogroup">
+              {(['abend', 'mittag'] as MealSlot[]).map((m) => (
+                <button key={m} type="button" role="radio" aria-checked={meal === m} className={'m-chip m-chip--small' + (meal === m ? ' m-chip--on' : '')} onClick={() => setMealSlot(m)}>{m === 'abend' ? 'Abend' : 'Mittag'}</button>
+              ))}
+            </div>
             {days.map((d) => {
-              const w = weekDays.find((x) => x.date === d)
+              const w = weekDays.find((x) => x.date === d && x.meal === meal)
               const current = w?.recipe_id ? recipeById(w.recipe_id)?.name : w?.free_text
               return (
                 <button key={d} type="button" className="m-dayopt" onClick={() => place(d)}>
@@ -122,7 +131,7 @@ export function Gericht() {
                     <span className="m-day__date">{fromISO(d).getDate()}.{fromISO(d).getMonth() + 1}.</span>
                   </span>
                   <span className="m-day__mid">
-                    <span className={'m-day__mode m-day__mode--' + RHYTHM[weekday(d) - 1].tone}>{RHYTHM[weekday(d) - 1].label}</span>
+                    <span className="m-day__mode m-day__mode--grey">{meal === 'abend' ? 'Abend' : 'Mittag'}</span>
                     {current ? <span className="m-dayopt__current">{current}</span> : <span className="m-dayopt__free">frei</span>}
                   </span>
                 </button>
