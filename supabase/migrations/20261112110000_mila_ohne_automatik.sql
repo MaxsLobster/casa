@@ -11,6 +11,9 @@ update public.mila_settings set card_weekday = 1, card_time = '00:00', close_wee
 -- Von Mila automatisch eingetragene Gerichte der Woche 9.–13.11.2026 entfernen (Max, 12.11.2026)
 delete from public.mila_week_days where date between '2026-11-09' and '2026-11-13' and created_by is null;
 
+-- Dazu der automatisch erzeugte Einkaufszettel dieser Woche (eigene Zeilen bleiben)
+delete from public.mila_shopping_items where source_week = '2026-W46' and added_by is null;
+
 -- Takt: nur noch Karte anlegen und nach der Frist aufdecken, nichts mehr automatisch übernehmen
 create or replace function public.mila_tick()
 returns void language plpgsql security definer set search_path = public, extensions as $$
