@@ -20,6 +20,7 @@ import { isFairEvent, isShared, isWorkday, unreadShouts } from '../lib/mwf'
 import { MwfIcon } from '../mwf/MwfIcon'
 import { isMilaEvent, mealsOn } from '../mila/casa-link'
 import { minutes } from '../mila/rhythm'
+import { alarmOpen } from '../lib/freizeit'
 import { shortName } from '../mila/engine'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
@@ -56,7 +57,8 @@ export function Heute() {
   const now = useNow()
   const nav = useNavigate()
   const location = useLocation()
-  const { me, partner, members, people, tasks: allTasks, events, normalWeek, overrides, anchors: allAnchors, pins, settings, setTaskDone, takeTask, isNew, markSeen } = casa
+  const { me, partner, members, people, tasks: allTasks, events, normalWeek, overrides, anchors: allAnchors, pins, settings, setTaskDone, takeTask, isNew, markSeen, freizeitTipps } = casa
+  const freizeitNeu = freizeitTipps.some((t) => alarmOpen(t, today))
   // Casa zeigt nur den Bereich casa; bei Arbeitstag an zusätzlich meine heute fälligen MWF-Aufgaben
   const workday = isWorkday(settings, today)
   const hasShouts = unreadShouts(casa.shouts, me?.id ?? null).length > 0
@@ -309,6 +311,13 @@ export function Heute() {
       <Link to="/mila/woche" className="heute__gear heute__pot" aria-label="Mila, der Essensplaner">
         <PotIcon />
       </Link>
+      <Link to="/freizeit" className="heute__gear heute__frei" aria-label="Freizeit">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M2.5 19.5l6-9 4 5.5 2.5-3 6.5 6.5z" />
+          <circle cx="17" cy="6.5" r="2.3" />
+        </svg>
+        {freizeitNeu && <span className="mwf__dot mwf__dot--icon" style={{ top: 9, right: 9 }} aria-label="neue Tipps" />}
+      </Link>
       {casa.med?.enabled && (
         <Link to="/med" className="heute__gear heute__med" aria-label="Medikament">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -318,7 +327,7 @@ export function Heute() {
         </Link>
       )}
       {workday && (
-        <Link to="/mwf/hub" className="heute__gear heute__mwf" style={casa.med?.enabled ? { right: 134 } : undefined} aria-label="Munich Watch Fair">
+        <Link to="/mwf/hub" className="heute__gear heute__mwf" style={casa.med?.enabled ? { right: 178 } : undefined} aria-label="Munich Watch Fair">
           <MwfIcon />
           {hasShouts && <span className="mwf__dot mwf__dot--icon" aria-label="ungelesene Zurufe" />}
         </Link>
@@ -396,6 +405,7 @@ export function Heute() {
                   const ev = events.find((x) => x.id === r.event) ?? null
                   if (ev && isFairEvent(ev)) nav('/mwf/hub')
                   else if (ev && isMilaEvent(ev)) nav('/mila/prep')
+                  else if (ev && freizeitTipps.some((t) => t.event_id === ev.id)) nav('/freizeit?tipp=' + freizeitTipps.find((t) => t.event_id === ev.id)!.id)
                   else setEditEvent(ev)
                 } else if (r.slots?.length) setEditSlots(r.slots)
               }

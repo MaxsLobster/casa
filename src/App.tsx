@@ -20,6 +20,7 @@ import { useSplashGone } from './state/splash'
 import { Mila } from './mila/Mila'
 import { Mwf } from './mwf/Mwf'
 import { Med } from './med/Med'
+import { Freizeit } from './freizeit/Freizeit'
 
 export default function App() {
   return (
@@ -109,6 +110,9 @@ function Shell() {
 
   // Medikament: privater Bereich
   if (loc.pathname.startsWith('/med')) return <Med />
+
+  // Freizeit: Wochenend-Tipps
+  if (loc.pathname.startsWith('/freizeit')) return <Freizeit />
 
   const isNeu = loc.pathname === '/neu'
 

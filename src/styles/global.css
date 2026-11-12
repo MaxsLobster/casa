@@ -1066,11 +1066,13 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
   align-self: center; display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 8px 12px; min-height: 40px;
   font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--grey-2); text-decoration: none;
 }
-.heute__mwf { right: 90px; }
+.heute__mwf { right: 134px; }
 /* Punkt: ungelesene Zurufe */
 .mwf__dot { display: inline-block; width: 8px; height: 8px; border-radius: 4px; background: var(--brown); box-shadow: 0 0 0 2px var(--paper); }
 .mwf__dot--icon { position: absolute; top: -2px; right: -3px; width: 7px; height: 7px; }
 .heute__mwf .mwf__dot--icon { top: 9px; right: 9px; }
 
 /* Medikament: Symbol auf Heute (links vom Topf) */
-.heute__med { right: 90px; }
+.heute__med { right: 134px; }
+/* Freizeit: Symbol auf Heute (links vom Topf) */
+.heute__frei { right: 90px; }

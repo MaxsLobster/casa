@@ -53,7 +53,7 @@ function weekOffset(date: ISODate, today: ISODate): number {
 }
 
 export function Woche() {
-  const { me, members, people, normalWeek, overrides, events, tasks: allTasks, settings, isNew, markSeen, setTaskDone, updateSettings, milaDays, milaRecipe } = useCasa()
+  const { me, members, people, normalWeek, overrides, events, tasks: allTasks, settings, isNew, markSeen, setTaskDone, updateSettings, milaDays, milaRecipe, freizeitTipps } = useCasa()
   const tasks = useMemo(() => allTasks.filter((t) => t.area === 'casa'), [allTasks])
   const today = useToday()
   const now = useNow()
@@ -71,6 +71,7 @@ export function Woche() {
     const ev = events.find((x) => x.id === id) ?? null
     if (ev && isFairEvent(ev)) nav('/mwf/hub')
     else if (ev && isMilaEvent(ev)) nav('/mila/prep')
+    else if (ev && freizeitTipps.some((t) => t.event_id === ev.id)) nav('/freizeit?tipp=' + freizeitTipps.find((t) => t.event_id === ev.id)!.id)
     else setEditEvent(ev)
   }
   const [takeover, setTakeover] = useState<{ date: ISODate; state: DayState; fx: DayEffects } | null>(null)

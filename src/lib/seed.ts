@@ -57,6 +57,7 @@ export function seedLocal(store: LocalStore) {
   }
   seedAnchor(store)
   seedMwf(store)
+  seedFreizeit(store)
 }
 
 /** Beispiel-Anker „Externes Büro" (wie in der echten Datenbank) */
@@ -157,4 +158,28 @@ function seedMwf(store: LocalStore) {
   const ago = (h: number) => new Date(Date.now() - h * 3600000).toISOString()
   store.insertSync('shouts', { household_id: H, area: 'mwf', from_member_id: DEMO_ANNA_ID, to_member_id: DEMO_MAX_ID, text: 'Hey, der Meier kommt nächsten Sonntag', reply_to: null, read_at: null, archived_at: null, created_at: ago(2) })
   store.insertSync('shouts', { household_id: H, area: 'mwf', from_member_id: DEMO_MAX_ID, to_member_id: DEMO_ANNA_ID, text: 'Tickets sind seit heute online', reply_to: null, read_at: ago(20), archived_at: ago(20), created_at: ago(26) })
+}
+
+/** Freizeit: Beispiel-Radar für das kommende Wochenende, ein Alarm und ein früherer Ausflug */
+function seedFreizeit(store: LocalStore) {
+  const H = DEMO_HOUSEHOLD_ID
+  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const plus = (n: number) => {
+    const d = new Date()
+    d.setDate(d.getDate() + n)
+    return d
+  }
+  const sat = plus((6 - new Date().getDay() + 7) % 7)
+  const day = (n: number) => iso(new Date(sat.getFullYear(), sat.getMonth(), sat.getDate() + n))
+  const at = (n: number, hm: string) => new Date(`${day(n)}T${hm}:00`).toISOString()
+  const now = new Date().toISOString()
+  const radar = store.insertSync('freizeit_radar', { household_id: H, wochenende: day(0), wetter: 'Sa sonnig 0–7 °C / So Sonne & Wolken, bis 9 °C', erstellt_am: now })
+  const base = { household_id: H, radar_id: radar.id, ende: null, ganztags: false, ort: null, fahrzeit_min: null, preis: null, anmeldung: 'unbekannt' as const, frist: null, warum_valerie: null, fuer_euch: null, hinweis: null, link: null, grund: null, status: 'neu' as const, notiz: null, feedback_von: null, feedback_am: null, event_id: null, erstellt_am: now }
+  store.insertSync('freizeit_tipps', { ...base, typ: 'haupt', titel: 'Kasperl auf Bergtour', start: at(0, '15:00'), ende: at(0, '16:00'), start_tag: day(0), ort: 'Moierhof, Gstadt', fahrzeit_min: 30, preis: 'nicht angegeben', warum_valerie: 'Klassisches Kasperltheater, spannend ohne Grusel', fuer_euch: 'Davor Seespaziergang und Kuchen in Gstadt', hinweis: '❓ unbestätigt', link: 'https://example.org/kasperl' })
+  store.insertSync('freizeit_tipps', { ...base, typ: 'haupt', titel: 'Wasservogelzählung am Simssee', start: at(1, '10:00'), ende: at(1, '12:00'), start_tag: day(1), ort: 'Treffpunkt nach Anmeldung', fahrzeit_min: 10, preis: 'frei', anmeldung: 'ja', warum_valerie: 'Vögel am See, fast vor der Haustür', fuer_euch: 'Gemütlich, früher gehen jederzeit möglich', link: 'https://example.org/voegel' })
+  store.insertSync('freizeit_tipps', { ...base, typ: 'planb', titel: 'Hallenbad', start: at(0, '09:00'), ende: at(1, '21:30'), start_tag: day(0), fahrzeit_min: 20, preis: 'Erwachsene 4,50 €, Valerie frei', link: 'https://example.org/bad' })
+  store.insertSync('freizeit_tipps', { ...base, typ: 'oma', titel: 'Therme', start: at(1, '10:00'), ende: at(1, '21:00'), start_tag: day(1), fahrzeit_min: 40, preis: 'Erwachsene 12 €', fuer_euch: 'Warm, wenig Laufen, viele Sitzplätze' })
+  store.insertSync('freizeit_tipps', { ...base, typ: 'vorschau', titel: 'Adventsmarkt', start: at(7, '00:00'), ende: at(28, '00:00'), ganztags: true, start_tag: day(7), preis: 'Eintritt frei', link: 'https://example.org/markt' })
+  store.insertSync('freizeit_tipps', { ...base, radar_id: null, typ: 'alarm', titel: 'Nikolausfahrt mit der Dampflok', start: at(21, '14:00'), start_tag: day(21), frist: day(3), grund: 'Die Plätze sind jedes Jahr schnell weg.', link: 'https://example.org/lok' })
+  store.insertSync('freizeit_tipps', { ...base, radar_id: null, typ: 'haupt', titel: 'Wildpark', start: at(-14, '10:00'), start_tag: day(-14), ort: 'Oberreith', status: 'gemacht', notiz: 'Die Ziegen waren der Hit', feedback_von: DEMO_MAX_ID, feedback_am: now })
 }

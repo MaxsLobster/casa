@@ -2,12 +2,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { DemoAuth, SupabaseAuth, type Auth, type AuthUser } from '../lib/auth'
 import { LocalStore, SupabaseStore, type Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
-import type { MedSettings, MilaRecipe, MilaSettings, MilaWeekDay } from '../lib/types'
+import type { MedSettings, MilaRecipe, MilaSettings, MilaWeekDay, FreizeitRadar, FreizeitStatus, FreizeitTipp } from '../lib/types'
 import type { Anchor, AnchorLog, AnchorLogKind, AnchorPhase, AnchorPin, AnchorQuestion, AnchorVisibility, Area, Event, EventEffect, Fair, Household, Idea, ItemSeen, Member, NormalWeekRow, Person, Settings, Shout, Slot, Task, TaskStatus, TemplateRow, WeekOverride, TableName, Repeat } from '../lib/types'
 import { addDays, fromISO, toISO, today } from '../lib/dates'
 import { subscribePush, unsubscribePush, type PushKeys } from '../lib/push'
 import { phaseLabel } from '../lib/anchors'
 import { dueFor, fairEvents, nextFair, roundStart } from '../lib/mwf'
+import { tippEvent } from '../lib/freizeit'
 import { prepEvents } from '../mila/casa-link'
 import { DEFAULT_RHYTHM, type Rhythm } from '../mila/engine'
 
@@ -47,6 +48,11 @@ export interface Casa {
   milaRhythm: Rhythm
   saveMilaRhythm(patch: Partial<Rhythm>): Promise<void>
   // Medikament (privat): meine Einstellungen, falls ich den Bereich habe
+  freizeitRadars: FreizeitRadar[]
+  freizeitTipps: FreizeitTipp[]
+  /** Rückmeldung zu einem Tipp; „machen“ legt einen Termin in der Woche an, „neu“/„nix“ nimmt ihn wieder weg */
+  setFreizeitStatus(id: string, status: FreizeitStatus): Promise<void>
+  setFreizeitNotiz(id: string, notiz: string | null): Promise<void>
   med: MedSettings | null
   /** Mitglied, das von mir eine Abend-Einschätzung möchte (sonst null) */
   medAsking: string | null
@@ -165,6 +171,8 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   const [milaDays, setMilaDays] = useState<MilaWeekDay[]>([])
   const [milaRecipes, setMilaRecipes] = useState<MilaRecipe[]>([])
   const [milaSettings, setMilaSettings] = useState<MilaSettings | null>(null)
+  const [freizeitRadars, setFreizeitRadars] = useState<FreizeitRadar[]>([])
+  const [freizeitTipps, setFreizeitTipps] = useState<FreizeitTipp[]>([])
   const [med, setMed] = useState<MedSettings | null>(null)
   const [medAsking, setMedAsking] = useState<string | null>(null)
 
@@ -244,6 +252,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
           setDataReady(true)
           void loadMila(hid)
           void loadMed(mine.id, hid)
+          void loadFreizeit(hid)
           return
         }
         if (table === 'mila_week_days' || table === 'mila_settings') {
@@ -251,6 +260,10 @@ export function CasaProvider({ children }: { children: ReactNode }) {
           return
         }
         if (!householdId) return
+        if (table === 'freizeit_radar' || table === 'freizeit_tipps') {
+          await loadFreizeit(householdId)
+          return
+        }
         if (table === 'tasks') setTasks(await store.select('tasks', { household_id: householdId }))
         if (table === 'events') setEvents(await store.select('events', { household_id: householdId }))
         if (table === 'normal_week') setNormalWeek(await store.select('normal_week', { household_id: householdId }))
@@ -276,6 +289,17 @@ export function CasaProvider({ children }: { children: ReactNode }) {
 
   const loadRef = useRef(load)
   loadRef.current = load
+
+  /** Freizeit: Radar und Tipps (fehlt die Tabelle noch, bleibt der Bereich leer) */
+  async function loadFreizeit(hid: string) {
+    try {
+      const [r, t] = await Promise.all([store.select('freizeit_radar', { household_id: hid }), store.select('freizeit_tipps', { household_id: hid })])
+      setFreizeitRadars(r)
+      setFreizeitTipps(t)
+    } catch {
+      /* Bereich noch nicht eingerichtet */
+    }
+  }
 
   /** Medikament: meine Einstellungen und ob der Partner eine Abendfrage an mich hat */
   async function loadMed(memberId: string, hid: string) {
@@ -349,7 +373,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   // Live: Änderungen (auch vom anderen) nachladen
   useEffect(() => {
     if (!user) return
-    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins', 'fairs', 'checklist_template', 'ideas', 'shouts', 'mila_week_days', 'mila_settings'], (t) => loadRef.current(t))
+    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins', 'fairs', 'checklist_template', 'ideas', 'shouts', 'mila_week_days', 'mila_settings', 'freizeit_radar', 'freizeit_tipps'], (t) => loadRef.current(t))
     const onVisible = () => {
       if (document.visibilityState === 'visible') loadRef.current()
     }
@@ -493,6 +517,41 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     milaRecipe: (id) => (id ? (milaById.get(id) ?? null) : null),
     reloadMila: async () => {
       if (householdId) await loadMila(householdId)
+    },
+    freizeitRadars,
+    freizeitTipps,
+    async setFreizeitStatus(id, status) {
+      const { hid, me } = need()
+      const tip = freizeitTipps.find((t) => t.id === id)
+      if (!tip) return
+      let eventId = tip.event_id
+      const keep = status === 'machen' || status === 'gemacht'
+      if (!keep && eventId) {
+        await store.remove('events', { id: eventId })
+        eventId = null
+      }
+      if (status === 'machen' && !eventId) {
+        const ev = tippEvent(tip, freizeitRadars.find((r) => r.id === tip.radar_id) ?? null)
+        if (ev) {
+          const row = await store.insert('events', {
+            household_id: hid, created_by: me.id, updated_by: me.id, member_id: null, person_id: null, repeat: null, repeat_until: null,
+            effect: 'termin', dropoff_by: null, dropoff_at: null, pickup_by: null, pickup_at: null, ...ev,
+          })
+          eventId = row.id
+        }
+      }
+      const fresh = status === 'neu'
+      const patch = { status, event_id: eventId, feedback_von: fresh ? null : me.id, feedback_am: fresh ? null : new Date().toISOString(), ...(fresh ? { notiz: null } : {}) }
+      setFreizeitTipps((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
+      await store.update('freizeit_tipps', { id }, patch)
+      await Promise.all([load('events'), loadFreizeit(hid)])
+      flushPush()
+    },
+    async setFreizeitNotiz(id, notiz) {
+      const { hid } = need()
+      setFreizeitTipps((prev) => prev.map((t) => (t.id === id ? { ...t, notiz } : t)))
+      await store.update('freizeit_tipps', { id }, { notiz })
+      await loadFreizeit(hid)
     },
     med,
     medAsking,

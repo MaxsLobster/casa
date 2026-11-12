@@ -292,9 +292,10 @@ export type TableName =
   | 'ideas'
   | 'shouts'
   | MedTableName
+  | FreizeitTableName
   | MilaTableName
 
-export interface TableRow extends MilaTableRow, MedTableRow {
+export interface TableRow extends MilaTableRow, MedTableRow, FreizeitTableRow {
   households: Household
   members: Member
   tasks: Task
@@ -587,4 +588,54 @@ export interface MedTableRow {
   med_days: MedDay
   med_checkins: MedCheckin
   med_partner_answers: MedPartnerAnswer
+}
+
+// ---------------------------------------------------------------------------
+// Freizeit: Wochenend-Tipps vom Freizeit-Scout (kommen über die Edge Function „freizeit-api“)
+// ---------------------------------------------------------------------------
+
+export type FreizeitTyp = 'haupt' | 'planb' | 'oma' | 'vorschau' | 'alarm'
+export type FreizeitStatus = 'neu' | 'machen' | 'nix' | 'gemacht'
+
+export interface FreizeitRadar {
+  id: Id
+  household_id: Id
+  wochenende: string // Samstag
+  wetter: string | null
+  erstellt_am: string
+}
+
+export interface FreizeitTipp {
+  id: Id
+  household_id: Id
+  radar_id: Id | null
+  typ: FreizeitTyp
+  titel: string
+  start: string | null // ISO mit Zeitzone
+  ende: string | null
+  ganztags: boolean
+  start_tag: string | null
+  ort: string | null
+  fahrzeit_min: number | null
+  preis: string | null
+  anmeldung: 'ja' | 'nein' | 'unbekannt'
+  frist: string | null
+  warum_valerie: string | null
+  fuer_euch: string | null
+  hinweis: string | null
+  link: string | null
+  grund: string | null
+  status: FreizeitStatus
+  notiz: string | null
+  feedback_von: Id | null
+  feedback_am: string | null
+  event_id: Id | null // Eintrag in der Casa-Woche
+  erstellt_am: string
+}
+
+export type FreizeitTableName = 'freizeit_radar' | 'freizeit_tipps'
+
+export interface FreizeitTableRow {
+  freizeit_radar: FreizeitRadar
+  freizeit_tipps: FreizeitTipp
 }
