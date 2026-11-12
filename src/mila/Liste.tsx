@@ -4,14 +4,12 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { MilaPage } from './Mila'
 import { useMila } from './MilaContext'
 import { SHOP_LABELS, SHOP_ORDER, parseManualInput } from './shopping'
-import { adoptedMenu } from './menu-view'
-import { weekKey } from './week-list'
 import { Collapse } from '../components/ui'
 import { weekdayLongByIndex } from '../lib/dates'
 import type { MilaShoppingItem } from '../lib/types'
 
 export function Liste() {
-  const { items, me, partner, members, menus, rhythm, addItems, setChecked, setStock, finishShopping } = useMila()
+  const { items, me, partner, members, rhythm, addItems, setChecked, setStock, finishShopping } = useMila()
   const [text, setText] = useState('')
   const [showDone, setShowDone] = useState(true)
 
@@ -21,11 +19,7 @@ export function Liste() {
   const done = useMemo(() => items.filter((i) => i.checked).sort((a, b) => (b.checked_at ?? '').localeCompare(a.checked_at ?? '')), [items])
   const groups = SHOP_ORDER.map((cat) => ({ cat, label: SHOP_LABELS[cat], items: open.filter((i) => i.category === cat).sort((a, b) => Number(a.is_stock) - Number(b.is_stock)) })).filter((g) => g.items.length)
 
-  // Kopf: „6 Mahlzeiten · 3 Personen“ aus der übernommenen Woche, wenn ihre Zeilen auf dem Zettel stehen
-  const menu = adoptedMenu(menus)
-  const fromMenu = menu?.plan && items.some((i) => i.source_week === weekKey(menu.week))
-  const people = menu?.plan ? Math.max(0, ...menu.plan.slots.filter((s) => s.meal === 'abend').map((s) => s.servings)) : 0
-  const meta = fromMenu && menu?.plan ? `${menu.plan.slots.length} Mahlzeiten · ${people} ${people === 1 ? 'Person' : 'Personen'} · ` : ''
+  const meta = ''
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -59,7 +53,7 @@ export function Liste() {
         <input type="text" className="m-add__input" placeholder="Was fehlt noch?" aria-label="Was fehlt noch?" value={text} onChange={(e) => setText(e.target.value)} enterKeyHint="done" autoComplete="off" />
       </form>
 
-      {open.length === 0 && done.length === 0 && <p className="m-hint">Noch nichts auf dem Zettel. Er füllt sich, sobald ihr eine Woche übernehmt. Eigenes oben eintippen.</p>}
+      {open.length === 0 && done.length === 0 && <p className="m-hint">Noch nichts auf dem Zettel. In der Woche gibt es den Knopf „Zutaten auf den Zettel“. Eigenes oben eintippen.</p>}
 
       {groups.map((g) => (
         <section key={g.cat} className="m-group">

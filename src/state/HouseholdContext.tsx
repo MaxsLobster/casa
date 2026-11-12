@@ -8,7 +8,7 @@ import { addDays, fromISO, toISO, today } from '../lib/dates'
 import { subscribePush, unsubscribePush, type PushKeys } from '../lib/push'
 import { phaseLabel } from '../lib/anchors'
 import { dueFor, fairEvents, nextFair, roundStart } from '../lib/mwf'
-import { prepEvent } from '../mila/casa-link'
+import { prepEvents } from '../mila/casa-link'
 import { DEFAULT_RHYTHM, type Rhythm } from '../mila/engine'
 
 export type SeenType = ItemSeen['item_type']
@@ -408,11 +408,11 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   }, [dataReady, me, fairs, template])
 
   // Messetage als Ereignis „Messe" (nicht gespeichert, nur abgeleitet)
-  // dazu die Prep-Stunde aus Mila (wöchentlich)
+  // dazu die Prep-Stunde aus Mila (nur vor Wochen mit eingetragenen Gerichten)
   const allEvents = useMemo(() => {
-    const extra = householdId ? [prepEvent(householdId, milaSettings ? { prep_weekday: milaSettings.prep_weekday, prep_time: milaSettings.prep_time } : DEFAULT_RHYTHM)] : []
+    const extra = householdId ? prepEvents(householdId, milaSettings ? { prep_weekday: milaSettings.prep_weekday, prep_time: milaSettings.prep_time } : DEFAULT_RHYTHM, milaDays) : []
     return [...events, ...fairEvents(fairs), ...extra]
-  }, [events, fairs, householdId, milaSettings])
+  }, [events, fairs, householdId, milaSettings, milaDays])
   const milaById = useMemo(() => new Map(milaRecipes.map((r) => [r.id, r])), [milaRecipes])
   const milaRhythm: Rhythm = useMemo(() => {
     if (!milaSettings) return DEFAULT_RHYTHM

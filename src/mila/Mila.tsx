@@ -57,8 +57,8 @@ function MilaShell() {
 function MilaNav() {
   const { menus, me } = useMila()
   const m = openMenu(menus)
-  // Punkt an „Karte“: Karte offen und ich habe noch nicht fertig gewählt, oder aufgedeckt und noch nicht übernommen
-  const dot = !!m && ((!m.revealed_at && !m.done_by.includes(me.id)) || (!!m.revealed_at && !m.adopted_at))
+  // Punkt an „Karte“: Karte offen und ich habe noch nicht fertig gewählt
+  const dot = !!m && !m.revealed_at && !m.done_by.includes(me.id)
   return (
     <nav className="nav" aria-label="Mila">
       <NavLink to="/mila/woche" className="nav__item">Woche</NavLink>

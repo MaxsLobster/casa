@@ -1,232 +1,72 @@
 // Mila · Woche: nach der Aufdeckung die Treffer und die verteilte Woche (Ziehen, „Woche übernehmen“),
 // sonst die Woche mit Mittag und Abend. Antippen: kochen, Rezept, tauschen, leeren.
-import { useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { MilaPage } from './Mila'
 import { useMila } from './MilaContext'
 import { isThermomix, minutes } from './rhythm'
-import { cookOn, shortName, workDays } from './engine'
+import { cookOn, dayInfo, servingsFor, shortName, workDays } from './engine'
 import { deadline, openMenu } from './menu-view'
+import { weekKey } from './week-list'
 import { Sheet } from '../components/ui'
 import { useCasa } from '../state/HouseholdContext'
-import type { MealSlot, MilaMenu, MilaPlan, MilaRecipe, MilaWeekDay, PlanSlot } from '../lib/types'
+import type { MealSlot, MilaMenu, MilaPlan, MilaRecipe, MilaWeekDay } from '../lib/types'
 import { addDays, fromISO, isoWeek, startOfWeek, today, weekDates, weekRange, weekdayShort } from '../lib/dates'
 
 export function Woche() {
-  const { menus } = useMila()
-  const menu = openMenu(menus)
-  const [showWeek, setShowWeek] = useState(false)
-  if (menu?.revealed_at && menu.plan && !showWeek) return <Treffer menu={menu} plan={menu.plan} onWeek={() => setShowWeek(true)} />
+  // Erst nach dem Laden aufbauen, damit gleich die richtige Woche offen ist
+  const { ready } = useMila()
+  if (!ready) return <MilaPage>{null}</MilaPage>
   return <WeekView />
 }
 
-// ---------------------------------------------------------------------------
-// Aufdeckung
-// ---------------------------------------------------------------------------
-
-function Treffer({ menu, plan, onWeek }: { menu: MilaMenu; plan: MilaPlan; onWeek: () => void }) {
-  const { recipeById, members, me, reorder, adopt } = useMila()
-  const [busy, setBusy] = useState(false)
-  const treffer = [...plan.hits, ...plan.reserve].filter((h) => h.kind === 'treffer').length
-  const jokers = plan.hits.filter((h) => h.kind === 'joker').length
-  const meals = plan.slots.length
-  const nameOf = (id: string) => (id === me.id ? 'du' : (members.find((m) => m.id === id)?.display_name ?? ''))
-  const plus = jokers === 1 ? 'plus ein Joker' : jokers > 1 ? `plus ${jokers} Joker` : ''
-  const headline = plan.voters.length === 0 ? 'Mila hat gewürfelt' : treffer === 1 ? '1 Treffer!' : `${treffer} Treffer!`
-  const sub = [plan.voters.length === 0 ? 'Niemand hat gewählt' : plan.voters.length === 1 ? `Nur ${nameOf(plan.voters[0]) === 'du' ? 'du hast' : nameOf(plan.voters[0]) + ' hat'} gewählt` : null, plus, `${meals} Mahlzeiten stehen`].filter(Boolean).join(' · ')
-
-  const mark = (k: string) => (k === 'joker' ? '★' : k === 'treffer' ? '✓✓' : '+')
-  const noteOf = (h: MilaPlan['hits'][number], reserve = false) => {
+/** Treffer der Wochenkarte: nur eine Liste. Antippen legt ein Gericht auf einen Tag, Mila verteilt nichts von selbst. */
+function Hits({ menu, plan, placed, onPick }: { menu: MilaMenu; plan: MilaPlan; placed: Set<string>; onPick: (recipeId: string, meal: MealSlot) => void }) {
+  const { recipeById, members, me } = useMila()
+  const all = [...plan.hits, ...plan.reserve]
+  const hits = all.filter((h) => h.kind !== 'aufgefuellt')
+  const single = all.filter((h) => h.kind === 'aufgefuellt' && h.points > 0)
+  const treffer = hits.filter((h) => h.kind === 'treffer').length
+  const jokers = hits.filter((h) => h.kind === 'joker').length
+  const nameOf = (id: string) => (id === me.id ? 'von dir' : (members.find((m) => m.id === id)?.display_name ?? ''))
+  const headline = plan.voters.length === 0 ? 'Niemand hat gewählt' : treffer === 1 ? '1 Treffer!' : `${treffer} Treffer!`
+  const sub = [jokers === 1 ? 'plus ein Joker' : jokers > 1 ? `plus ${jokers} Joker` : null, 'antippen legt ein Gericht auf einen Tag'].filter(Boolean).join(' · ')
+  const row = (h: MilaPlan['hits'][number]) => {
     const r = recipeById(h.recipe_id)
-    const parts = [h.meal === 'abend' ? 'Abend' : 'Mittag']
-    if (reserve) return 'Reserve · ' + parts[0]
-    if (h.meal === 'abend' && r?.cook_double && plan.slots.some((s) => s.leftover && s.recipe_id === h.recipe_id)) parts.push('doppelt')
-    if (h.kind === 'joker') parts.push('Joker ' + h.joker_by.map((id) => (id === me.id ? 'von dir' : nameOf(id))).join(' + '))
-    if (h.kind === 'aufgefuellt') parts.push('aufgefüllt')
-    return parts.join(' · ')
+    if (!r) return null
+    const note = [h.meal === 'abend' ? 'Abend' : 'Mittag', h.kind === 'joker' ? 'Joker ' + h.joker_by.map(nameOf).join(' + ') : null, placed.has(h.recipe_id) ? 'steht in der Woche' : null].filter(Boolean).join(' · ')
+    return (
+      <button type="button" key={h.meal + h.recipe_id} className={'m-hit' + (placed.has(h.recipe_id) ? ' m-hit--reserve' : '')} onClick={() => onPick(h.recipe_id, h.meal)}>
+        <span className={'m-hit__badge m-hit__badge--' + h.kind}>{h.kind === 'joker' ? '★' : h.kind === 'treffer' ? '✓✓' : '✓'}</span>
+        <span className="m-hit__name">{r.name}</span>
+        <span className="m-hit__note">{note}</span>
+      </button>
+    )
   }
-
-  async function take() {
-    setBusy(true)
-    await adopt(menu)
-    setBusy(false)
-  }
-
   return (
-    <MilaPage>
-      <header className="m-head">
-        <span className="m-sub">Aufdeckung · KW {isoWeek(menu.week)}</span>
-        <span className="m-title">Eure Woche</span>
-      </header>
-
+    <section className="m-group">
       <div className="m-reveal">
-        <span className="m-reveal__big">{headline}</span>
+        <span className="m-reveal__big" key={menu.id}>{headline}</span>
         <span className="m-hint">{sub}</span>
       </div>
-
-      <section className="m-group">
-        <h2 className="m-group__label">Treffer</h2>
-        {plan.hits.map((h) => (
-          <div key={h.meal + h.recipe_id} className="m-hit">
-            <span className={'m-hit__badge m-hit__badge--' + h.kind}>{mark(h.kind)}</span>
-            <span className="m-hit__name">{recipeById(h.recipe_id)?.name ?? '—'}</span>
-            <span className="m-hit__note">{noteOf(h)}</span>
-          </div>
-        ))}
-        {plan.reserve.map((h) => (
-          <div key={'r' + h.meal + h.recipe_id} className="m-hit m-hit--reserve">
-            <span className="m-hit__badge m-hit__badge--reserve">{mark(h.kind)}</span>
-            <span className="m-hit__name">{recipeById(h.recipe_id)?.name ?? '—'}</span>
-            <span className="m-hit__note">{noteOf(h, true)}</span>
-          </div>
-        ))}
-      </section>
-
-      <section className="m-group">
-        <h2 className="m-group__label">So sieht eure Woche aus</h2>
-        <span className="m-hint" style={{ fontSize: 12.5 }}>Zum Tauschen ein Gericht am Griff ziehen.</span>
-        <PlanList menu={menu} plan={plan} onSwap={(d, l) => reorder(menu, d, l)} />
-      </section>
-
-      <button type="button" className="link" style={{ alignSelf: 'center', marginTop: 8 }} onClick={onWeek}>Diese Woche ansehen ›</button>
-      <div className="m-week-pad" style={{ height: 130 }} aria-hidden />
-      <div className="m-weekbar">
-        <button type="button" className="m-bar__main" disabled={busy} onClick={take}>Woche übernehmen</button>
-        <span className="m-hint m-weekbar__note">Danach entstehen Einkaufszettel und Prep-Plan. Sonst übernimmt Mila {deadline(menu.adopt_at)} selbst.</span>
-      </div>
-    </MilaPage>
+      {hits.map(row)}
+      {single.length > 0 && <h2 className="m-group__label" style={{ marginTop: 10 }}>Nur einer wollte</h2>}
+      {single.map(row)}
+    </section>
   )
 }
-
-/** Verteilte Woche mit Ziehen: Abend auf Abend tauscht, Mittag auf Mittag tauscht */
-function PlanList({ menu, plan, onSwap }: { menu: MilaMenu; plan: MilaPlan; onSwap: (dinners: string[], lunches: string[]) => void }) {
-  const { recipeById, ctx, me } = useMila()
-  const casa = useCasa()
-  const rows = useRef<Record<string, HTMLDivElement | null>>({})
-  const [drag, setDrag] = useState<{ key: string; meal: MealSlot; y0: number; dy: number; over: string | null } | null>(null)
-
-  // Reihenfolge: Index in plan.dinners bzw. plan.lunches
-  const dinnerSlots = plan.slots.filter((s) => s.meal === 'abend')
-  const lunchSlots = plan.slots.filter((s) => s.meal === 'mittag' && !s.leftover)
-  const keyOf = (s: PlanSlot) => s.date + s.meal
-  const items = [...plan.slots.map((s) => ({ kind: 'slot' as const, s })), ...plan.skipped.map((d) => ({ kind: 'skip' as const, d }))].sort((a, b) => {
-    const da = a.kind === 'slot' ? a.s.date + (a.s.meal === 'mittag' ? '0' : '1') : a.d
-    const db = b.kind === 'slot' ? b.s.date + (b.s.meal === 'mittag' ? '0' : '1') : b.d
-    return da.localeCompare(db)
-  })
-
-  function down(e: RPointerEvent<HTMLElement>, s: PlanSlot) {
-    e.preventDefault()
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-    setDrag({ key: keyOf(s), meal: s.meal, y0: e.clientY, dy: 0, over: null })
-  }
-  function move(e: RPointerEvent<HTMLElement>) {
-    if (!drag) return
-    const pool = drag.meal === 'abend' ? dinnerSlots : lunchSlots
-    let over: string | null = null
-    for (const s of pool) {
-      const el = rows.current[keyOf(s)]
-      if (!el || keyOf(s) === drag.key) continue
-      const r = el.getBoundingClientRect()
-      if (e.clientY >= r.top && e.clientY <= r.bottom) over = keyOf(s)
-    }
-    setDrag({ ...drag, dy: e.clientY - drag.y0, over })
-  }
-  function up() {
-    if (!drag) return
-    const d = drag
-    setDrag(null)
-    if (!d.over) return
-    if (d.meal === 'abend') {
-      const a = dinnerSlots.findIndex((s) => keyOf(s) === d.key)
-      const b = dinnerSlots.findIndex((s) => keyOf(s) === d.over)
-      const next = [...plan.dinners]
-      ;[next[a], next[b]] = [next[b], next[a]]
-      onSwap(next, plan.lunches)
-    } else {
-      const a = lunchSlots.findIndex((s) => keyOf(s) === d.key)
-      const b = lunchSlots.findIndex((s) => keyOf(s) === d.over)
-      const next = [...plan.lunches]
-      ;[next[a], next[b]] = [next[b], next[a]]
-      onSwap(plan.dinners, next)
-    }
-  }
-
-  return (
-    <div className="m-plan">
-      {items.map((it) => {
-        if (it.kind === 'skip') {
-          return (
-            <div key={'skip' + it.d} className="m-plan__row m-plan__row--skip">
-              <span className="m-plan__day">{weekdayShort(it.d)}</span>
-              <span className="m-plan__mid"><span className="m-plan__who">Ihr seid beide weg</span></span>
-            </div>
-          )
-        }
-        const s = it.s
-        const r = recipeById(s.recipe_id)
-        const k = keyOf(s)
-        const dragging = drag?.key === k
-        const target = drag?.over === k
-        const cook = s.meal === 'abend' ? cookOn(s.date, ctx) : null
-        const who = s.meal === 'abend'
-          ? cook?.open
-            ? null
-            : cook?.member?.id === me.id
-              ? 'du kochst'
-              : cook?.value
-                ? (cook.member ? `${cook.value} kocht` : `Essen ${cook.value}`)
-                : ''
-          : s.leftover
-            ? 'Reste · aufwärmen'
-            : 'fertig in der Box'
-        const double = s.meal === 'abend' && plan.slots.some((x) => x.leftover && x.recipe_id === s.recipe_id && x.date === addDays(s.date, 1))
-        return (
-          <div
-            key={k}
-            ref={(el) => { rows.current[k] = el }}
-            className={'m-plan__row' + (s.leftover ? ' m-plan__row--left' : '') + (dragging ? ' m-plan__row--drag' : '') + (target ? ' m-plan__row--over' : '')}
-            style={dragging ? { transform: `translateY(${drag.dy}px)` } : undefined}
-          >
-            <span className="m-plan__day">{weekdayShort(s.date)} · {s.meal === 'abend' ? 'A' : 'M'}</span>
-            <span className="m-plan__mid">
-              <span className="m-plan__dish">{s.leftover ? `${shortName(r?.name ?? '')} vom Vortag` : (r?.name ?? '—') + (double ? ' (doppelt)' : '')}</span>
-              <span className="m-plan__who">
-                {who}
-                {cook?.open && (
-                  <button type="button" className="m-chip m-chip--small" onClick={() => casa.setOverride({ date: s.date, slot: 'abend_essen', value: me.display_name })}>offen · übernehmen</button>
-                )}
-                {' '}· {s.servings} {s.servings === 1 ? 'Portion' : 'Portionen'}
-              </span>
-            </span>
-            {!s.leftover && (
-              <span className="m-plan__grip" aria-label="Ziehen zum Tauschen" onPointerDown={(e) => down(e, s)} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
-                  <path d="M5 8h14M5 12h14M5 16h14" />
-                </svg>
-              </span>
-            )}
-          </div>
-        )
-      })}
-      {menu.week && plan.slots.length === 0 && <p className="m-hint">Diese Woche seid ihr beide weg, es gibt nichts zu verteilen.</p>}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Woche
-// ---------------------------------------------------------------------------
 
 function WeekView() {
-  const { recipes, weekDays, recipeById, menus, me, partner, ctx, setMeal } = useMila()
+  const { recipes, weekDays, recipeById, menus, me, partner, ctx, items, setMeal, weekToList } = useMila()
   const casa = useCasa()
   const nav = useNavigate()
-  // Steht die nächste Woche schon (übernommen), gleich dort öffnen
+  // Ist die Karte für die nächste Woche aufgedeckt (oder dort schon etwas eingetragen), gleich dort öffnen
   const [monday, setMonday] = useState(() => {
     const next = addDays(startOfWeek(today()), 7)
-    return menus.some((m) => m.week === next && m.adopted_at) ? next : startOfWeek(today())
+    return menus.some((m) => m.week === next && m.revealed_at) || weekDays.some((w) => w.recipe_id && w.date >= next) ? next : startOfWeek(today())
   })
+  const [place, setPlace] = useState<{ recipeId: string; meal: MealSlot } | null>(null)
+  const [listed, setListed] = useState(false)
   const [open, setOpen] = useState<{ date: string; meal: MealSlot } | null>(null)
   const [pick, setPick] = useState<{ date: string; meal: MealSlot } | null>(null)
 
@@ -241,6 +81,19 @@ function WeekView() {
     const base = w.servings ?? recipeById(w.recipe_id)?.portions ?? 2
     const left = weekDays.find((x) => x.is_leftover && x.recipe_id === w.recipe_id && x.date === addDays(w.date, 1))
     return base + (left?.servings ?? 0)
+  }
+
+  // Treffer der gezeigten Woche und was davon schon eingetragen ist
+  const weekMenu = menus.find((m) => m.week === monday && m.revealed_at && m.plan) ?? null
+  const inWeek = weekDays.filter((w) => w.recipe_id && dates.includes(w.date))
+  const placed = new Set(inWeek.map((w) => w.recipe_id as string))
+  const wkKey = weekKey(monday)
+  const onList = items.filter((i) => !i.checked && i.source_week === wkKey).length
+  /** Portionen nach Anwesenden an dem Tag */
+  const portions = (date: string, meal: MealSlot) => servingsFor(dayInfo(date, ctx), meal)
+  async function toList() {
+    await weekToList(monday)
+    setListed(true)
   }
 
   const openRow = open ? day(open.date, open.meal) : null
@@ -266,6 +119,8 @@ function WeekView() {
         )}
         <Link to="/mila/gerichte" className="m-day__link">Alle Gerichte ›</Link>
       </div>
+
+      {weekMenu?.plan && <Hits menu={weekMenu} plan={weekMenu.plan} placed={placed} onPick={(recipeId, meal) => setPlace({ recipeId, meal })} />}
 
       <div className="m-days">
         {dates.map((date) => {
@@ -337,13 +192,55 @@ function WeekView() {
         </Sheet>
       )}
 
+      {inWeek.length > 0 && (
+        <>
+          <div className="m-week-pad" aria-hidden />
+          <div className="m-weekbar">
+            {listed || (onList > 0 && !listed) ? (
+              <div className="between" style={{ gap: 10 }}>
+                <Link to="/mila/einkauf" className="m-weekbar__done" style={{ flex: 1 }}>{onList} auf dem Zettel · ansehen ›</Link>
+                <button type="button" className="m-bar__ghost" onClick={toList}>neu</button>
+              </div>
+            ) : (
+              <button type="button" className="m-bar__main" onClick={toList}>Zutaten auf den Zettel</button>
+            )}
+          </div>
+        </>
+      )}
+
+      {place && (
+        <Sheet onClose={() => setPlace(null)} title="Tag wählen">
+          <div className="stack" style={{ gap: 4 }}>
+            <span className="m-group__label">{recipeById(place.recipeId)?.name} · an welchem Tag?</span>
+            <div className="m-chips" role="radiogroup">
+              {(['abend', 'mittag'] as MealSlot[]).map((m) => (
+                <button key={m} type="button" role="radio" aria-checked={place.meal === m} className={'m-chip m-chip--small' + (place.meal === m ? ' m-chip--on' : '')} onClick={() => setPlace({ ...place, meal: m })}>{m === 'abend' ? 'Abend' : 'Mittag'}</button>
+              ))}
+            </div>
+            {dates.map((d) => {
+              const cur = recipeById(day(d, place.meal)?.recipe_id)
+              return (
+                <button key={d} type="button" className="m-dayopt" onClick={() => { setMeal(d, place.meal, place.recipeId, portions(d, place.meal)); setListed(false); setPlace(null) }}>
+                  <span className="m-day__when">
+                    <span className="m-day__wd">{weekdayShort(d)}</span>
+                    <span className="m-day__date">{fromISO(d).getDate()}.{fromISO(d).getMonth() + 1}.</span>
+                  </span>
+                  {cur ? <span className="m-dayopt__current">{cur.name}</span> : <span className="m-dayopt__free">frei</span>}
+                </button>
+              )
+            })}
+          </div>
+        </Sheet>
+      )}
+
       {pick && (
         <AllDishes
           recipes={recipes}
           current={day(pick.date, pick.meal)?.recipe_id ?? null}
           title={`${weekdayShort(pick.date)} ${fromISO(pick.date).getDate()}.${fromISO(pick.date).getMonth() + 1}. · ${pick.meal === 'abend' ? 'Abend' : 'Mittag'}`}
           onPick={(rec) => {
-            setMeal(pick.date, pick.meal, rec.id)
+            setMeal(pick.date, pick.meal, rec.id, portions(pick.date, pick.meal))
+            setListed(false)
             setPick(null)
           }}
           onClose={() => setPick(null)}

@@ -1,9 +1,8 @@
 // Casa · Edge Function „mila-tick“
 // Läuft, wenn pg_cron (public.mila_tick) etwas Fälliges findet:
-//  1. Karte ab (Fr 18 Uhr): Wochenkarte anlegen → Trigger schickt „Die Wochenkarte ist da“
-//  2. Wahl schließt (Sa 12 Uhr): aufdecken und verteilen
-//  3. Niemand hat übernommen (Sa 14 Uhr): automatisch übernehmen → Woche, Einkaufszettel, Vortag-Aufgaben;
-//     der Trigger schickt „6 Mahlzeiten stehen · Einkaufszettel ist fertig“
+//  1. Karte ab (Montag): Wochenkarte für die nächste Woche anlegen → Trigger schickt „Die Wochenkarte ist da“
+//  2. Wahl schließt (Sonntag 20 Uhr): aufdecken und die Trefferliste rechnen
+//  Mila trägt nichts von selbst in die Woche ein, das machen Max und Anna.
 // Die Rechnung kommt gebündelt aus src/mila/engine.ts (engine.js, `npm run build:mila-tick`).
 import { createClient } from 'npm:@supabase/supabase-js@2'
 // @ts-ignore: gebündeltes JavaScript ohne Typen
@@ -92,28 +91,6 @@ Deno.serve(async (req) => {
           const plan = E.computePlan(m, votes, recipes, rhythm, ctx)
           const { data } = await db.from('mila_menus').update({ plan }).eq('id', m.id).is('plan', null).select('*')
           m = data?.[0] ?? { ...m, plan }
-        }
-        // 3. Niemand hat übernommen: automatisch
-        if (m.plan && !m.adopted_at && past(m.adopt_at)) {
-          const { data: claimed } = await db.from('mila_menus').update({ adopted_at: new Date().toISOString(), adopted_by: null }).eq('id', m.id).is('adopted_at', null).select('id')
-          if (!claimed?.length) continue
-          const w = E.adoptWrites(m, m.plan, recipes, ingredients, prepSteps, rhythm, ctx)
-          const dates: string[] = E.workDays(m.week)
-          await db.from('mila_week_days').delete().eq('household_id', hid).in('date', dates)
-          if (w.weekDays.length) {
-            const { error: e1 } = await db.from('mila_week_days').insert(w.weekDays.map((d: object) => ({ household_id: hid, ...d, free_text: null, added_to_list: true, created_by: null, updated_by: null })))
-            if (e1) throw new Error('Woche: ' + e1.message)
-          }
-          await db.from('mila_shopping_items').delete().eq('household_id', hid).eq('source_week', E.weekKey(m.week)).eq('checked', false)
-          if (w.items.length) {
-            const { error: e2 } = await db.from('mila_shopping_items').insert(w.items.map((r: object) => ({ household_id: hid, ...r, added_by: null })))
-            if (e2) throw new Error('Einkauf: ' + e2.message)
-          }
-          for (const t of w.tasks) {
-            // Ersteller = Besitzer bzw. leer: keine Mitteilung
-            await db.from('tasks').insert({ household_id: hid, title: t.title, owner_member_id: t.owner_member_id, due_date: t.due_date, status: 'offen', area: 'casa', created_by: t.owner_member_id, updated_by: t.owner_member_id })
-          }
-          log.push(`${hid}: automatisch übernommen ${m.week}`)
         }
       }
     } catch (err) {

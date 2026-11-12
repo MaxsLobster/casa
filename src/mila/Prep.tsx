@@ -4,27 +4,31 @@ import { Link } from 'react-router-dom'
 import { MilaPage } from './Mila'
 import { useMila } from './MilaContext'
 import { prepDate, prepPlan, workDays } from './engine'
-import { adoptedMenu } from './menu-view'
+import { focusWeek } from './menu-view'
+import { useState } from 'react'
 import { minutes } from './rhythm'
 import { fromISO, weekdayLong } from '../lib/dates'
 
 export function Prep() {
   const { menus, weekDays, recipes, prepSteps, rhythm, togglePrep } = useMila()
-  const menu = adoptedMenu(menus)
-  if (!menu) {
+  const [local, setLocal] = useState<string[]>([])
+  const week = focusWeek(weekDays)
+  const menu = menus.find((m) => m.week === week) ?? null
+  const day = prepDate(week, rhythm)
+  const dates = workDays(week)
+  const rows = weekDays.filter((w) => dates.includes(w.date))
+  if (rows.filter((w) => w.recipe_id).length === 0) {
     return (
       <MilaPage>
         <PrepHead when={`${weekdayLongFor(rhythm.prep_weekday)} ${rhythm.prep_time}`} />
-        <p className="m-hint">Noch keine Woche übernommen. Der Prep-Plan entsteht zusammen mit der Woche.</p>
-        <Link to="/mila/karte" className="link" style={{ alignSelf: 'flex-start' }}>Zur Wochenkarte ›</Link>
+        <p className="m-hint">Noch keine Gerichte in der Woche. Der Prep-Plan entsteht, sobald ihr welche eintragt.</p>
+        <Link to="/mila/woche" className="link" style={{ alignSelf: 'flex-start' }}>Zur Woche ›</Link>
       </MilaPage>
     )
   }
-  const day = prepDate(menu.week, rhythm)
-  const dates = workDays(menu.week)
-  const rows = weekDays.filter((w) => dates.includes(w.date))
   const plan = prepPlan(rows, day, recipes, prepSteps)
-  const done = new Set(menu.prep_done)
+  const done = new Set(menu ? menu.prep_done : local)
+  const toggle = (key: string) => (menu ? togglePrep(menu, key) : setLocal((p) => (p.includes(key) ? p.filter((k) => k !== key) : [...p, key])))
   const left = plan.items.filter((i) => !done.has(i.key)).length
 
   return (
@@ -44,7 +48,7 @@ export function Prep() {
           {plan.items.map((p) => {
             const d = done.has(p.key)
             return (
-              <button key={p.key} type="button" className={'m-prep' + (d ? ' m-prep--done' : '')} onClick={() => togglePrep(menu, p.key)} aria-pressed={d}>
+              <button key={p.key} type="button" className={'m-prep' + (d ? ' m-prep--done' : '')} onClick={() => toggle(p.key)} aria-pressed={d}>
                 <span className={'m-check' + (d ? ' m-check--done' : '')}>
                   {d && (
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

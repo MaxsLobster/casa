@@ -52,3 +52,7 @@ Alle Schriftgrößen der App rund 4 % größer (ein zentraler Wert, kein Umbau d
 
 ## Nach dem Update
 Push muss nicht neu erlaubt werden. Max schaltet den Bereich einmal in den Einstellungen an. Anna schaltet ihre Zustimmung selbst an, wenn sie mag.
+
+## Von Max bestätigt (12.11.2026)
+- Reihenfolge: erst Medikament + Schrift als eigene Version, danach Mila als zweite.
+- Mila: Karte bleibt, Wählen mit Treffern. Automatisch eingetragene Gerichte 9.–13.11. löschen. Prep-Termin bleibt und erscheint nur, wenn für die Woche Gerichte eingetragen sind.

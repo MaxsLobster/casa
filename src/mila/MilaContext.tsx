@@ -5,13 +5,13 @@ import { useCasa } from '../state/HouseholdContext'
 import { LocalStore, SupabaseStore, type Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
 import type {
-  MealSlot, Member, MilaIngredient, MilaMenu, MilaPlan, MilaPrepStep, MilaRecipe, MilaSettings, MilaShoppingItem, MilaStep, MilaTableName,
-  MilaVote, MilaVoteKind, MilaWeekDay, ShopCategory, TableName, Task,
+  MealSlot, Member, MilaIngredient, MilaMenu, MilaPrepStep, MilaRecipe, MilaSettings, MilaShoppingItem, MilaStep, MilaTableName,
+  MilaVote, MilaVoteKind, MilaWeekDay, ShopCategory, TableName,
 } from '../lib/types'
 import { categorize } from './shopping'
 import { DEMO_MAX_ID } from '../lib/seed'
 import { addDays, toISO } from '../lib/dates'
-import { DEFAULT_RHYTHM, adoptWrites, cardWeek, computePlan, generateCard, menuTimes, relayout, workDays, type LocalStamp, type Rhythm, type WeekCtx } from './engine'
+import { DEFAULT_RHYTHM, cardWeek, computePlan, generateCard, menuTimes, shoppingFor, type LocalStamp, type Rhythm, type WeekCtx } from './engine'
 import { weekKey } from './week-list'
 
 export interface Mila {
@@ -48,8 +48,8 @@ export interface Mila {
   vote(menu: MilaMenu, recipeId: string, meal: MealSlot, vote: MilaVoteKind): Promise<void>
   resetVotes(menu: MilaMenu, meal: MealSlot): Promise<void>
   setDone(menu: MilaMenu, done: boolean): Promise<void>
-  reorder(menu: MilaMenu, dinners: string[], lunches: string[]): Promise<void>
-  adopt(menu: MilaMenu): Promise<void>
+  /** Zutaten der selbst gefüllten Woche auf den Einkaufszettel */
+  weekToList(monday: string): Promise<void>
   togglePrep(menu: MilaMenu, key: string): Promise<void>
   saveRhythm(patch: Partial<Rhythm>): Promise<void>
 
@@ -311,6 +311,7 @@ export function MilaProvider({ children }: { children: ReactNode }) {
       setError((err as Error).message)
     }
     await loadRef.current('mila_week_days')
+    void casa.reloadMila()
   }
 
   // ---------- Wochenkarte ----------
@@ -362,44 +363,19 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     await loadRef.current('mila_votes')
   }
 
-  const reorder = async (menu: MilaMenu, dinners: string[], lunches: string[]) => {
-    if (!menu.plan || menu.adopted_at) return
-    const plan = relayout(menu.plan, dinners, lunches, menu.week, recipes, rhythm, ctx)
-    setMenus((prev) => prev.map((m) => (m.id === menu.id ? { ...m, plan } : m)))
+  /** Einkaufszettel aus der selbst gefüllten Woche: offene Zeilen dieser Woche ersetzen */
+  const weekToList = async (monday: string) => {
+    const end = addDays(monday, 6)
+    const rows = weekDays.filter((w) => w.recipe_id && w.date >= monday && w.date <= end)
+    const slots = rows.map((w) => ({ date: w.date, meal: w.meal ?? 'abend', recipe_id: w.recipe_id as string, leftover: w.is_leftover ?? false, servings: w.servings ?? recipeById(w.recipe_id)?.portions ?? 2 }))
+    const wk = weekKey(monday)
     try {
-      await store.update('mila_menus', { id: menu.id }, { plan })
+      for (const it of items.filter((i) => i.source_week === wk && !i.checked && i.source_label)) await store.remove('mila_shopping_items', { id: it.id })
+      await store.insertMany('mila_shopping_items', shoppingFor(monday, slots, recipes, ingredients).map((r) => ({ household_id: hid, ...r, added_by: me.id, checked: false, checked_by: null, checked_at: null })))
     } catch (err) {
-      fail(err, 'mila_menus')
+      fail(err)
     }
-  }
-
-  const adopt = async (menu: MilaMenu, auto = false) => {
-    if (!menu.plan || menu.adopted_at) return
-    try {
-      const mine = await store.claim('mila_menus', { id: menu.id, adopted_at: null }, { adopted_at: new Date().toISOString(), adopted_by: auto ? null : me.id })
-      if (!mine) return
-      await writeWeek(menu, menu.plan, auto)
-    } catch (err) {
-      fail(err, 'mila_menus')
-    }
-    await Promise.all(['mila_menus', 'mila_week_days', 'mila_shopping_items'].map((t) => loadRef.current(t as MilaTableName)))
-    await casa.reloadMila()
-  }
-
-  /** Woche, Einkaufszettel und Vortag-Aufgaben auf einmal schreiben */
-  async function writeWeek(menu: MilaMenu, plan: MilaPlan, auto: boolean) {
-    const w = adoptWrites(menu, plan, recipes, ingredients, prepSteps, rhythm, ctx)
-    const dates = workDays(menu.week)
-    for (const d of weekDays.filter((x) => dates.includes(x.date))) await store.remove('mila_week_days', { id: d.id })
-    await store.insertMany('mila_week_days', w.weekDays.map((d) => ({ household_id: hid!, ...d, free_text: null, added_to_list: true, created_by: auto ? null : me!.id, updated_by: auto ? null : me!.id })))
-    const wk = weekKey(menu.week)
-    for (const it of items.filter((i) => i.source_week === wk && !i.checked)) await store.remove('mila_shopping_items', { id: it.id })
-    await store.insertMany('mila_shopping_items', w.items.map((r) => ({ household_id: hid!, ...r, added_by: null, checked: false, checked_by: null, checked_at: null })))
-    // Aufgaben ohne Mitteilung: Ersteller = Besitzer
-    for (const t of w.tasks) {
-      const row: Partial<Task> = { household_id: hid!, title: t.title, owner_member_id: t.owner_member_id, due_date: t.due_date, status: 'offen', note: null, repeat: null, repeat_until: null, anchor_id: null, is_step: false, area: 'casa', fair_id: null, template_id: null, is_running: false, is_yearly: false, created_by: t.owner_member_id, updated_by: t.owner_member_id, done_at: null }
-      await store.insert('tasks', row)
-    }
+    await loadRef.current('mila_shopping_items')
   }
 
   const togglePrep = async (menu: MilaMenu, key: string) => {
@@ -458,11 +434,6 @@ export function MilaProvider({ children }: { children: ReactNode }) {
           const plan = computePlan(m, all, recipes, rhythm, ctx)
           await store.claim('mila_menus', { id: m.id, plan: null }, { plan })
           await loadRef.current('mila_menus')
-          return
-        }
-        // 4. Niemand hat übernommen: automatisch
-        if (m.plan && !m.adopted_at && past(m.adopt_at)) {
-          await adopt(m, true)
           return
         }
       }
@@ -556,8 +527,7 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     vote,
     resetVotes,
     setDone,
-    reorder,
-    adopt: (m) => adopt(m, false),
+    weekToList,
     togglePrep,
     saveRhythm,
     addItems,

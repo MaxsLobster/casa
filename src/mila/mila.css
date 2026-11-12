@@ -435,3 +435,6 @@
 @media (prefers-reduced-motion: reduce) {
   .m-card, .m-reveal__big, .m-hit, .m-done, .m-done__tick { animation: none; }
 }
+
+/* Trefferliste zum Antippen */
+button.m-hit { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--line-soft); padding: 0; cursor: pointer; text-align: left; font-family: var(--font-ui); color: var(--ink); }
