@@ -438,3 +438,17 @@
 
 /* Trefferliste zum Antippen */
 button.m-hit { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--line-soft); padding: 0; cursor: pointer; text-align: left; font-family: var(--font-ui); color: var(--ink); }
+
+/* Woche: Gericht entfernen (×) und „Rückgängig“ */
+.m-meal__x { flex: none; width: 44px; height: 54px; margin-right: -10px; border: none; background: transparent; cursor: pointer; font-family: var(--font-ui); font-size: 24px; line-height: 1; color: var(--grey-2); }
+.m-meal__x:active { color: var(--navy); }
+.m-undo {
+  position: fixed; left: var(--gutter-l); right: 16px; z-index: 12; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px);
+  display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 0 6px 0 16px; border-radius: 25px;
+  background: var(--navy); color: var(--on-navy); box-shadow: 0 4px 14px var(--shadow); animation: m-pop 0.2s ease-out;
+}
+.m-undo--bar { bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 78px); }
+.m-undo__text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.m-undo__btn { flex: none; min-height: 44px; padding: 0 12px; border: none; background: transparent; cursor: pointer; font-family: var(--font-ui); font-size: 12.5px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: var(--gold); }
+:root[data-theme="dark"] .m-undo { background: var(--paper-3); color: var(--ink); border: 1px solid var(--gold); }
+@media (min-width: 768px) { .m-undo { max-width: 500px; } }

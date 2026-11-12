@@ -10,7 +10,7 @@ import type {
 } from '../lib/types'
 import { categorize } from './shopping'
 import { DEMO_MAX_ID } from '../lib/seed'
-import { addDays, toISO } from '../lib/dates'
+import { addDays, startOfWeek, toISO } from '../lib/dates'
 import { DEFAULT_RHYTHM, cardWeek, computePlan, generateCard, menuTimes, shoppingFor, type LocalStamp, type Rhythm, type WeekCtx } from './engine'
 import { weekKey } from './week-list'
 
@@ -43,6 +43,8 @@ export interface Mila {
 
   /** Woche: eine Mahlzeit an einem Datum setzen, null leert sie */
   setMeal(date: string, meal: MealSlot, recipeId: string | null, servings?: number | null): Promise<void>
+  /** Gericht aus der Woche nehmen, seine offenen Zutaten vom Zettel dazu. Gibt „Rückgängig“ zurück. */
+  removeMeal(date: string, meal: MealSlot): Promise<(() => Promise<void>) | null>
 
   /** Wochenkarte */
   vote(menu: MilaMenu, recipeId: string, meal: MealSlot, vote: MilaVoteKind): Promise<void>
@@ -297,12 +299,59 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     return rid
   }
 
+  /**
+   * Zutaten eines Gerichts vom Zettel der Woche nehmen. Es bleibt, was schon abgehakt ist
+   * und was ein anderes Gericht derselben Woche auch braucht. Gibt die entfernten Zeilen zurück.
+   */
+  const dropFromList = async (date: string, recipeId: string, rowId: string): Promise<MilaShoppingItem[]> => {
+    const monday = startOfWeek(date)
+    const end = addDays(monday, 6)
+    const wk = weekKey(monday)
+    const still = new Set(weekDays.filter((w) => w.id !== rowId && w.recipe_id && w.date >= monday && w.date <= end).map((w) => w.recipe_id as string))
+    if (still.has(recipeId)) return []
+    const gone = items.filter((i) => i.source_week === wk && !i.checked && (i.source_recipe_ids ?? []).includes(recipeId) && !(i.source_recipe_ids ?? []).some((id) => still.has(id)))
+    for (const it of gone) await store.remove('mila_shopping_items', { id: it.id })
+    return gone
+  }
+
+  const removeMeal = async (date: string, meal: MealSlot) => {
+    const row = weekDays.find((w) => w.date === date && (w.meal ?? 'abend') === meal)
+    if (!row) return null
+    let gone: MilaShoppingItem[] = []
+    try {
+      await store.remove('mila_week_days', { id: row.id })
+      if (row.recipe_id) gone = await dropFromList(date, row.recipe_id, row.id)
+    } catch (err) {
+      setError((err as Error).message)
+    }
+    await Promise.all([loadRef.current('mila_week_days'), loadRef.current('mila_shopping_items')])
+    void casa.reloadMila()
+    return async () => {
+      try {
+        const taken = await store.select('mila_week_days', { household_id: hid, date, meal })
+        if (!taken.length) await store.insert('mila_week_days', row)
+        if (gone.length) await store.insertMany('mila_shopping_items', gone)
+      } catch (err) {
+        setError((err as Error).message)
+      }
+      await Promise.all([loadRef.current('mila_week_days'), loadRef.current('mila_shopping_items')])
+      void casa.reloadMila()
+    }
+  }
+
   const setMeal = async (date: string, meal: MealSlot, recipeId: string | null, servings?: number | null) => {
     const existing = weekDays.find((w) => w.date === date && (w.meal ?? 'abend') === meal)
+    if (!recipeId) {
+      await removeMeal(date, meal)
+      return
+    }
     try {
-      if (!recipeId) {
-        if (existing) await store.remove('mila_week_days', { id: existing.id })
-      } else if (existing) {
+      if (existing?.recipe_id && existing.recipe_id !== recipeId) {
+        // Ersetzen: die Zutaten des alten Gerichts gehen vom Zettel
+        await dropFromList(date, existing.recipe_id, existing.id)
+        void loadRef.current('mila_shopping_items')
+      }
+      if (existing) {
         await store.update('mila_week_days', { id: existing.id }, { recipe_id: recipeId, free_text: null, is_leftover: false, servings: servings ?? existing.servings, updated_by: me.id })
       } else {
         await store.insert('mila_week_days', { household_id: hid, date, meal, recipe_id: recipeId, free_text: null, is_leftover: false, servings: servings ?? null, added_to_list: false, created_by: me.id, updated_by: me.id })
@@ -524,6 +573,7 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     reload: load,
     saveRecipe,
     setMeal,
+    removeMeal,
     vote,
     resetVotes,
     setDone,

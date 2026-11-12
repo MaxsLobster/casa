@@ -1,6 +1,6 @@
 // Mila · Woche: nach der Aufdeckung die Treffer und die verteilte Woche (Ziehen, „Woche übernehmen“),
 // sonst die Woche mit Mittag und Abend. Antippen: kochen, Rezept, tauschen, leeren.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { MilaPage } from './Mila'
 import { useMila } from './MilaContext'
@@ -57,7 +57,7 @@ function Hits({ menu, plan, placed, onPick }: { menu: MilaMenu; plan: MilaPlan; 
 }
 
 function WeekView() {
-  const { recipes, weekDays, recipeById, menus, me, partner, ctx, items, setMeal, weekToList } = useMila()
+  const { recipes, weekDays, recipeById, menus, me, partner, ctx, items, setMeal, removeMeal, weekToList } = useMila()
   const casa = useCasa()
   const nav = useNavigate()
   // Ist die Karte für die nächste Woche aufgedeckt (oder dort schon etwas eingetragen), gleich dort öffnen
@@ -69,6 +69,20 @@ function WeekView() {
   const [listed, setListed] = useState(false)
   const [open, setOpen] = useState<{ date: string; meal: MealSlot } | null>(null)
   const [pick, setPick] = useState<{ date: string; meal: MealSlot } | null>(null)
+
+  // Entfernt: kurz „Rückgängig“ anbieten
+  const [undo, setUndo] = useState<{ name: string; run: () => Promise<void> } | null>(null)
+  useEffect(() => {
+    if (!undo) return
+    const t = window.setTimeout(() => setUndo(null), 8000)
+    return () => window.clearTimeout(t)
+  }, [undo])
+  async function remove(date: string, meal: MealSlot) {
+    const name = recipeById(day(date, meal)?.recipe_id)?.name ?? 'Gericht'
+    const run = await removeMeal(date, meal)
+    setListed(false)
+    if (run) setUndo({ name: shortName(name), run })
+  }
 
   const dates = weekDates(monday)
   const work = workDays(monday)
@@ -160,6 +174,9 @@ function WeekView() {
                         {r && !w?.is_leftover && <span className="m-day__time">{minutes(r.time_min)}</span>}
                       </span>
                     </button>
+                    {r && (
+                      <button type="button" className="m-meal__x" aria-label={`${r.name} entfernen`} onClick={() => remove(date, meal)}>×</button>
+                    )}
                     {meal === 'abend' && cook?.open && date >= today() && (
                       <div className="m-meal__take">
                         <button type="button" className="m-chip m-chip--small" onClick={() => casa.setOverride({ date, slot: 'abend_essen', value: me.display_name })}>Kochen offen · übernehmen</button>
@@ -186,10 +203,17 @@ function WeekView() {
             <div className="m-day__actions">
               <Link to={`/mila/gerichte/${openRecipe.id}`} className="m-day__link m-day__link--gold">Rezept ansehen ›</Link>
               <button type="button" className="m-day__link" onClick={() => { setPick(open); setOpen(null) }}>Anderes Gericht</button>
-              <button type="button" className="m-day__link m-day__link--quiet" onClick={() => { setMeal(open.date, open.meal, null); setOpen(null) }}>Leeren</button>
+              <button type="button" className="m-day__link m-day__link--quiet" onClick={() => { void remove(open.date, open.meal); setOpen(null) }}>Entfernen</button>
             </div>
           </div>
         </Sheet>
+      )}
+
+      {undo && (
+        <div className={'m-undo' + (inWeek.length > 0 ? ' m-undo--bar' : '')} role="status">
+          <span className="m-undo__text">{undo.name} entfernt</span>
+          <button type="button" className="m-undo__btn" onClick={() => { const u = undo; setUndo(null); void u.run() }}>Rückgängig</button>
+        </div>
       )}
 
       {inWeek.length > 0 && (
