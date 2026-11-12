@@ -28,7 +28,7 @@ function DayTime({ label, day, time, onChange }: { label: string; day: number; t
 }
 
 export function Einstellungen() {
-  const { me, user, settings, updateSettings, setWorkday, signOut, isDemo, household, enablePush, disablePush, sendTestPush, milaRhythm, saveMilaRhythm } = useCasa()
+  const { me, user, settings, updateSettings, setWorkday, signOut, isDemo, household, enablePush, disablePush, sendTestPush, milaRhythm, saveMilaRhythm, med, medAsking, updateMed, members } = useCasa()
   const today = useToday()
   const darkAuto = settings?.dark_mode_auto ?? true
   const paper = usePaper()
@@ -122,7 +122,7 @@ export function Einstellungen() {
           <div className="stack">
             {subscribed ? (
               <>
-                <p className="hand hand--navy" style={{ fontSize: 23 }}>Auf diesem Gerät an.</p>
+                <p className="hand hand--navy" style={{ fontSize: 24 }}>Auf diesem Gerät an.</p>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <button type="button" className="btn btn--ghost" style={{ width: 'auto', padding: '0 20px', height: 46 }} disabled={busy} onClick={onTest}>Test-Mitteilung senden</button>
                   <button type="button" className="link" disabled={busy} onClick={onDisable}>Hier abschalten</button>
@@ -200,6 +200,24 @@ export function Einstellungen() {
         </div>
       </div>
 
+      {/* ---------- Medikament (privat, nur wer den Bereich hat) ---------- */}
+      {med && (
+        <div className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 4 }}>
+          <Toggle on={med.enabled} onChange={(v) => updateMed({ enabled: v })} label="Medikament" hint="Privater Bereich nur für dich: Symbol auf der Startseite, kurze Check-ins am Tag. Niemand sonst sieht ihn." />
+        </div>
+      )}
+      {medAsking && (
+        <div className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 4 }}>
+          <Toggle
+            on={settings?.med_partner_ok ?? false}
+            onChange={(v) => updateSettings({ med_partner_ok: v })}
+            label={`Abendfrage zu ${members.find((m) => m.id === medAsking)?.display_name ?? ''}`}
+            hint="Abends eine einzige Frage, wie der Abend auf dich gewirkt hat. Du siehst nur deine eigene Antwort. Jederzeit abschaltbar."
+          />
+          {settings?.med_partner_ok && <Link to="/med/anna" className="link" style={{ alignSelf: 'flex-start' }}>Heute beantworten ›</Link>}
+        </div>
+      )}
+
       {/* ---------- Mila ---------- */}
       <div className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
         <span className="label">Mila · Wochenkarte</span>
@@ -248,7 +266,7 @@ export function Einstellungen() {
       {/* ---------- Passwort ---------- */}
       <div className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
         <span className="label">Passwort</span>
-        {pwDone && <p className="hand hand--navy" style={{ fontSize: 22 }}>Passwort geändert.</p>}
+        {pwDone && <p className="hand hand--navy" style={{ fontSize: 23 }}>Passwort geändert.</p>}
         {!pwOpen ? (
           <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => { setPwOpen(true); setPwDone(false) }}>Passwort ändern</button>
         ) : (

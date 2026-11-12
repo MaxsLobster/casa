@@ -30,7 +30,7 @@ export function Login() {
       <div className="pane">
         <div className="page" style={{ gap: 28, maxWidth: 480, margin: '0 auto', paddingTop: 'calc(72px + env(safe-area-inset-top))' }}>
           <header className="stack stack--tight">
-            <h1 className="h1" style={{ fontSize: 56 }}>Casa</h1>
+            <h1 className="h1" style={{ fontSize: 58 }}>Casa</h1>
             <span className="kicker">Notizbuch für zwei</span>
           </header>
 

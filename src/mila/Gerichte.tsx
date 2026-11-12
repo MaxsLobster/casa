@@ -33,8 +33,8 @@ export function Gerichte() {
   return (
     <MilaPage>
       <header className="stack stack--tight">
-        <span className="m-title" style={{ fontSize: 40, lineHeight: 0.95 }}>Unsere Gerichte</span>
-        <span className="m-hint" style={{ fontSize: 12 }}>{filter === 'alle' ? `${recipes.length} Gerichte` : `${list.length} von ${recipes.length}`}</span>
+        <span className="m-title" style={{ fontSize: 41.5, lineHeight: 0.95 }}>Unsere Gerichte</span>
+        <span className="m-hint" style={{ fontSize: 12.5 }}>{filter === 'alle' ? `${recipes.length} Gerichte` : `${list.length} von ${recipes.length}`}</span>
       </header>
 
       <div className="m-chips" role="radiogroup" aria-label="Filter">
@@ -48,8 +48,8 @@ export function Gerichte() {
       <Link to="/mila/gerichte/neu" className="m-new">
         <PlusIcon />
         <span className="stack" style={{ gap: 2 }}>
-          <span className="hand" style={{ fontSize: 22, lineHeight: 1, color: 'inherit' }}>Neues Rezept</span>
-          <span className="m-hint" style={{ fontSize: 12 }}>Name, Zutaten und Schritte eintippen</span>
+          <span className="hand" style={{ fontSize: 23, lineHeight: 1, color: 'inherit' }}>Neues Rezept</span>
+          <span className="m-hint" style={{ fontSize: 12.5 }}>Name, Zutaten und Schritte eintippen</span>
         </span>
       </Link>
 

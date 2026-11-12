@@ -309,8 +309,16 @@ export function Heute() {
       <Link to="/mila/woche" className="heute__gear heute__pot" aria-label="Mila, der Essensplaner">
         <PotIcon />
       </Link>
+      {casa.med?.enabled && (
+        <Link to="/med" className="heute__gear heute__med" aria-label="Medikament">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <rect x="3" y="8.5" width="18" height="7" rx="3.5" transform="rotate(-45 12 12)" />
+            <path d="M9.5 9.5l5 5" />
+          </svg>
+        </Link>
+      )}
       {workday && (
-        <Link to="/mwf/hub" className="heute__gear heute__mwf" aria-label="Munich Watch Fair">
+        <Link to="/mwf/hub" className="heute__gear heute__mwf" style={casa.med?.enabled ? { right: 134 } : undefined} aria-label="Munich Watch Fair">
           <MwfIcon />
           {hasShouts && <span className="mwf__dot mwf__dot--icon" aria-label="ungelesene Zurufe" />}
         </Link>
@@ -324,7 +332,7 @@ export function Heute() {
           <button type="button" className="heute__num" onClick={backToToday} aria-label={isToday ? undefined : 'Zurück zu heute'} style={isToday ? { cursor: 'default' } : undefined}>{d.getDate()}</button>
           <div className="stack" style={{ gap: 2, paddingBottom: 4 }}>
             <span className="heute__wd">{weekdayLong(date)}</span>
-            <span className="kicker" style={{ fontSize: 12 }}>{MONTHS[d.getMonth()]} · KW {isoWeek(date)}</span>
+            <span className="kicker" style={{ fontSize: 12.5 }}>{MONTHS[d.getMonth()]} · KW {isoWeek(date)}</span>
           </div>
         </div>
         <div className={'heute__tear' + rc} style={rs(1)} />
@@ -347,7 +355,7 @@ export function Heute() {
                 return (
                   <button key={k} type="button" className={cls} aria-label={aria} disabled={locked} onClick={() => pick(k)}>
                     {k === 'weisheit' && <FeatherIcon />}
-                    {k === 'wort' && <span style={{ fontSize: 14, fontWeight: 600 }}>Aa</span>}
+                    {k === 'wort' && <span style={{ fontSize: 14.5, fontWeight: 600 }}>Aa</span>}
                     {k === 'heute' && <HourglassIcon />}
                   </button>
                 )
@@ -358,8 +366,8 @@ export function Heute() {
         {shown && (
           <figure className={stagger ? 'heute__figure rise' : 'heute__figure fade-in'} style={rs(3)}>
             <span className="label label--small">{shown.label}</span>
-            <blockquote className="hand" style={{ margin: 0, fontSize: 24, lineHeight: 1.2 }}>{shown.text}</blockquote>
-            {shown.source && <figcaption className="label" style={{ alignSelf: 'flex-end', fontSize: 12 }}>{shown.source}</figcaption>}
+            <blockquote className="hand" style={{ margin: 0, fontSize: 25, lineHeight: 1.2 }}>{shown.text}</blockquote>
+            {shown.source && <figcaption className="label" style={{ alignSelf: 'flex-end', fontSize: 12.5 }}>{shown.source}</figcaption>}
           </figure>
         )}
       </div>
@@ -370,7 +378,7 @@ export function Heute() {
           {isToday && newCount > 0 && (
             <button type="button" className={'note heute__note' + rc} onClick={openNew} style={{ textAlign: 'left', width: '100%', cursor: 'pointer', ...rs(3) }}>
               <span className="label label--small" style={{ color: 'var(--brown)' }}>Neu von {partner?.display_name ?? 'Anna'}</span>
-              <span className="hand" style={{ fontSize: 24, lineHeight: 1.15 }}>
+              <span className="hand" style={{ fontSize: 25, lineHeight: 1.15 }}>
                 {firstNew}
                 {newCount > 1 && <span className="hand hand--meta" style={{ marginLeft: 8 }}>+{newCount - 1} weitere</span>}
               </span>
@@ -446,7 +454,7 @@ export function Heute() {
               {soon.map((o) => (
                 <button type="button" key={o.id + o.occ_date} className="heute__soon" onClick={() => nav('/woche')}>
                   <span className="heute__pill">{spanLabel(o.occ_date, o.occ_end)}</span>
-                  <span className="hand hand--navy" style={{ fontSize: 24, lineHeight: 1.1 }}>{o.title}</span>
+                  <span className="hand hand--navy" style={{ fontSize: 25, lineHeight: 1.1 }}>{o.title}</span>
                 </button>
               ))}
             </section>

@@ -165,7 +165,7 @@ export function RezeptForm() {
     <div className="page m-form">
       <MilaTop />
       <Link to={back} className="m-back" style={{ alignSelf: 'flex-start' }}>‹ {existing ? 'Zurück' : 'Gerichte'}</Link>
-      <span className="m-title" style={{ fontSize: 36 }}>{existing ? 'Rezept bearbeiten' : 'Neues Rezept'}</span>
+      <span className="m-title" style={{ fontSize: 37.5 }}>{existing ? 'Rezept bearbeiten' : 'Neues Rezept'}</span>
 
       <label className="m-field">
         <span className="m-group__label">Name</span>
@@ -230,7 +230,7 @@ export function RezeptForm() {
       {/* ---------- Zutaten ---------- */}
       <section className="m-field">
         <span className="m-group__label">Zutaten</span>
-        <span className="m-hint" style={{ fontSize: 12 }}>Menge · Einheit · Name. „Basis“ heißt: ist immer da, kommt nicht auf die Einkaufsliste.</span>
+        <span className="m-hint" style={{ fontSize: 12.5 }}>Menge · Einheit · Name. „Basis“ heißt: ist immer da, kommt nicht auf die Einkaufsliste.</span>
         {ings.map((i) => (
           <div key={i.key} className="m-ingrow">
             <input className="m-input m-input--xs" value={i.amount} onChange={(e) => setIng(i.key, { amount: e.target.value })} placeholder="500" aria-label="Menge" inputMode="decimal" />
@@ -249,7 +249,7 @@ export function RezeptForm() {
         {steps.map((s, k) => (
           <div key={s.key} className="m-steprow">
             <div className="between">
-              <span className="hand hand--brown" style={{ fontSize: 24, lineHeight: 1 }}>{k + 1}</span>
+              <span className="hand hand--brown" style={{ fontSize: 25, lineHeight: 1 }}>{k + 1}</span>
               <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <button type="button" className={'m-mini' + (s.is_thermomix ? ' m-mini--on' : '')} aria-pressed={s.is_thermomix} onClick={() => setStep(s.key, { is_thermomix: !s.is_thermomix })}>Thermomix</button>
                 <button type="button" className="m-x" aria-label="Schritt entfernen" onClick={() => setSteps((xs) => xs.filter((x) => x.key !== s.key))}>×</button>
@@ -292,7 +292,7 @@ export function RezeptForm() {
       {/* ---------- Prep-Schritte ---------- */}
       <section className="m-field">
         <span className="m-group__label">Prep-Schritte</span>
-        <span className="m-hint" style={{ fontSize: 12 }}>Was sich in der Prep-Stunde vorbereiten lässt. Ohne Prep-Schritte wird ein Mittagessen komplett vorgekocht.</span>
+        <span className="m-hint" style={{ fontSize: 12.5 }}>Was sich in der Prep-Stunde vorbereiten lässt. Ohne Prep-Schritte wird ein Mittagessen komplett vorgekocht.</span>
         {prep.map((p) => (
           <div key={p.key} className="m-steprow">
             <div className="m-ingrow">

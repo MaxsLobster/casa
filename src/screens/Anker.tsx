@@ -41,7 +41,7 @@ export function Anker() {
     <div className="page" style={{ gap: 6 }}>
       <header className="between" style={{ alignItems: 'flex-end', marginBottom: 6 }}>
         <div className="stack" style={{ gap: 2 }}>
-          <span className="kicker" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{area === 'mwf' ? 'Was der Firma wichtig ist' : 'Was uns wichtig ist'}</span>
+          <span className="kicker" style={{ fontSize: 11.5, whiteSpace: 'nowrap' }}>{area === 'mwf' ? 'Was der Firma wichtig ist' : 'Was uns wichtig ist'}</span>
           <h1 className="h1">Anker</h1>
         </div>
         {shared.length > 0 && (
@@ -103,7 +103,7 @@ export function Anker() {
               {archived.map((a) => (
                 <div className="row" key={a.id}>
                   <span className="row__mark" style={{ color: 'var(--grey-2)' }}>⚓︎</span>
-                  <button type="button" className="row__text hand" style={{ background: 'transparent', border: 'none', padding: 0, textAlign: 'left', color: 'var(--grey)', fontSize: 22, cursor: 'pointer' }} onClick={() => nav(base + '/anker/' + a.id)}>
+                  <button type="button" className="row__text hand" style={{ background: 'transparent', border: 'none', padding: 0, textAlign: 'left', color: 'var(--grey)', fontSize: 23, cursor: 'pointer' }} onClick={() => nav(base + '/anker/' + a.id)}>
                     {a.title}
                   </button>
                   <button type="button" className="link" onClick={() => archiveAnchor(a.id, false)}>zurückholen</button>

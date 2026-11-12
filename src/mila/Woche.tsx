@@ -84,7 +84,7 @@ function Treffer({ menu, plan, onWeek }: { menu: MilaMenu; plan: MilaPlan; onWee
 
       <section className="m-group">
         <h2 className="m-group__label">So sieht eure Woche aus</h2>
-        <span className="m-hint" style={{ fontSize: 12 }}>Zum Tauschen ein Gericht am Griff ziehen.</span>
+        <span className="m-hint" style={{ fontSize: 12.5 }}>Zum Tauschen ein Gericht am Griff ziehen.</span>
         <PlanList menu={menu} plan={plan} onSwap={(d, l) => reorder(menu, d, l)} />
       </section>
 
@@ -322,7 +322,7 @@ function WeekView() {
         <Sheet onClose={() => setOpen(null)} title={openRecipe.name}>
           <div className="stack" style={{ gap: 12 }}>
             <span className="m-sub">{weekdayShort(open.date)} {fromISO(open.date).getDate()}.{fromISO(open.date).getMonth() + 1}. · {open.meal === 'abend' ? 'Abend' : 'Mittag'}</span>
-            <span className="m-title" style={{ fontSize: 30 }}>{openRecipe.name}</span>
+            <span className="m-title" style={{ fontSize: 31 }}>{openRecipe.name}</span>
             {!openRow.is_leftover && (
               <button type="button" className="m-bar__main" onClick={() => nav(`/mila/kochen/${openRecipe.id}?p=${cookPortions(openRow)}`)}>
                 Kochen · {cookPortions(openRow)} Portionen

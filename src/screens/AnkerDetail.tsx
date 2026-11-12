@@ -88,7 +88,7 @@ export function AnkerDetail() {
       <header className="stack" style={{ gap: 6 }}>
         <button type="button" className="ank__h1" onClick={() => setEditing(true)} aria-label="Anker bearbeiten">
           <AnchorIcon size={22} />
-          <span className="h1" style={{ fontSize: 40, lineHeight: 1 }}>{anchor.title}</span>
+          <span className="h1" style={{ fontSize: 41.5, lineHeight: 1 }}>{anchor.title}</span>
         </button>
         {anchor.why ? (
           <button type="button" className="ank__body ank__why" onClick={() => setEditing(true)}>{anchor.why}</button>
@@ -123,7 +123,7 @@ export function AnkerDetail() {
         ) : step ? (
           <>
             <button type="button" className="ank__body" onClick={() => setStepForm(true)}>
-              <span className="hand hand--navy" style={{ fontSize: 26, lineHeight: 1.1 }}>{step.title}</span>
+              <span className="hand hand--navy" style={{ fontSize: 27, lineHeight: 1.1 }}>{step.title}</span>
             </button>
             <div className="between" style={{ marginTop: 4 }}>
               <span className="ank__small">{stepMeta(step, members, today)}</span>
@@ -132,7 +132,7 @@ export function AnkerDetail() {
           </>
         ) : (
           <button type="button" className="ank__body" onClick={() => setStepForm(true)}>
-            <span className="hand" style={{ fontSize: 24, color: 'var(--brown)' }}>Nächsten Schritt festlegen</span>
+            <span className="hand" style={{ fontSize: 25, color: 'var(--brown)' }}>Nächsten Schritt festlegen</span>
           </button>
         )}
       </div>
@@ -155,7 +155,7 @@ export function AnkerDetail() {
             </div>
           </div>
         ) : (
-          <button type="button" className="link link--hand" style={{ alignSelf: 'flex-start', padding: '4px 0', fontSize: 20 }} onClick={() => setQuestionOpen(true)}>+ Frage</button>
+          <button type="button" className="link link--hand" style={{ alignSelf: 'flex-start', padding: '4px 0', fontSize: 21 }} onClick={() => setQuestionOpen(true)}>+ Frage</button>
         )}
       </section>
 
@@ -181,7 +181,7 @@ export function AnkerDetail() {
             </div>
           </div>
         ) : (
-          <button type="button" className="link link--hand" style={{ alignSelf: 'flex-start', padding: '4px 0', fontSize: 20 }} onClick={() => setNoteOpen(true)}>+ Notiz</button>
+          <button type="button" className="link link--hand" style={{ alignSelf: 'flex-start', padding: '4px 0', fontSize: 21 }} onClick={() => setNoteOpen(true)}>+ Notiz</button>
         )}
       </section>
 
@@ -201,13 +201,13 @@ export function AnkerDetail() {
             <div className="todo" key={t.id}>
               <Check done={done} onToggle={() => setTaskDone(t.id, !done)} label={done ? 'Wieder öffnen' : 'Erledigt'} />
               <button type="button" className="task__body" onClick={() => setEditTask(t)}>
-                <span className={'task__title' + (done ? ' task__title--done' : '')} style={{ lineHeight: 1.1, fontSize: 23 }}>{t.title}</span>
+                <span className={'task__title' + (done ? ' task__title--done' : '')} style={{ lineHeight: 1.1, fontSize: 24 }}>{t.title}</span>
                 <span className="heute__sub">{t.owner_member_id ? nameOf(t.owner_member_id) : 'offen'} · {dueLabel(t.due_date, today)}</span>
               </button>
             </div>
           )
         })}
-        <button type="button" className="link link--hand" style={{ alignSelf: 'flex-start', padding: '4px 0', fontSize: 20 }} onClick={() => nav(base + '/neu', { state: { kind: 'aufgabe', anchor: anchor.id } })}>+ Aufgabe</button>
+        <button type="button" className="link link--hand" style={{ alignSelf: 'flex-start', padding: '4px 0', fontSize: 21 }} onClick={() => nav(base + '/neu', { state: { kind: 'aufgabe', anchor: anchor.id } })}>+ Aufgabe</button>
       </section>
 
       <div className="spacer" />
@@ -241,7 +241,7 @@ function ResolveSheet({ question, onClose, onResolve, onRemove }: { question: An
         <span className="kicker">Geklärt?</span>
         <button type="button" className="link" onClick={onClose}>Schließen</button>
       </div>
-      <span className="hand hand--navy" style={{ fontSize: 24, lineHeight: 1.15 }}>{question.text}</span>
+      <span className="hand hand--navy" style={{ fontSize: 25, lineHeight: 1.15 }}>{question.text}</span>
       <div className="stack">
         <label className="label" htmlFor="ank-answer">Antwort dazu (kommt in den Verlauf)</label>
         <textarea id="ank-answer" className="textarea-lined" rows={2} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="optional …" autoFocus />

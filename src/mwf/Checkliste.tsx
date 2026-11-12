@@ -94,7 +94,7 @@ export function Checkliste() {
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 12, gap: 10 }}>
           <div className="stack" style={{ gap: 2, minWidth: 0 }}>
             <span className="mwf__kicker">Checkliste</span>
-            <span className="mwf__big" style={{ fontSize: 34 }}>{fair ? `Messe ${fairLabel(fair.date)}` : 'Keine Messe'}</span>
+            <span className="mwf__big" style={{ fontSize: 35.5 }}>{fair ? `Messe ${fairLabel(fair.date)}` : 'Keine Messe'}</span>
           </div>
           <button type="button" className="mwf__pill" onClick={toggleMine}>{onlyMine ? 'Alle zeigen' : 'Nur meine'}</button>
         </div>
@@ -103,7 +103,7 @@ export function Checkliste() {
       <main className="page mwf__main" style={{ gap: 4 }}>
         <div className="between" style={{ minHeight: 36 }}>
           <button type="button" className="mwf__arrow" disabled={idx <= 0} onClick={() => go(-1)} aria-label="Vorherige Runde">‹ vorherige</button>
-          <span className="hint" style={{ fontSize: 12 }}>{isCurrent ? 'laufende Runde' : isPast ? 'vergangene Runde' : start ? `Runde ab ${dueLabel(start, today).replace('bis ', '')}` : ''}</span>
+          <span className="hint" style={{ fontSize: 12.5 }}>{isCurrent ? 'laufende Runde' : isPast ? 'vergangene Runde' : start ? `Runde ab ${dueLabel(start, today).replace('bis ', '')}` : ''}</span>
           <button type="button" className="mwf__arrow" disabled={idx >= sorted.length - 1} onClick={() => go(1)} aria-label="Nächste Runde">nächste ›</button>
         </div>
 
@@ -116,8 +116,8 @@ export function Checkliste() {
                 {showDone ? ' ausblenden' : ''}
               </button>
             )}
-            {!isCurrent && !isPast && <p className="hint" style={{ margin: '0 0 6px 70px', fontSize: 13 }}>Noch nicht gestartet. Vorschau aus der Vorlage.</p>}
-            {isPast && rows.filter((r) => r.kind === 'item').length === 0 && <p className="hint" style={{ margin: '0 0 6px 70px', fontSize: 13 }}>Für diese Runde gab es noch keine Checkliste.</p>}
+            {!isCurrent && !isPast && <p className="hint" style={{ margin: '0 0 6px 70px', fontSize: 13.5 }}>Noch nicht gestartet. Vorschau aus der Vorlage.</p>}
+            {isPast && rows.filter((r) => r.kind === 'item').length === 0 && <p className="hint" style={{ margin: '0 0 6px 70px', fontSize: 13.5 }}>Für diese Runde gab es noch keine Checkliste.</p>}
             <div className="tl2">
               {visible.map((r) => {
                 const past = isPast || (isCurrent && r.date <= today)
@@ -185,24 +185,24 @@ export function Checkliste() {
 
         <div className="stack" style={{ gap: 2, marginTop: 24 }}>
           <span className="todo-group__title">Jahr</span>
-          {yearly.length === 0 && <span className="hint" style={{ fontSize: 13 }}>Noch kein Jahrespunkt.</span>}
+          {yearly.length === 0 && <span className="hint" style={{ fontSize: 13.5 }}>Noch kein Jahrespunkt.</span>}
           {yearly.map((t) => {
             const done = t.status === 'erledigt'
             return (
               <div className="todo" key={t.id}>
                 <Check done={done} onToggle={() => setTaskDone(t.id, !done)} label={done ? 'Wieder öffnen' : 'Erledigt'} />
                 <button type="button" className="task__body" onClick={() => setEditing(t)}>
-                  <span className={'task__title' + (done ? ' task__title--done' : '')} style={{ lineHeight: 1.1, fontSize: 23 }}>{t.title}</span>
+                  <span className={'task__title' + (done ? ' task__title--done' : '')} style={{ lineHeight: 1.1, fontSize: 24 }}>{t.title}</span>
                   <span className="heute__sub">{t.owner_member_id ? members.find((m) => m.id === t.owner_member_id)?.display_name : 'beide'} · {dueLabel(t.due_date, today)}</span>
                 </button>
               </div>
             )
           })}
-          <button type="button" className="link link--hand" style={{ alignSelf: 'flex-start', padding: '4px 0', fontSize: 20 }} onClick={() => nav('/mwf/neu', { state: { kind: 'aufgabe', yearly: true } })}>+ Jahrespunkt</button>
+          <button type="button" className="link link--hand" style={{ alignSelf: 'flex-start', padding: '4px 0', fontSize: 21 }} onClick={() => nav('/mwf/neu', { state: { kind: 'aufgabe', yearly: true } })}>+ Jahrespunkt</button>
         </div>
 
         <div className="spacer" />
-        <Link to="/mwf/vorlage" className="link" style={{ alignSelf: 'flex-start', fontSize: 12, paddingTop: 16 }}>Vorlage bearbeiten</Link>
+        <Link to="/mwf/vorlage" className="link" style={{ alignSelf: 'flex-start', fontSize: 12.5, paddingTop: 16 }}>Vorlage bearbeiten</Link>
       </main>
 
       {editing && <TaskEditor task={editing} onClose={() => setEditing(null)} />}

@@ -19,6 +19,7 @@ import { finishSplash, wantsStagger } from './state/splash'
 import { useSplashGone } from './state/splash'
 import { Mila } from './mila/Mila'
 import { Mwf } from './mwf/Mwf'
+import { Med } from './med/Med'
 
 export default function App() {
   return (
@@ -68,7 +69,7 @@ function Shell() {
         <div className="pane">
           <div className="page" style={{ gap: 24, maxWidth: 480, margin: '0 auto', paddingTop: 'calc(72px + env(safe-area-inset-top))' }}>
             <header className="stack stack--tight">
-              <h1 className="h1" style={{ fontSize: 56 }}>Casa</h1>
+              <h1 className="h1" style={{ fontSize: 58 }}>Casa</h1>
               <span className="kicker">Willkommen</span>
             </header>
             <SetPassword
@@ -106,6 +107,9 @@ function Shell() {
   // Munich Watch Fair: eigener Arbeitsbereich mit Navy-Einband
   if (loc.pathname.startsWith('/mwf')) return <Mwf />
 
+  // Medikament: privater Bereich
+  if (loc.pathname.startsWith('/med')) return <Med />
+
   const isNeu = loc.pathname === '/neu'
 
   return (
@@ -138,7 +142,7 @@ function Shell() {
       {casa.error && (
         <div style={{ position: 'fixed', left: 16, right: 16, bottom: 'calc(var(--nav-h) + 12px)', zIndex: 40 }}>
           <div className="note" style={{ transform: 'none' }}>
-            <span className="hand" style={{ fontSize: 22 }}>{casa.error}</span>
+            <span className="hand" style={{ fontSize: 23 }}>{casa.error}</span>
           </div>
         </div>
       )}
@@ -151,7 +155,7 @@ function Blank({ text }: { text?: string }) {
     <div className="app">
       <div className="pane">
         <div className="page" style={{ paddingTop: 72 }}>
-          <h1 className="h1" style={{ fontSize: 56 }}>Casa</h1>
+          <h1 className="h1" style={{ fontSize: 58 }}>Casa</h1>
           {text && <span className="hint">{text}</span>}
         </div>
       </div>

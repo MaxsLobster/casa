@@ -63,7 +63,7 @@ export function Sonntagsrunde() {
       <div className="page" style={{ gap: 16 }}>
         <Link to={base + '/anker'} className="ank__back">‹ Alle Anker</Link>
         <h1 className="h1">Sonntagsrunde</h1>
-        <p className="hand hand--navy" style={{ fontSize: 30, lineHeight: 1.15 }}>Fertig – bis nächsten Sonntag.</p>
+        <p className="hand hand--navy" style={{ fontSize: 31, lineHeight: 1.15 }}>Fertig – bis nächsten Sonntag.</p>
         <p className="hint">{order.length === 1 ? 'Ein Anker besprochen.' : `${order.length} Anker besprochen.`} Jeder hat einen Eintrag im Verlauf bekommen.</p>
         <button type="button" className="btn" style={{ alignSelf: 'flex-start', width: 'auto', padding: '10px 22px' }} onClick={() => nav(base + '/anker')}>Zu den Ankern</button>
       </div>
@@ -80,7 +80,7 @@ export function Sonntagsrunde() {
         <span className="kicker">Sonntagsrunde</span>
         <span className="ank__row">
           <AnchorIcon size={22} />
-          <span className="h1" style={{ fontSize: 38, lineHeight: 1 }}>{anchor.title}</span>
+          <span className="h1" style={{ fontSize: 39.5, lineHeight: 1 }}>{anchor.title}</span>
         </span>
         {anchor.why && <span className="ank__why">{anchor.why}</span>}
         {mode === 'phase' ? (
@@ -107,11 +107,11 @@ export function Sonntagsrunde() {
           <StepForm anchorId={anchor.id} step={step} onDone={() => setMode(null)} onCancel={() => setMode(null)} cancelLabel="abbrechen" />
         ) : step ? (
           <>
-            <span className="hand hand--navy" style={{ fontSize: 26, lineHeight: 1.1 }}>{step.title}</span>
+            <span className="hand hand--navy" style={{ fontSize: 27, lineHeight: 1.1 }}>{step.title}</span>
             <span className="ank__small">{stepMeta(step, members, today)}</span>
           </>
         ) : (
-          <span className="hand" style={{ fontSize: 24, color: 'var(--brown)' }}>{anchor.ask_next ? 'Und der nächste Schritt?' : 'Noch kein Schritt festgelegt'}</span>
+          <span className="hand" style={{ fontSize: 25, color: 'var(--brown)' }}>{anchor.ask_next ? 'Und der nächste Schritt?' : 'Noch kein Schritt festgelegt'}</span>
         )}
       </div>
 

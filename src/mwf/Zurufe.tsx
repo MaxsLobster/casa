@@ -40,7 +40,7 @@ export function Zurufe() {
     <div className="page" style={{ gap: 6 }}>
       <Link to="/mwf/hub" className="ank__back">‹ Hub</Link>
       <header className="stack" style={{ gap: 2, marginBottom: 6 }}>
-        <span className="kicker" style={{ fontSize: 11 }}>Kurz zugerufen</span>
+        <span className="kicker" style={{ fontSize: 11.5 }}>Kurz zugerufen</span>
         <h1 className="h1">Zurufe</h1>
       </header>
 
@@ -51,7 +51,7 @@ export function Zurufe() {
           <div className="mwf__shout mwf__shout--inbox" key={s.id}>
             {!s.read_at && <span className="mwf__dot" aria-label="ungelesen" />}
             <span className="stack" style={{ gap: 3, minWidth: 0, flex: 1 }}>
-              {ref && <span className="hint" style={{ fontSize: 12 }}>↩ auf „{ref}“</span>}
+              {ref && <span className="hint" style={{ fontSize: 12.5 }}>↩ auf „{ref}“</span>}
               <span className="mwf__shout-text">{s.text}</span>
               <span className="heute__sub">von {nameOf(s.from_member_id)} · {agoLabel(s.created_at, now)}</span>
               <span className="mwf__shout-actions">
@@ -148,7 +148,7 @@ function ReplySheet({ original, toName, onClose, onSend }: { original: Shout; to
         <span className="kicker">Antwort an {toName}</span>
         <button type="button" className="link" onClick={onClose}>Schließen</button>
       </div>
-      <span className="hint" style={{ fontSize: 12 }}>↩ auf „{original.text.length > 80 ? original.text.slice(0, 78).trimEnd() + ' …' : original.text}“</span>
+      <span className="hint" style={{ fontSize: 12.5 }}>↩ auf „{original.text.length > 80 ? original.text.slice(0, 78).trimEnd() + ' …' : original.text}“</span>
       <HandInput value={text} onChange={setText} placeholder="Kurz zurück …" autoFocus />
       <span className="hint">{SHOUT_HINT}</span>
       <button type="button" className="btn" disabled={!ready || busy} onClick={send}>{busy ? 'Einen Moment …' : 'Senden'}</button>

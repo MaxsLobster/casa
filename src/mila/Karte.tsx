@@ -109,10 +109,10 @@ function Voting({ menu }: { menu: MilaMenu }) {
       {allDone ? (
         <div className="m-done">
           <span className="m-done__tick" aria-hidden>✓</span>
-          <span className="m-title" style={{ fontSize: 34 }}>Fertig gewählt</span>
+          <span className="m-title" style={{ fontSize: 35.5 }}>Fertig gewählt</span>
           <span className="m-hint">{summary}</span>
-          {partner && !partnerDone && <span className="hand hand--brown" style={{ fontSize: 22 }}>{other} wählt noch … Aufdeckung, sobald ihr beide fertig seid, spätestens {deadline(menu.closes_at)}.</span>}
-          {partner && partnerDone && <span className="hand hand--brown" style={{ fontSize: 22 }}>Gleich wird aufgedeckt …</span>}
+          {partner && !partnerDone && <span className="hand hand--brown" style={{ fontSize: 23 }}>{other} wählt noch … Aufdeckung, sobald ihr beide fertig seid, spätestens {deadline(menu.closes_at)}.</span>}
+          {partner && partnerDone && <span className="hand hand--brown" style={{ fontSize: 23 }}>Gleich wird aufgedeckt …</span>}
           <div className="m-chips" style={{ justifyContent: 'center', marginTop: 6 }}>
             {cards.map((c) => (
               <button key={c.meal} type="button" className="m-day__link" onClick={() => { setMeal(c.meal); resetVotes(menu, c.meal) }}>{c.label} nochmal von vorn</button>
@@ -135,7 +135,7 @@ function Voting({ menu }: { menu: MilaMenu }) {
           {idx > 0 && (
             <>
               {' · '}
-              <button type="button" className="link" style={{ fontSize: 13 }} onClick={() => resetVotes(menu, meal)}>nochmal von vorn</button>
+              <button type="button" className="link" style={{ fontSize: 13.5 }} onClick={() => resetVotes(menu, meal)}>nochmal von vorn</button>
             </>
           )}
         </p>

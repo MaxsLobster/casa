@@ -267,6 +267,7 @@ export interface Settings {
   show_legend: boolean
   workday_on: string | null // Arbeitstag an diesem Datum (sonst aus)
   mwf_notify: 'aus' | 'briefing' | 'sofort'
+  med_partner_ok?: boolean // Zustimmung zur Abendfrage des Partners (Bereich Medikament)
   updated_at: string
 }
 
@@ -290,9 +291,10 @@ export type TableName =
   | 'checklist_template'
   | 'ideas'
   | 'shouts'
+  | MedTableName
   | MilaTableName
 
-export interface TableRow extends MilaTableRow {
+export interface TableRow extends MilaTableRow, MedTableRow {
   households: Household
   members: Member
   tasks: Task
@@ -513,4 +515,76 @@ export interface MilaTableRow {
   mila_settings: MilaSettings
   mila_menus: MilaMenu
   mila_votes: MilaVote
+}
+
+// ---------------------------------------------------------------------------
+// Medikament · privates Add-on (Tabellen mit Präfix med_, alles pro Mitglied)
+// ---------------------------------------------------------------------------
+
+export interface MedSettings {
+  member_id: Id
+  household_id: Id
+  enabled: boolean
+  t_morning: string
+  t_1: string
+  t_2: string
+  t_3: string
+  ask_partner: boolean
+  t_partner: string
+  updated_at: string
+}
+
+export interface MedCourse {
+  id: Id
+  member_id: Id
+  household_id: Id
+  name: string | null // leer = kein Medikament
+  dose: string | null
+  start_date: string
+  created_at: string
+}
+
+export interface MedDay {
+  id: Id
+  member_id: Id
+  household_id: Id
+  date: string
+  taken_at: string | null
+  sleep: number | null
+}
+
+export type MedSlot = 1 | 2 | 3
+
+export interface MedCheckin {
+  id: Id
+  member_id: Id
+  household_id: Id
+  date: string
+  slot: MedSlot
+  focus: number | null
+  calm: number | null
+  mood: number | null
+  note: string | null
+  appetite: number | null
+  side_effects: string[]
+}
+
+export interface MedPartnerAnswer {
+  id: Id
+  household_id: Id
+  about_member_id: Id
+  from_member_id: Id
+  date: string
+  value: number
+  note: string | null
+}
+
+export type MedTableName = 'med_settings' | 'med_courses' | 'med_days' | 'med_checkins' | 'med_partner_answers'
+
+export interface MedTableRow {
+  med_settings: MedSettings
+  med_courses: MedCourse
+  med_days: MedDay
+  med_checkins: MedCheckin
+  med_partner_answers: MedPartnerAnswer
 }

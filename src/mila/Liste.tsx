@@ -40,8 +40,8 @@ export function Liste() {
       <header className="m-shop__head">
         <div className="stack stack--tight">
           <span className="m-sub">Großer Einkauf · {weekdayLongByIndex(rhythm.shop_weekday).slice(0, 2)}</span>
-          <span className="m-title" style={{ fontSize: 40, lineHeight: 0.95 }}>Einkaufszettel</span>
-          <span className="m-hint" style={{ fontSize: 12 }}>{meta}{toBuy.length} offen</span>
+          <span className="m-title" style={{ fontSize: 41.5, lineHeight: 0.95 }}>Einkaufszettel</span>
+          <span className="m-hint" style={{ fontSize: 12.5 }}>{meta}{toBuy.length} offen</span>
         </div>
         <span className="m-shop__live">
           <span className="m-initials">
@@ -85,7 +85,7 @@ export function Liste() {
         </section>
       ))}
 
-      {open.some((i) => i.is_stock) && <p className="m-hint" style={{ fontSize: 12 }}>Grau = „haben wir schon“ (Vorrat). Antippen setzt es doch auf den Zettel.</p>}
+      {open.some((i) => i.is_stock) && <p className="m-hint" style={{ fontSize: 12.5 }}>Grau = „haben wir schon“ (Vorrat). Antippen setzt es doch auf den Zettel.</p>}
 
       {done.length > 0 && (
         <section className="m-group" style={{ marginTop: 4 }}>

@@ -32,10 +32,10 @@ export function Vorlage() {
     <div className="page" style={{ gap: 6 }}>
       <Link to="/mwf/checkliste" className="ank__back">‹ Checkliste</Link>
       <header className="stack" style={{ gap: 2, marginBottom: 6 }}>
-        <span className="kicker" style={{ fontSize: 11 }}>Jede Runde gleich</span>
+        <span className="kicker" style={{ fontSize: 11.5 }}>Jede Runde gleich</span>
         <h1 className="h1">Vorlage</h1>
       </header>
-      <p className="hint" style={{ fontSize: 13 }}>Neue Punkte kommen auch in die laufende Runde. Geänderte gelten ab der nächsten.</p>
+      <p className="hint" style={{ fontSize: 13.5 }}>Neue Punkte kommen auch in die laufende Runde. Geänderte gelten ab der nächsten.</p>
 
       {rows.map((r) => {
         const key = r.section === 'before' ? `before:${r.days_before ?? 0}` : r.section
@@ -50,7 +50,7 @@ export function Vorlage() {
             )}
             <div className="mwf__trow">
               <button type="button" className="task__body" onClick={() => setEditing(r)}>
-                <span className="task__title" style={{ fontSize: 22, lineHeight: 1.1 }}>{r.title}</span>
+                <span className="task__title" style={{ fontSize: 23, lineHeight: 1.1 }}>{r.title}</span>
                 <span className="heute__sub">
                   {nameOf(r.owner_member_id)}
                   {' · '}

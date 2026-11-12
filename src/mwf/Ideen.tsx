@@ -51,7 +51,7 @@ export function IdeenGruppe() {
             <button type="button" key={i.id} className="mwf__idea" onClick={() => setEditing(i)}>
               <span className="mwf__bulb" aria-hidden>✦</span>
               <span className="stack" style={{ gap: 0, minWidth: 0 }}>
-                <span className="task__title" style={{ lineHeight: 1.1, fontSize: 23 }}>{i.text}</span>
+                <span className="task__title" style={{ lineHeight: 1.1, fontSize: 24 }}>{i.text}</span>
                 {i.created_by && i.created_by !== me?.id && <span className="heute__sub">von {nameOf(i.created_by)}</span>}
               </span>
             </button>

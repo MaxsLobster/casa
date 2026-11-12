@@ -219,7 +219,7 @@ export function Woche() {
           <button type="button" className="wk__arrow" aria-label="Zurück zur Woche" onClick={closeNormal}>‹</button>
           <div className="wk__title" style={{ cursor: 'default' }}>
             <span className="wk__range">Eine normale Woche</span>
-            <span className="kicker" style={{ fontSize: 12 }}>Unser Wochenplan</span>
+            <span className="kicker" style={{ fontSize: 12.5 }}>Unser Wochenplan</span>
           </div>
           <span style={{ width: 44, flex: 'none' }} />
         </header>
@@ -267,7 +267,7 @@ export function Woche() {
         <button type="button" className="wk__arrow" aria-label="Vorige Woche" onClick={() => go(-1)}>‹</button>
         <button type="button" className="wk__title" onClick={home} aria-label={offset === 0 ? undefined : 'Zurück zur aktuellen Woche'}>
           <span className="wk__range">{weekRange(monday)}</span>
-          <span className="kicker" style={{ fontSize: 12 }}>KW {isoWeek(monday)}</span>
+          <span className="kicker" style={{ fontSize: 12.5 }}>KW {isoWeek(monday)}</span>
         </button>
         <button type="button" className="wk__arrow" aria-label="Nächste Woche" onClick={() => go(1)}>›</button>
         <button type="button" className="wk__icon" aria-label="Normalwoche bearbeiten" onClick={openNormal}>
@@ -382,7 +382,7 @@ export function Woche() {
                         const past = !isMultiDay(e) && eventEnd({ date: e.occ_date, start_time: e.start_time, end_time: e.end_time }) <= now
                         return (
                           <button type="button" key={e.id + e.occ_date} className={'day__line' + (past ? ' day__line--past' : '')} style={{ minHeight: 40, padding: '2px 0' }} onClick={() => openEvent(e.base_id)}>
-                            <span className="hand" style={{ fontSize: 22 }}>
+                            <span className="hand" style={{ fontSize: 23 }}>
                               {isMultiDay(e) ? `${spanLabel(e.occ_date, e.occ_end)} · ` : hhmm(e.start_time) ? hhmm(e.start_time) + ' ' : ''}
                               {e.title}
                               {(e.repeat || e.is_repeat) && ' ↻'}
@@ -411,7 +411,7 @@ export function Woche() {
                         return (
                           <div className="wk__task" key={t.id} style={away ? { flexWrap: 'wrap' } : undefined}>
                             <Check done={false} onToggle={() => setTaskDone(t.id, true)} label={`${t.title} abhaken`} />
-                            <span className="hand hand--navy" style={{ fontSize: 22, lineHeight: 1.15 }}>{t.title}</span>
+                            <span className="hand hand--navy" style={{ fontSize: 23, lineHeight: 1.15 }}>{t.title}</span>
                             {away && <span className="hint hint--brown" style={{ width: '100%', paddingLeft: 28 }}>Du bist da weg – trotzdem bei dir lassen? (In To-Dos abgeben)</span>}
                           </div>
                         )
@@ -442,7 +442,7 @@ export function Woche() {
       )}
       {askLegend && (
         <Sheet onClose={() => setAskLegend(false)} title="Legende ausblenden">
-          <span className="hand hand--navy" style={{ fontSize: 26 }}>Nicht mehr anzeigen?</span>
+          <span className="hand hand--navy" style={{ fontSize: 27 }}>Nicht mehr anzeigen?</span>
           <span className="hint">Die Legende verschwindet dann dauerhaft, auf allen deinen Geräten. In den Einstellungen kannst du sie wieder einblenden.</span>
           <button type="button" className="btn" onClick={() => { void updateSettings({ show_legend: false }); setAskLegend(false) }}>Ja, ausblenden</button>
           <button type="button" className="link" onClick={() => setAskLegend(false)}>Abbrechen</button>

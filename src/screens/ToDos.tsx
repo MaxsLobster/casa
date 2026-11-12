@@ -194,7 +194,7 @@ export function ToDos() {
                   {g.items.map((t) => (
                     <div className="row" key={t.id}>
                       <span className="row__mark" style={{ color: 'var(--green)' }}>✓</span>
-                      <button type="button" className="row__text hand" style={{ background: 'transparent', border: 'none', padding: 0, textAlign: 'left', color: 'var(--ink-soft)', fontSize: 23, cursor: 'pointer' }} onClick={() => setEditing(t)}>
+                      <button type="button" className="row__text hand" style={{ background: 'transparent', border: 'none', padding: 0, textAlign: 'left', color: 'var(--ink-soft)', fontSize: 24, cursor: 'pointer' }} onClick={() => setEditing(t)}>
                         {t.title}
                       </button>
                       <span className="hand hand--meta">

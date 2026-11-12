@@ -80,7 +80,7 @@ export function Hub() {
                 <Check done={false} onToggle={() => setTaskDone(t.id, true)} label={`${t.title} abhaken`} />
               )}
               <button type="button" className="task__body" style={{ padding: '4px 0' }} onClick={() => setEditing(t)}>
-                <span className="task__title" style={{ fontSize: 24, lineHeight: 1.12 }}>{t.title}</span>
+                <span className="task__title" style={{ fontSize: 25, lineHeight: 1.12 }}>{t.title}</span>
                 <span className="heute__sub">
                   {t.is_running ? 'laufend bis zur Messe' : dueLabel(t.due_date, today)}
                   {t.owner_member_id === null && ' · beide'}
@@ -90,7 +90,7 @@ export function Hub() {
             </div>
           ))}
         </div>
-        {fair && doneCount > 0 && <span className="hint" style={{ fontSize: 13 }}>{doneCount === 1 ? '1 erledigt diese Runde' : `${doneCount} erledigt diese Runde`}</span>}
+        {fair && doneCount > 0 && <span className="hint" style={{ fontSize: 13.5 }}>{doneCount === 1 ? '1 erledigt diese Runde' : `${doneCount} erledigt diese Runde`}</span>}
 
         <div className="spacer" />
 
@@ -105,7 +105,7 @@ export function Hub() {
             ))}
           </div>
         )}
-        <Link to="/mwf/zurufe" className="link" style={{ alignSelf: 'flex-start', fontSize: 12, paddingTop: 16 }}>Alle Zurufe</Link>
+        <Link to="/mwf/zurufe" className="link" style={{ alignSelf: 'flex-start', fontSize: 12.5, paddingTop: 16 }}>Alle Zurufe</Link>
       </main>
 
       {editing && <TaskEditor task={editing} onClose={() => setEditing(null)} />}

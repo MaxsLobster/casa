@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { DemoAuth, SupabaseAuth, type Auth, type AuthUser } from '../lib/auth'
 import { LocalStore, SupabaseStore, type Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
-import type { MilaRecipe, MilaSettings, MilaWeekDay } from '../lib/types'
+import type { MedSettings, MilaRecipe, MilaSettings, MilaWeekDay } from '../lib/types'
 import type { Anchor, AnchorLog, AnchorLogKind, AnchorPhase, AnchorPin, AnchorQuestion, AnchorVisibility, Area, Event, EventEffect, Fair, Household, Idea, ItemSeen, Member, NormalWeekRow, Person, Settings, Shout, Slot, Task, TaskStatus, TemplateRow, WeekOverride, TableName, Repeat } from '../lib/types'
 import { addDays, fromISO, toISO, today } from '../lib/dates'
 import { subscribePush, unsubscribePush, type PushKeys } from '../lib/push'
@@ -46,6 +46,11 @@ export interface Casa {
   reloadMila(): Promise<void>
   milaRhythm: Rhythm
   saveMilaRhythm(patch: Partial<Rhythm>): Promise<void>
+  // Medikament (privat): meine Einstellungen, falls ich den Bereich habe
+  med: MedSettings | null
+  /** Mitglied, das von mir eine Abend-Einschätzung möchte (sonst null) */
+  medAsking: string | null
+  updateMed(patch: Partial<Pick<MedSettings, 'enabled' | 't_morning' | 't_1' | 't_2' | 't_3' | 'ask_partner' | 't_partner'>>): Promise<void>
   error: string | null
 
   /** NEU: vom anderen für mich eingetragen oder geändert und noch nicht angesehen */
@@ -111,7 +116,7 @@ export interface Casa {
   clearOverride(date: string, slot: Slot): Promise<void>
   setTemplate(input: { weekday: number; slot: Slot; value: string | null; at?: string | null; is_open: boolean; note?: string | null }): Promise<void>
 
-  updateSettings(patch: Partial<Pick<Settings, 'dark_mode_auto' | 'briefing_time' | 'quiet_enabled' | 'quiet_hours_start' | 'quiet_hours_end' | 'show_legend' | 'workday_on' | 'mwf_notify'>>): Promise<void>
+  updateSettings(patch: Partial<Pick<Settings, 'dark_mode_auto' | 'briefing_time' | 'quiet_enabled' | 'quiet_hours_start' | 'quiet_hours_end' | 'show_legend' | 'workday_on' | 'mwf_notify' | 'med_partner_ok'>>): Promise<void>
 
   /** Push auf diesem Gerät anmelden (braucht einen Tipp des Nutzers) */
   enablePush(): Promise<void>
@@ -160,6 +165,8 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   const [milaDays, setMilaDays] = useState<MilaWeekDay[]>([])
   const [milaRecipes, setMilaRecipes] = useState<MilaRecipe[]>([])
   const [milaSettings, setMilaSettings] = useState<MilaSettings | null>(null)
+  const [med, setMed] = useState<MedSettings | null>(null)
+  const [medAsking, setMedAsking] = useState<string | null>(null)
 
   // --- Anmeldung -----------------------------------------------------------
   useEffect(() => {
@@ -236,6 +243,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
           setShouts(sh)
           setDataReady(true)
           void loadMila(hid)
+          void loadMed(mine.id, hid)
           return
         }
         if (table === 'mila_week_days' || table === 'mila_settings') {
@@ -268,6 +276,30 @@ export function CasaProvider({ children }: { children: ReactNode }) {
 
   const loadRef = useRef(load)
   loadRef.current = load
+
+  /** Medikament: meine Einstellungen und ob der Partner eine Abendfrage an mich hat */
+  async function loadMed(memberId: string, hid: string) {
+    try {
+      if (isDemo) {
+        // Demo: Max hat den Bereich
+        const all = await store.select('med_settings')
+        if (memberId === '00000000-0000-0000-0000-00000000000b' && !all.some((x) => x.member_id === memberId)) {
+          await store.insert('med_settings', { member_id: memberId, household_id: hid, enabled: false, t_morning: '07:30', t_1: '11:00', t_2: '15:00', t_3: '20:00', ask_partner: false, t_partner: '20:30' })
+          await store.insert('med_courses', { member_id: memberId, household_id: hid, name: 'Lisdexamfetamin', dose: '30 mg', start_date: today() })
+        }
+        const rows = await store.select('med_settings')
+        setMed(rows.find((x) => x.member_id === memberId) ?? null)
+        setMedAsking(rows.find((x) => x.member_id !== memberId && x.enabled && x.ask_partner)?.member_id ?? null)
+        return
+      }
+      const rows = await store.select('med_settings', { member_id: memberId })
+      setMed(rows[0] ?? null)
+      const { data } = await supabase!.rpc('med_partner_asking')
+      setMedAsking((data as string | null) ?? null)
+    } catch {
+      /* Bereich noch nicht eingerichtet */
+    }
+  }
 
   /** Mila-Woche (ohne Fehler für Casa, falls Mila noch fehlt) */
   async function loadMila(hid: string) {
@@ -305,6 +337,8 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       setShouts([])
       setMilaDays([])
       setMilaRecipes([])
+      setMed(null)
+      setMedAsking(null)
       setSettings(null)
       setHousehold(null)
       return
@@ -459,6 +493,13 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     milaRecipe: (id) => (id ? (milaById.get(id) ?? null) : null),
     reloadMila: async () => {
       if (householdId) await loadMila(householdId)
+    },
+    med,
+    medAsking,
+    async updateMed(patch) {
+      const { hid, me } = need()
+      await store.update('med_settings', { member_id: me.id }, patch)
+      await loadMed(me.id, hid)
     },
     milaRhythm,
     async saveMilaRhythm(patch) {

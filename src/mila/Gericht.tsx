@@ -97,7 +97,7 @@ export function Gericht() {
         {recipe.notes && <p className="m-hint" style={{ whiteSpace: 'pre-line' }}>{recipe.notes}</p>}
 
         {placed && (
-          <p className="hand hand--brown fade-in" style={{ fontSize: 21 }}>
+          <p className="hand hand--brown fade-in" style={{ fontSize: 22 }}>
             Steht am {weekdayShort(placed)} {fromISO(placed).getDate()}.{fromISO(placed).getMonth() + 1}. in der Woche. <Link to="/mila/woche" className="link">Ansehen ›</Link>
           </p>
         )}
