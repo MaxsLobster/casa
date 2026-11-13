@@ -6,13 +6,13 @@ import { LocalStore, SupabaseStore, type Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
 import type {
   MealSlot, Member, MilaIngredient, MilaMenu, MilaPrepStep, MilaRecipe, MilaSettings, MilaShoppingItem, MilaStep, MilaTableName,
-  MilaVote, MilaVoteKind, MilaWeekDay, ShopCategory, TableName,
-} from '../lib/types'
+  MilaVote, MilaVoteKind, MilaWeekDay, ShopCategory, TableName, MilaBlend, MilaVariantKey } from '../lib/types'
 import { categorize } from './shopping'
 import { DEMO_MAX_ID } from '../lib/seed'
 import { addDays, startOfWeek, toISO } from '../lib/dates'
 import { DEFAULT_RHYTHM, cardWeek, computePlan, generateCard, menuTimes, shoppingFor, type LocalStamp, type Rhythm, type WeekCtx } from './engine'
 import { weekKey } from './week-list'
+import { variantShopping } from './recipe-view'
 
 export interface Mila {
   ready: boolean
@@ -34,7 +34,12 @@ export interface Mila {
   ctx: WeekCtx
   recipeById(id: string | null | undefined): MilaRecipe | null
   ingredientsOf(recipeId: string): MilaIngredient[]
-  stepsOf(recipeId: string): MilaStep[]
+  /** Schritte einer Variante; „thermomix“ fällt auf die normalen zurück, wenn es keine gibt */
+  stepsOf(recipeId: string, variant?: 'original' | 'thermomix'): MilaStep[]
+  hasThermomixSteps(recipeId: string): boolean
+  blends: MilaBlend[]
+  /** Foto-Adresse (Signed URL) zu einem Speicher-Pfad; null, solange sie noch nicht da ist */
+  photoUrl(path: string | null | undefined): string | null
   prepStepsOf(recipeId: string): MilaPrepStep[]
   reload(table?: MilaTableName): Promise<void>
 
@@ -42,7 +47,9 @@ export interface Mila {
   saveRecipe(recipe: RecipeInput, ingredients: IngredientInput[], steps: StepInput[], prep: PrepInput[], id?: string): Promise<string>
 
   /** Woche: eine Mahlzeit an einem Datum setzen, null leert sie */
-  setMeal(date: string, meal: MealSlot, recipeId: string | null, servings?: number | null): Promise<void>
+  setMeal(date: string, meal: MealSlot, recipeId: string | null, servings?: number | null, variant?: MilaVariantKey): Promise<void>
+  /** Portionen oder Variante an einem eingetragenen Tag ändern */
+  updateMeal(id: string, patch: Partial<Pick<MilaWeekDay, 'servings' | 'variant'>>): Promise<void>
   /** Gericht aus der Woche nehmen, seine offenen Zutaten vom Zettel dazu. Gibt „Rückgängig“ zurück. */
   removeMeal(date: string, meal: MealSlot): Promise<(() => Promise<void>) | null>
 
@@ -86,7 +93,7 @@ export function useMila(): Mila {
   return c
 }
 
-const TABLES: MilaTableName[] = ['mila_recipes', 'mila_ingredients', 'mila_steps', 'mila_prep_steps', 'mila_week_days', 'mila_shopping_items', 'mila_settings', 'mila_menus', 'mila_votes']
+const TABLES: MilaTableName[] = ['mila_recipes', 'mila_ingredients', 'mila_steps', 'mila_prep_steps', 'mila_week_days', 'mila_shopping_items', 'mila_settings', 'mila_menus', 'mila_votes', 'mila_hausmischungen']
 
 /** Felder, die ältere Zeilen (Demo) noch nicht haben: sinnvolle Standards */
 export function withDefaults(r: MilaRecipe): MilaRecipe {
@@ -152,6 +159,8 @@ export function MilaProvider({ children }: { children: ReactNode }) {
   const [settingsRow, setSettingsRow] = useState<MilaSettings | null>(null)
   const [menus, setMenus] = useState<MilaMenu[]>([])
   const [votes, setVotes] = useState<MilaVote[]>([])
+  const [blends, setBlends] = useState<MilaBlend[]>([])
+  const photos = usePhotoUrls(recipes, steps)
 
   const load = useCallback(
     async (table?: MilaTableName) => {
@@ -160,7 +169,7 @@ export function MilaProvider({ children }: { children: ReactNode }) {
         const f = { household_id: hid }
         if (!table) {
           if (isDemo) await seedDemo(store, hid)
-          const [r, i, s, p, w, it, st, mn, v] = await Promise.all([
+          const [r, i, s, p, w, it, st, mn, v, hm] = await Promise.all([
             store.select('mila_recipes', f),
             store.select('mila_ingredients', f),
             store.select('mila_steps', f),
@@ -170,6 +179,7 @@ export function MilaProvider({ children }: { children: ReactNode }) {
             store.select('mila_settings', f),
             store.select('mila_menus', f),
             store.select('mila_votes', f),
+            store.select('mila_hausmischungen', f).catch(() => [] as MilaBlend[]),
           ])
           setRecipes(r.map(withDefaults))
           setIngredients(i)
@@ -180,6 +190,7 @@ export function MilaProvider({ children }: { children: ReactNode }) {
           setSettingsRow(st[0] ?? null)
           setMenus(mn)
           setVotes(v)
+          setBlends(hm)
           setReady(true)
           return
         }
@@ -192,6 +203,7 @@ export function MilaProvider({ children }: { children: ReactNode }) {
         if (table === 'mila_settings') setSettingsRow((await store.select('mila_settings', f))[0] ?? null)
         if (table === 'mila_menus') setMenus(await store.select('mila_menus', f))
         if (table === 'mila_votes') setVotes(await store.select('mila_votes', f))
+        if (table === 'mila_hausmischungen') setBlends(await store.select('mila_hausmischungen', f))
       } catch (err) {
         setError((err as Error).message)
         setReady(true)
@@ -339,7 +351,7 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const setMeal = async (date: string, meal: MealSlot, recipeId: string | null, servings?: number | null) => {
+  const setMeal = async (date: string, meal: MealSlot, recipeId: string | null, servings?: number | null, variant?: MilaVariantKey) => {
     const existing = weekDays.find((w) => w.date === date && (w.meal ?? 'abend') === meal)
     if (!recipeId) {
       await removeMeal(date, meal)
@@ -352,10 +364,21 @@ export function MilaProvider({ children }: { children: ReactNode }) {
         void loadRef.current('mila_shopping_items')
       }
       if (existing) {
-        await store.update('mila_week_days', { id: existing.id }, { recipe_id: recipeId, free_text: null, is_leftover: false, servings: servings ?? existing.servings, updated_by: me.id })
+        await store.update('mila_week_days', { id: existing.id }, { recipe_id: recipeId, free_text: null, is_leftover: false, servings: servings ?? existing.servings, variant: variant ?? 'original', updated_by: me.id })
       } else {
-        await store.insert('mila_week_days', { household_id: hid, date, meal, recipe_id: recipeId, free_text: null, is_leftover: false, servings: servings ?? null, added_to_list: false, created_by: me.id, updated_by: me.id })
+        await store.insert('mila_week_days', { household_id: hid, date, meal, recipe_id: recipeId, free_text: null, is_leftover: false, servings: servings ?? null, variant: variant ?? 'original', added_to_list: false, created_by: me.id, updated_by: me.id })
       }
+    } catch (err) {
+      setError((err as Error).message)
+    }
+    await loadRef.current('mila_week_days')
+    void casa.reloadMila()
+  }
+
+  const updateMeal = async (id: string, patch: Partial<Pick<MilaWeekDay, 'servings' | 'variant'>>) => {
+    setWeekDays((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)))
+    try {
+      await store.update('mila_week_days', { id }, { ...patch, updated_by: me.id })
     } catch (err) {
       setError((err as Error).message)
     }
@@ -416,11 +439,22 @@ export function MilaProvider({ children }: { children: ReactNode }) {
   const weekToList = async (monday: string) => {
     const end = addDays(monday, 6)
     const rows = weekDays.filter((w) => w.recipe_id && w.date >= monday && w.date <= end)
-    const slots = rows.map((w) => ({ date: w.date, meal: w.meal ?? 'abend', recipe_id: w.recipe_id as string, leftover: w.is_leftover ?? false, servings: w.servings ?? recipeById(w.recipe_id)?.portions ?? 2 }))
+    // Light/Protein: eigene Zutatenliste je Variante (Schlüssel „Gericht:Variante“), danach wieder auf die Gericht-ID zurück
+    const keyOf = (w: MilaWeekDay) => (w.variant && w.variant !== 'original' ? `${w.recipe_id}:${w.variant}` : (w.recipe_id as string))
+    const shopRecipes = [...recipes]
+    const shopIngs = [...ingredients]
+    for (const w of rows) {
+      const k = keyOf(w)
+      const r = recipeById(w.recipe_id)
+      if (!r || k === r.id || shopRecipes.some((x) => x.id === k)) continue
+      shopRecipes.push({ ...r, id: k })
+      shopIngs.push(...variantShopping(r, ingByRecipe.get(r.id) ?? [], w.variant as MilaVariantKey).map((i) => ({ ...i, recipe_id: k })))
+    }
+    const slots = rows.map((w) => ({ date: w.date, meal: w.meal ?? 'abend', recipe_id: keyOf(w), leftover: w.is_leftover ?? false, servings: w.servings ?? recipeById(w.recipe_id)?.portions ?? 2 }))
     const wk = weekKey(monday)
     try {
       for (const it of items.filter((i) => i.source_week === wk && !i.checked && i.source_label)) await store.remove('mila_shopping_items', { id: it.id })
-      await store.insertMany('mila_shopping_items', shoppingFor(monday, slots, recipes, ingredients).map((r) => ({ household_id: hid, ...r, added_by: me.id, checked: false, checked_by: null, checked_at: null })))
+      await store.insertMany('mila_shopping_items', shoppingFor(monday, slots, shopRecipes, shopIngs).map((r) => ({ household_id: hid, ...r, source_recipe_ids: [...new Set(r.source_recipe_ids.map((x) => x.split(':')[0]))], added_by: me.id, checked: false, checked_by: null, checked_at: null })))
     } catch (err) {
       fail(err)
     }
@@ -560,7 +594,7 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     ingredients,
     steps,
     prepSteps,
-    weekDays: weekDays.map((w) => ({ ...w, meal: w.meal ?? 'abend', is_leftover: w.is_leftover ?? false, servings: w.servings ?? null })),
+    weekDays: weekDays.map((w) => ({ ...w, meal: w.meal ?? 'abend', is_leftover: w.is_leftover ?? false, servings: w.servings ?? null, variant: w.variant ?? 'original' })),
     items: items.map((i) => ({ ...i, is_stock: i.is_stock ?? false })),
     menus: [...menus].sort((a, b) => b.week.localeCompare(a.week)),
     votes,
@@ -568,11 +602,20 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     ctx,
     recipeById,
     ingredientsOf: (id) => ingByRecipe.get(id) ?? [],
-    stepsOf: (id) => stepsByRecipe.get(id) ?? [],
+    stepsOf: (id, variant = 'original') => {
+      const all = stepsByRecipe.get(id) ?? []
+      const tm = all.filter((s) => s.variant === 'thermomix')
+      if (variant === 'thermomix' && tm.length) return tm
+      return all.filter((s) => (s.variant ?? 'original') === 'original')
+    },
+    hasThermomixSteps: (id) => (stepsByRecipe.get(id) ?? []).some((s) => s.variant === 'thermomix'),
+    blends,
+    photoUrl: (path) => (path ? (/^https?:/.test(path) ? path : (photos[path] ?? null)) : null),
     prepStepsOf: (id) => prepByRecipe.get(id) ?? [],
     reload: load,
     saveRecipe,
     setMeal,
+    updateMeal,
     removeMeal,
     vote,
     resetVotes,
@@ -592,4 +635,56 @@ function group<T extends { recipe_id: string; position: number }>(rows: T[]): Ma
   const m = new Map<string, T[]>()
   for (const r of [...rows].sort((a, b) => a.position - b.position)) m.set(r.recipe_id, [...(m.get(r.recipe_id) ?? []), r])
   return m
+}
+
+// ---------------------------------------------------------------------------
+// Fotos aus dem privaten Speicher: Signed URLs, gebündelt geholt und auf dem Gerät gemerkt
+// (7 Tage gültig; erneuert, wenn weniger als ein Tag übrig ist). Der Service Worker hält die Bilder selbst.
+// ---------------------------------------------------------------------------
+
+const PHOTO_KEY = 'mila.fotos'
+const PHOTO_TTL = 7 * 24 * 3600
+
+function readPhotoCache(): Record<string, [string, number]> {
+  try {
+    return JSON.parse(localStorage.getItem(PHOTO_KEY) ?? '{}')
+  } catch {
+    return {}
+  }
+}
+
+function usePhotoUrls(recipes: MilaRecipe[], steps: MilaStep[]): Record<string, string> {
+  const [urls, setUrls] = useState<Record<string, string>>(() => {
+    const now = Date.now() / 1000
+    return Object.fromEntries(Object.entries(readPhotoCache()).filter(([, [, exp]]) => exp - now > 86400).map(([p, [u]]) => [p, u]))
+  })
+  const busy = useRef(false)
+  useEffect(() => {
+    if (isDemo || !supabase || busy.current) return
+    const paths = [...new Set([...recipes.map((r) => r.photo_path), ...steps.map((s) => s.photo_path)].filter((p): p is string => !!p && !/^https?:/.test(p)))]
+    const missing = paths.filter((p) => !urls[p])
+    if (!missing.length) return
+    busy.current = true
+    void (async () => {
+      const cache = readPhotoCache()
+      const add: Record<string, string> = {}
+      for (let i = 0; i < missing.length; i += 100) {
+        const { data } = await supabase!.storage.from('mila-fotos').createSignedUrls(missing.slice(i, i + 100), PHOTO_TTL)
+        for (const d of data ?? []) {
+          if (d.signedUrl && d.path) {
+            add[d.path] = d.signedUrl
+            cache[d.path] = [d.signedUrl, Date.now() / 1000 + PHOTO_TTL]
+          }
+        }
+      }
+      try {
+        localStorage.setItem(PHOTO_KEY, JSON.stringify(cache))
+      } catch {
+        /* voll oder privat */
+      }
+      setUrls((prev) => ({ ...prev, ...add }))
+      busy.current = false
+    })()
+  }, [recipes, steps, urls])
+  return urls
 }

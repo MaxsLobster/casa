@@ -26,7 +26,20 @@ registerRoute(
   }),
 )
 
-// Supabase nie cachen
+// Mila-Fotos (privater Speicher, Signed URLs): einmal laden, dann aus dem Cache.
+// Der Schlüssel ist der Pfad ohne das wechselnde Token, damit ein neu signierter Link denselben Eintrag trifft.
+registerRoute(
+  ({ url }) => url.hostname.endsWith('.supabase.co') && url.pathname.includes('/storage/v1/object/sign/mila-fotos/'),
+  new CacheFirst({
+    cacheName: 'mila-fotos',
+    plugins: [
+      { cacheKeyWillBeUsed: async ({ request }) => request.url.split('?')[0] },
+      new ExpirationPlugin({ maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 180 }),
+    ],
+  }),
+)
+
+// Supabase sonst nie cachen
 registerRoute(({ url }) => url.hostname.endsWith('.supabase.co'), new NetworkOnly())
 
 // --- Web Push -------------------------------------------------------------

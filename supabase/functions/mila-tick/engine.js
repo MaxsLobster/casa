@@ -173,11 +173,19 @@ function applyEffects(state, fx) {
 
 // src/mila/shop-rules.json
 var shop_rules_default = {
-  order: ["obst_gemuese", "kuehl", "trocken", "getraenke", "sonstiges"],
+  order: [
+    "obst_gemuese",
+    "kuehl",
+    "fleisch_fisch",
+    "trocken",
+    "getraenke",
+    "sonstiges"
+  ],
   labels: {
     obst_gemuese: "Obst & Gem\xFCse",
     kuehl: "K\xFChlregal",
-    trocken: "Trocken & Vorrat",
+    fleisch_fisch: "Fleisch & Fisch",
+    trocken: "Vorrat",
     getraenke: "Getr\xE4nke",
     sonstiges: "Sonstiges"
   },
@@ -222,7 +230,7 @@ var shop_rules_default = {
       ]
     },
     {
-      cat: "kuehl",
+      cat: "fleisch_fisch",
       keywords: [
         "hack",
         "rind",
@@ -233,6 +241,18 @@ var shop_rules_default = {
         "wurst",
         "speck",
         "garnele",
+        "lachs",
+        "steak",
+        "pute",
+        "chorizo",
+        "salami",
+        "schinken",
+        "chashu"
+      ]
+    },
+    {
+      cat: "kuehl",
+      keywords: [
         "milch",
         "joghurt",
         "butter",
@@ -250,7 +270,13 @@ var shop_rules_default = {
     },
     {
       cat: "getraenke",
-      keywords: ["wein", "bier", "limonad", "cola", "prosecco"]
+      keywords: [
+        "wein",
+        "bier",
+        "limonad",
+        "cola",
+        "prosecco"
+      ]
     },
     {
       cat: "obst_gemuese",

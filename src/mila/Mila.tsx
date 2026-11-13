@@ -1,13 +1,13 @@
 // Mila · Gerüst: Kopf, Routen, drei Reiter
 import type { ReactNode } from 'react'
-import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, Navigate, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { MilaProvider, useMila } from './MilaContext'
 import { PotIcon } from './icons'
 import { useSplashGone } from '../state/splash'
 import { Woche } from './Woche'
 import { Liste } from './Liste'
 import { Gerichte } from './Gerichte'
-import { Gericht } from './Gericht'
+import { Rezeptkarte } from './Rezeptkarte'
 import { RezeptForm } from './RezeptForm'
 import { Kochen } from './Kochen'
 import { Karte } from './Karte'
@@ -27,7 +27,7 @@ function MilaShell() {
   const splashGone = useSplashGone()
   const loc = useLocation()
   // Detail, Formular und Kochmodus haben eigene Knöpfe unten, keine Reiterleiste
-  const showNav = !/^\/mila\/(gerichte\/.+|kochen)/.test(loc.pathname)
+  const showNav = !/^\/mila\/(gerichte\/.+|kochen|rezept)/.test(loc.pathname)
   const cooking = loc.pathname.startsWith('/mila/kochen')
   return (
     <div className={'app mila' + (cooking ? ' mila--kochen' : '')}>
@@ -41,7 +41,8 @@ function MilaShell() {
             <Route path="/mila/prep" element={<Prep />} />
             <Route path="/mila/gerichte" element={<Gerichte />} />
             <Route path="/mila/gerichte/neu" element={<RezeptForm />} />
-            <Route path="/mila/gerichte/:id" element={<Gericht />} />
+            <Route path="/mila/gerichte/:id" element={<GerichtZuKarte />} />
+            <Route path="/mila/rezept/:id" element={<Rezeptkarte />} />
             <Route path="/mila/gerichte/:id/bearbeiten" element={<RezeptForm />} />
             <Route path="/mila/kochen/:id" element={<Kochen />} />
             <Route path="*" element={<Navigate to="/mila/woche" replace />} />
@@ -94,4 +95,10 @@ export function MilaPage({ children }: { children: ReactNode }) {
       {ready ? children : <span className="hint">Einen Moment …</span>}
     </div>
   )
+}
+
+/** Alte Adresse der Detailseite: führt jetzt auf die Rezeptkarte */
+function GerichtZuKarte() {
+  const { id } = useParams()
+  return <Navigate to={`/mila/rezept/${id}`} replace state={{ from: 'fundus' }} />
 }
