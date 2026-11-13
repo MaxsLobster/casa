@@ -1,9 +1,17 @@
 {
-  "order": ["obst_gemuese", "kuehl", "trocken", "getraenke", "sonstiges"],
+  "order": [
+    "obst_gemuese",
+    "kuehl",
+    "fleisch_fisch",
+    "trocken",
+    "getraenke",
+    "sonstiges"
+  ],
   "labels": {
     "obst_gemuese": "Obst & Gemüse",
     "kuehl": "Kühlregal",
-    "trocken": "Trocken & Vorrat",
+    "fleisch_fisch": "Fleisch & Fisch",
+    "trocken": "Vorrat",
     "getraenke": "Getränke",
     "sonstiges": "Sonstiges"
   },
@@ -11,34 +19,131 @@
     {
       "cat": "trocken",
       "keywords": [
-        "tomatenmark", "passata", "kokosmilch", "brühe", "currypaste", "fischsauce",
-        "sojasauce", "chia", "haferflock", "flocken", "reis", "linse", "mehl",
-        "pasta", "spaghetti", "nudel", "pinienkern", "mandel", "olivenöl", "öl",
-        "essig", "dose", "gewürz", "paste", "zucker", "sirup", "honig", "bambus",
-        "palmzucker", "pulver", "brot", "toast", "cracker", "nüsse"
+        "tomatenmark",
+        "passata",
+        "kokosmilch",
+        "brühe",
+        "currypaste",
+        "fischsauce",
+        "sojasauce",
+        "chia",
+        "haferflock",
+        "flocken",
+        "reis",
+        "linse",
+        "mehl",
+        "pasta",
+        "spaghetti",
+        "nudel",
+        "pinienkern",
+        "mandel",
+        "olivenöl",
+        "öl",
+        "essig",
+        "dose",
+        "gewürz",
+        "paste",
+        "zucker",
+        "sirup",
+        "honig",
+        "bambus",
+        "palmzucker",
+        "pulver",
+        "brot",
+        "toast",
+        "cracker",
+        "nüsse"
+      ]
+    },
+    {
+      "cat": "fleisch_fisch",
+      "keywords": [
+        "hack",
+        "rind",
+        "schwein",
+        "hähnch",
+        "lamm",
+        "fisch",
+        "wurst",
+        "speck",
+        "garnele",
+        "lachs",
+        "steak",
+        "pute",
+        "chorizo",
+        "salami",
+        "schinken",
+        "chashu"
       ]
     },
     {
       "cat": "kuehl",
       "keywords": [
-        "hack", "rind", "schwein", "hähnch", "lamm", "fisch", "wurst", "speck",
-        "garnele", "milch", "joghurt", "butter", "käse", "parmesan", "feta",
-        "sahne", "quark", "frischkäse", "eier", "creme", "mozzarella", "ricotta"
+        "milch",
+        "joghurt",
+        "butter",
+        "käse",
+        "parmesan",
+        "feta",
+        "sahne",
+        "quark",
+        "frischkäse",
+        "eier",
+        "creme",
+        "mozzarella",
+        "ricotta"
       ]
     },
     {
       "cat": "getraenke",
-      "keywords": ["wein", "bier", "limonad", "cola", "prosecco"]
+      "keywords": [
+        "wein",
+        "bier",
+        "limonad",
+        "cola",
+        "prosecco"
+      ]
     },
     {
       "cat": "obst_gemuese",
       "keywords": [
-        "karotte", "sellerie", "zwiebel", "knoblauch", "paprika", "tomate",
-        "basilikum", "petersilie", "koriander", "thymian", "rosmarin", "zitrone",
-        "limette", "ingwer", "spargel", "aubergine", "kartoffel", "bärlauch",
-        "beere", "banane", "kräuter", "zuckerschot", "apfel", "birne", "salat",
-        "gurk", "lauch", "schalotte", "peperoncino", "chili", "kapern", "minze",
-        "dill", "avocado", "kresse", "zweige", "topping"
+        "karotte",
+        "sellerie",
+        "zwiebel",
+        "knoblauch",
+        "paprika",
+        "tomate",
+        "basilikum",
+        "petersilie",
+        "koriander",
+        "thymian",
+        "rosmarin",
+        "zitrone",
+        "limette",
+        "ingwer",
+        "spargel",
+        "aubergine",
+        "kartoffel",
+        "bärlauch",
+        "beere",
+        "banane",
+        "kräuter",
+        "zuckerschot",
+        "apfel",
+        "birne",
+        "salat",
+        "gurk",
+        "lauch",
+        "schalotte",
+        "peperoncino",
+        "chili",
+        "kapern",
+        "minze",
+        "dill",
+        "avocado",
+        "kresse",
+        "zweige",
+        "topping"
       ]
     }
   ]

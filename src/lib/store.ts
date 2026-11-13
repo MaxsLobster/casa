@@ -28,11 +28,25 @@ export class SupabaseStore implements Store {
   constructor(private db: SupabaseClient) {}
 
   async select<T extends TableName>(table: T, filter: Filter = {}): Promise<TableRow[T][]> {
-    let q = this.db.from(table).select('*')
-    for (const [k, v] of Object.entries(filter)) q = v === null ? q.is(k, null) : q.eq(k, v)
-    const { data, error } = await q
-    if (error) throw error
-    return (data ?? []) as TableRow[T][]
+    // Supabase liefert höchstens 1000 Zeilen pro Abfrage. Sind es genau so viele, seitenweise nach id holen
+    // (nicht jede Tabelle hat eine Spalte id, deshalb erst beim Überlauf sortieren).
+    const PAGE = 1000
+    const query = () => {
+      let q = this.db.from(table).select('*')
+      for (const [k, v] of Object.entries(filter)) q = v === null ? q.is(k, null) : q.eq(k, v)
+      return q
+    }
+    const first = await query().range(0, PAGE - 1)
+    if (first.error) throw first.error
+    if ((first.data ?? []).length < PAGE) return (first.data ?? []) as TableRow[T][]
+    const out: TableRow[T][] = []
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await query().order('id').range(from, from + PAGE - 1)
+      if (error) throw error
+      out.push(...((data ?? []) as TableRow[T][]))
+      if (!data || data.length < PAGE) break
+    }
+    return out
   }
 
   async insert<T extends TableName>(table: T, row: Partial<TableRow[T]>): Promise<TableRow[T]> {
