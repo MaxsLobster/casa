@@ -562,7 +562,7 @@ export interface MilaShoppingItem {
   created_at: string
 }
 
-export type MilaTableName = 'mila_recipes' | 'mila_ingredients' | 'mila_steps' | 'mila_week_days' | 'mila_shopping_items' | 'mila_prep_steps' | 'mila_settings' | 'mila_menus' | 'mila_votes' | 'mila_hausmischungen'
+export type MilaTableName = 'mila_recipes' | 'mila_ingredients' | 'mila_steps' | 'mila_week_days' | 'mila_shopping_items' | 'mila_prep_steps' | 'mila_settings' | 'mila_menus' | 'mila_votes' | 'mila_hausmischungen' | 'mila_week_plans' | 'mila_swipes' | 'mila_matches' | 'mila_plan_items' | 'mila_haltbarkeit_regeln'
 
 export interface MilaTableRow {
   mila_recipes: MilaRecipe
@@ -575,6 +575,11 @@ export interface MilaTableRow {
   mila_menus: MilaMenu
   mila_votes: MilaVote
   mila_hausmischungen: MilaBlend
+  mila_week_plans: MilaWeekPlan
+  mila_swipes: MilaSwipe
+  mila_matches: MilaMatch
+  mila_plan_items: MilaPlanItem
+  mila_haltbarkeit_regeln: MilaShelfRule
 }
 
 // ---------------------------------------------------------------------------
@@ -697,4 +702,81 @@ export type FreizeitTableName = 'freizeit_radar' | 'freizeit_tipps'
 export interface FreizeitTableRow {
   freizeit_radar: FreizeitRadar
   freizeit_tipps: FreizeitTipp
+}
+
+// ---------------------------------------------------------------------------
+// Mila · Wochenwahl (Anzahl, Wischen, Treffer, Kombo, Heute dran)
+// ---------------------------------------------------------------------------
+
+export type MilaPlanStatus = 'wischen' | 'kombo' | 'aktiv' | 'fertig'
+export interface MilaDeckCard {
+  recipe_id: Id
+  meal: MealSlot
+}
+export interface MilaWeekPlan {
+  id: Id
+  household_id: Id
+  week: string // Montag
+  abend_anzahl: number
+  mittag_anzahl: number
+  deadline: string
+  status: MilaPlanStatus
+  deck: MilaDeckCard[]
+  deck_built_at: string | null
+  beide_fertig_at: string | null
+  kombo_at: string | null
+  adopted_at: string | null
+  adopted_by: Id | null
+  einkauf_tag: string | null
+  prep_tag: string | null
+  prep_done: string[]
+  created_at: string
+  updated_at: string
+}
+export type MilaWahl = 'ja' | 'nein' | 'stern'
+export interface MilaSwipe {
+  id: Id
+  household_id: Id
+  plan_id: Id
+  member_id: Id
+  recipe_id: Id
+  wahl: MilaWahl
+  created_at: string
+}
+export interface MilaMatch {
+  id: Id
+  household_id: Id
+  plan_id: Id
+  recipe_id: Id
+  created_at: string
+}
+export type MilaItemSlot = 'abend' | 'mittag' | 'reste'
+export type MilaItemGroup = 'zuerst' | 'prep' | 'schluss'
+export type MilaItemArt = 'joker' | 'treffer' | 'halb' | 'offen' | 'dazu'
+export type MilaItemStatus = 'offen' | 'gekocht' | 'eingefroren' | 'getauscht' | 'reserve'
+export interface MilaPlanItem {
+  id: Id
+  household_id: Id
+  plan_id: Id
+  recipe_id: Id
+  slot: MilaItemSlot
+  gruppe: MilaItemGroup
+  position: number
+  art: MilaItemArt
+  portionen: number
+  variante: MilaVariantKey
+  status: MilaItemStatus
+  frist_bis: string | null
+  parent_id: Id | null
+  geplant_am: string | null
+  gekocht_am: string | null
+  created_at: string
+  updated_at: string
+}
+export interface MilaShelfRule {
+  id: Id
+  household_id: Id
+  stichwort: string
+  tage: number | null // null = unbegrenzt
+  gruppe: 'kurz' | 'mittel' | 'lang' | 'vorrat'
 }

@@ -22,14 +22,14 @@ export type Rhythm = Omit<MilaSettings, 'household_id' | 'updated_at'>
 export const DEFAULT_RHYTHM: Rhythm = {
   lunches: 3,
   dinners: 3,
-  card_weekday: 1,
+  card_weekday: 5,
   card_time: '00:00',
   close_weekday: 7,
   close_time: '20:00',
   adopt_weekday: 6,
   adopt_time: '14:00',
-  shop_weekday: 6,
-  prep_weekday: 7,
+  shop_weekday: 1,
+  prep_weekday: 1,
   prep_time: '17:00',
 }
 
