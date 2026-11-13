@@ -322,7 +322,39 @@ export interface TableRow extends MilaTableRow, MedTableRow, FreizeitTableRow {
 // ---------------------------------------------------------------------------
 
 export type MilaCategory = 'schnell' | 'mealprep' | 'wochenende' | 'grill' | 'fruehstueck'
-export type ShopCategory = 'obst_gemuese' | 'kuehl' | 'trocken' | 'getraenke' | 'sonstiges'
+export type ShopCategory = 'obst_gemuese' | 'kuehl' | 'fleisch_fisch' | 'trocken' | 'getraenke' | 'sonstiges'
+
+export interface MilaNutrition {
+  kcal?: number
+  kj?: number
+  protein_g?: number
+  fett_g?: number
+  ges_fett_g?: number
+  kh_g?: number
+  zucker_g?: number
+  salz_g?: number
+  ballaststoffe_g?: number
+}
+export interface MilaVariant {
+  tausch: { statt: string; nimm: string }[]
+  kcal_geschaetzt?: number | null
+  protein_g_geschaetzt?: number | null
+}
+export type MilaVariantKey = 'original' | 'light' | 'protein'
+
+export interface MilaBlend {
+  id: Id
+  household_id: Id
+  key: string
+  name: string
+  ersetzt: string | null
+  glas_rezept: { zutat: string; menge: number | null; einheit: string | null }[]
+  portion: string | null
+  haltbar: string | null
+  scharf: boolean
+  geschaetzt: boolean
+  hinweis: string | null
+}
 
 export interface MilaRecipe {
   id: Id
@@ -342,6 +374,24 @@ export interface MilaRecipe {
   valerie_mag: boolean
   cook_double: boolean // „doppelt → Mittag“
   prep_box: boolean // komplett vorbereitbar
+  // Fundus (HelloFresh-Import); bei eigenen Gerichten leer
+  hf_id?: string | null
+  source_url?: string | null
+  subtitle?: string | null
+  photo_path?: string | null // Pfad im Speicher „mila-fotos“
+  difficulty?: 'leicht' | 'mittel' | 'aufwendig' | null
+  tags?: string[]
+  cuisine?: string[]
+  allergens?: string[]
+  traces?: string[]
+  utensils?: string[]
+  optional_items?: string[]
+  nutrition?: MilaNutrition | null
+  prep_info?: { tauglich: boolean; modus?: string; satz?: string; haltbar_tage?: number | null } | null
+  device_tips?: { thermomix?: string | null; airfryer?: string | null } | null
+  variants?: { light: MilaVariant | null; protein: MilaVariant | null } | null
+  kit?: unknown
+  anna?: { paprika_ersetzt?: boolean; hinweis?: string | null } | null
   created_by: Id | null
   updated_by: Id | null
   created_at: string
@@ -453,6 +503,10 @@ export interface MilaIngredient {
   unit: string
   pantry_basic: boolean
   shop_category: ShopCategory
+  hint?: string | null
+  hf_original?: string | null
+  blend_key?: string | null
+  anna_swap?: boolean
 }
 
 export interface MilaStep {
@@ -469,6 +523,9 @@ export interface MilaStep {
   tm_speed: string | null
   tm_reverse: boolean
   ingredient_ids: Id[]
+  variant?: 'original' | 'thermomix'
+  photo_path?: string | null
+  in_prep?: boolean
 }
 
 export interface MilaWeekDay {
@@ -481,6 +538,7 @@ export interface MilaWeekDay {
   meal: MealSlot
   is_leftover: boolean
   servings: number | null
+  variant?: MilaVariantKey
   created_by: Id | null
   updated_by: Id | null
   created_at: string
@@ -504,7 +562,7 @@ export interface MilaShoppingItem {
   created_at: string
 }
 
-export type MilaTableName = 'mila_recipes' | 'mila_ingredients' | 'mila_steps' | 'mila_week_days' | 'mila_shopping_items' | 'mila_prep_steps' | 'mila_settings' | 'mila_menus' | 'mila_votes'
+export type MilaTableName = 'mila_recipes' | 'mila_ingredients' | 'mila_steps' | 'mila_week_days' | 'mila_shopping_items' | 'mila_prep_steps' | 'mila_settings' | 'mila_menus' | 'mila_votes' | 'mila_hausmischungen'
 
 export interface MilaTableRow {
   mila_recipes: MilaRecipe
@@ -516,6 +574,7 @@ export interface MilaTableRow {
   mila_settings: MilaSettings
   mila_menus: MilaMenu
   mila_votes: MilaVote
+  mila_hausmischungen: MilaBlend
 }
 
 // ---------------------------------------------------------------------------

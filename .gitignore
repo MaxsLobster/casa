@@ -8,3 +8,6 @@ dev-dist
 supabase/.branches
 supabase/.temp
 supabase/.env
+
+# Mila-Fundus: Rezeptdaten bleiben außerhalb des Repos
+mila-fundus*.json
