@@ -1,4 +1,4 @@
-// Mila · Gerichte (Fundus): Filter, Kachelraster, Neues Rezept
+// Mila · Gerichte (Fundus): Filter, Kachelraster mit Foto, Neues Rezept. Antippen öffnet die Rezeptkarte.
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MilaPage } from './Mila'
@@ -8,37 +8,45 @@ import { tileKind } from './portions'
 import { PlusIcon, TileIcon } from './icons'
 import type { MilaRecipe } from '../lib/types'
 
-type Filter = 'alle' | 'schnell' | 'tm' | 'prep' | 'grill'
+type Filter = 'alle' | 'schnell' | 'tm' | 'prep' | 'mittag' | 'grill'
 const FILTERS: { id: Filter; label: string }[] = [
   { id: 'alle', label: 'Alle' },
   { id: 'schnell', label: 'Schnell' },
   { id: 'tm', label: 'Thermomix' },
   { id: 'prep', label: 'Meal-Prep' },
+  { id: 'mittag', label: 'Mittag' },
   { id: 'grill', label: 'Grill' },
 ]
 
 function matches(r: MilaRecipe, f: Filter) {
   if (f === 'alle') return true
   if (f === 'tm') return isThermomix(r.devices)
-  if (f === 'prep') return r.category === 'mealprep'
+  if (f === 'prep') return r.prep_box || r.category === 'mealprep'
+  if (f === 'mittag') return r.meal === 'mittag' || r.meal === 'beides'
   if (f === 'grill') return r.category === 'grill' || r.devices.includes('bge')
-  return r.category === 'schnell'
+  return (r.time_min ?? 99) <= 25
 }
 
+const mealBadge = (r: MilaRecipe) => (r.meal === 'mittag' ? 'Mittag' : r.meal === 'beides' ? 'Mittag & Abend' : 'Abend')
+
 export function Gerichte() {
-  const { recipes } = useMila()
+  const { recipes, photoUrl } = useMila()
   const [filter, setFilter] = useState<Filter>('alle')
   const list = recipes.filter((r) => matches(r, filter)).sort((a, b) => a.name.localeCompare(b.name, 'de'))
+  const shown = FILTERS.filter((f) => f.id !== 'grill' || recipes.some((r) => matches(r, 'grill')))
+  const fromHf = recipes.filter((r) => r.hf_id).length
 
   return (
     <MilaPage>
       <header className="stack stack--tight">
         <span className="m-title" style={{ fontSize: 41.5, lineHeight: 0.95 }}>Unsere Gerichte</span>
-        <span className="m-hint" style={{ fontSize: 12.5 }}>{filter === 'alle' ? `${recipes.length} Gerichte` : `${list.length} von ${recipes.length}`}</span>
+        <span className="m-hint" style={{ fontSize: 12.5 }}>
+          {filter === 'alle' ? `${recipes.length} Gerichte${fromHf ? `, ${fromHf} aus HelloFresh` : ''}` : `${list.length} von ${recipes.length}`} · Tipp öffnet die Rezeptkarte
+        </span>
       </header>
 
       <div className="m-chips" role="radiogroup" aria-label="Filter">
-        {FILTERS.map((f) => (
+        {shown.map((f) => (
           <button key={f.id} type="button" role="radio" aria-checked={filter === f.id} className={'m-chip' + (filter === f.id ? ' m-chip--on' : '')} onClick={() => setFilter(f.id)}>
             {f.label}
           </button>
@@ -56,15 +64,26 @@ export function Gerichte() {
       <div className="m-grid">
         {list.map((r) => {
           const kind = tileKind(r)
-          const meta = [minutes(r.time_min), isThermomix(r.devices) ? 'Thermomix' : null].filter(Boolean).join(' · ')
+          const n = r.nutrition
+          const meta = [minutes(r.time_min), n?.kcal ? `${Math.round(n.kcal)} kcal` : null, n?.protein_g ? `${Math.round(n.protein_g)} g P` : null].filter(Boolean).join(' · ')
+          const marks = [r.prep_box ? 'Prep' : null, isThermomix(r.devices) ? 'TM' : null, r.anna?.paprika_ersetzt ? 'Anna ✓' : null].filter(Boolean) as string[]
+          const src = photoUrl(r.photo_path)
           return (
-            <Link key={r.id} to={`/mila/gerichte/${r.id}`} className="m-tile">
-              <span className={'m-tile__pic m-tile__pic--' + kind}>
-                <TileIcon kind={kind} />
+            <Link key={r.id} to={`/mila/rezept/${r.id}`} state={{ from: 'fundus' }} className="m-tile">
+              <span className={'m-tile__pic' + (src ? ' m-tile__pic--photo' : ' m-tile__pic--' + kind)}>
+                {src ? <img src={src} alt="" loading="lazy" /> : <TileIcon kind={kind} />}
+                {r.hf_id && <span className={'m-tile__badge' + (r.meal === 'mittag' ? ' m-tile__badge--mittag' : '')}>{mealBadge(r)}</span>}
               </span>
               <span className="m-tile__text">
                 <span className="m-tile__name">{r.name}</span>
                 {meta && <span className="m-tile__meta">{meta}</span>}
+                {marks.length > 0 && (
+                  <span className="m-tile__marks">
+                    {marks.map((m) => (
+                      <span key={m}>{m}</span>
+                    ))}
+                  </span>
+                )}
               </span>
             </Link>
           )

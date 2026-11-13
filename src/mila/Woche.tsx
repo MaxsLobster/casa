@@ -1,5 +1,5 @@
 // Mila · Woche: nach der Aufdeckung die Treffer und die verteilte Woche (Ziehen, „Woche übernehmen“),
-// sonst die Woche mit Mittag und Abend. Antippen: kochen, Rezept, tauschen, leeren.
+// sonst die Woche mit Mittag und Abend. Antippen öffnet die Rezeptkarte, × nimmt das Gericht heraus.
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { MilaPage } from './Mila'
@@ -10,7 +10,7 @@ import { deadline, openMenu } from './menu-view'
 import { weekKey } from './week-list'
 import { Sheet } from '../components/ui'
 import { useCasa } from '../state/HouseholdContext'
-import type { MealSlot, MilaMenu, MilaPlan, MilaRecipe, MilaWeekDay } from '../lib/types'
+import type { MealSlot, MilaMenu, MilaPlan, MilaRecipe } from '../lib/types'
 import { addDays, fromISO, isoWeek, startOfWeek, today, weekDates, weekRange, weekdayShort } from '../lib/dates'
 
 export function Woche() {
@@ -67,7 +67,6 @@ function WeekView() {
   })
   const [place, setPlace] = useState<{ recipeId: string; meal: MealSlot } | null>(null)
   const [listed, setListed] = useState(false)
-  const [open, setOpen] = useState<{ date: string; meal: MealSlot } | null>(null)
   const [pick, setPick] = useState<{ date: string; meal: MealSlot } | null>(null)
 
   // Entfernt: kurz „Rückgängig“ anbieten
@@ -90,13 +89,6 @@ function WeekView() {
   const day = (date: string, meal: MealSlot) => weekDays.find((w) => w.date === date && w.meal === meal) ?? null
   const iVoted = menu?.done_by.includes(me.id)
 
-  /** Kochen: Portionen inkl. Reste für den nächsten Mittag */
-  function cookPortions(w: MilaWeekDay): number {
-    const base = w.servings ?? recipeById(w.recipe_id)?.portions ?? 2
-    const left = weekDays.find((x) => x.is_leftover && x.recipe_id === w.recipe_id && x.date === addDays(w.date, 1))
-    return base + (left?.servings ?? 0)
-  }
-
   // Treffer der gezeigten Woche und was davon schon eingetragen ist
   const weekMenu = menus.find((m) => m.week === monday && m.revealed_at && m.plan) ?? null
   const inWeek = weekDays.filter((w) => w.recipe_id && dates.includes(w.date))
@@ -110,8 +102,6 @@ function WeekView() {
     setListed(true)
   }
 
-  const openRow = open ? day(open.date, open.meal) : null
-  const openRecipe = recipeById(openRow?.recipe_id)
 
   return (
     <MilaPage>
@@ -159,7 +149,7 @@ function WeekView() {
                         </>
                       )}
                     </span>
-                    <button type="button" className="m-meal__row" onClick={() => (w ? setOpen({ date, meal }) : setPick({ date, meal }))}>
+                    <button type="button" className="m-meal__row" onClick={() => (w?.recipe_id ? nav(`/mila/rezept/${w.recipe_id}?tag=${date}&m=${meal}`) : setPick({ date, meal }))}>
                       <span className="m-day__mid">
                         <span className={'m-day__mode m-day__mode--' + (meal === 'abend' ? 'navy' : 'gold')}>{meal === 'abend' ? 'Abend' : 'Mittag'}</span>
                         {r ? (
@@ -189,25 +179,6 @@ function WeekView() {
           )
         })}
       </div>
-
-      {open && openRow && openRecipe && (
-        <Sheet onClose={() => setOpen(null)} title={openRecipe.name}>
-          <div className="stack" style={{ gap: 12 }}>
-            <span className="m-sub">{weekdayShort(open.date)} {fromISO(open.date).getDate()}.{fromISO(open.date).getMonth() + 1}. · {open.meal === 'abend' ? 'Abend' : 'Mittag'}</span>
-            <span className="m-title" style={{ fontSize: 31 }}>{openRecipe.name}</span>
-            {!openRow.is_leftover && (
-              <button type="button" className="m-bar__main" onClick={() => nav(`/mila/kochen/${openRecipe.id}?p=${cookPortions(openRow)}`)}>
-                Kochen · {cookPortions(openRow)} Portionen
-              </button>
-            )}
-            <div className="m-day__actions">
-              <Link to={`/mila/gerichte/${openRecipe.id}`} className="m-day__link m-day__link--gold">Rezept ansehen ›</Link>
-              <button type="button" className="m-day__link" onClick={() => { setPick(open); setOpen(null) }}>Anderes Gericht</button>
-              <button type="button" className="m-day__link m-day__link--quiet" onClick={() => { void remove(open.date, open.meal); setOpen(null) }}>Entfernen</button>
-            </div>
-          </div>
-        </Sheet>
-      )}
 
       {undo && (
         <div className={'m-undo' + (inWeek.length > 0 ? ' m-undo--bar' : '')} role="status">

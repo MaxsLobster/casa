@@ -359,7 +359,7 @@ export function Woche() {
                     )
                   })}
                   {(() => {
-                    // Mila: Gericht beim Mittag und Abend, Antippen öffnet den Kochmodus
+                    // Mila: Gericht beim Mittag und Abend, Antippen öffnet die Rezeptkarte
                     const m = mealsOn(milaDays, r.date)
                     return (['mittag', 'abend'] as const).map((meal) => {
                       const w = m[meal]
@@ -367,7 +367,7 @@ export function Woche() {
                       if (!w || !rec) return null
                       const text = meal === 'mittag' ? (w.is_leftover ? `Reste vom ${shortName(rec.name)}` : `${rec.name} · aus der Box`) : rec.name
                       return (
-                        <button type="button" key={'mila' + meal} className="day__line" onClick={() => nav(`/mila/kochen/${rec.id}${w.servings ? `?p=${w.servings}` : ''}`)}>
+                        <button type="button" key={'mila' + meal} className="day__line" onClick={() => nav(`/mila/rezept/${rec.id}?tag=${r.date}&m=${meal}`)}>
                           <span className="label label--small">{meal === 'mittag' ? 'Mittag' : 'Gericht'}</span>
                           <span className="hand">{text}</span>
                         </button>

@@ -1,6 +1,6 @@
 // Mila · Wochenkarte: jeder wählt für sich, anonym. ✕ nein · ✓ ja · ★ unbedingt (1 Joker pro Karte).
 import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { MilaPage } from './Mila'
 import { useMila } from './MilaContext'
 import { cardLabel, cardBlurb, deadline, openMenu } from './menu-view'
@@ -147,7 +147,8 @@ function Voting({ menu }: { menu: MilaMenu }) {
 function SwipeCard({ recipe, last, jokerUsed, onVote }: { recipe: MilaRecipe; last: string; jokerUsed: boolean; onVote: (k: MilaVoteKind) => void }) {
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null)
   const [out, setOut] = useState<MilaVoteKind | null>(null)
-  const start = useRef<{ x: number; y: number; id: number } | null>(null)
+  const start = useRef<{ x: number; y: number; id: number; t: number } | null>(null)
+  const nav = useNavigate()
 
   function fling(k: MilaVoteKind) {
     if (out) return
@@ -157,17 +158,23 @@ function SwipeCard({ recipe, last, jokerUsed, onVote }: { recipe: MilaRecipe; la
   }
   function down(e: RPointerEvent<HTMLDivElement>) {
     if ((e.target as HTMLElement).closest('button')) return
-    start.current = { x: e.clientX, y: e.clientY, id: e.pointerId }
+    start.current = { x: e.clientX, y: e.clientY, id: e.pointerId, t: Date.now() }
     e.currentTarget.setPointerCapture(e.pointerId)
   }
   function move(e: RPointerEvent<HTMLDivElement>) {
     if (!start.current) return
     setDrag({ x: e.clientX - start.current.x, y: e.clientY - start.current.y })
   }
-  function up() {
+  function up(e: RPointerEvent<HTMLDivElement>) {
     const d = drag
+    const s0 = start.current
     start.current = null
     setDrag(null)
+    // Tipp (kaum bewegt, kurz): Rezeptkarte öffnen. Wischen zählt erst ab deutlicher Bewegung.
+    if (s0 && e.type === 'pointerup' && Math.hypot(e.clientX - s0.x, e.clientY - s0.y) < 8 && Date.now() - s0.t < 450) {
+      nav(`/mila/rezept/${recipe.id}`)
+      return
+    }
     if (!d) return
     if (d.y < -SWIPE && Math.abs(d.y) > Math.abs(d.x) && !jokerUsed) fling('joker')
     else if (d.x > SWIPE) fling('ja')

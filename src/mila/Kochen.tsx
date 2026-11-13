@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMila } from './MilaContext'
 import { scaleAmount } from './portions'
 import { formatAmount } from './shopping'
+import { variantShopping } from './recipe-view'
 import type { MilaIngredient, MilaStep } from '../lib/types'
 
 
@@ -30,9 +31,11 @@ export function Kochen() {
 
   const steps = useMemo<CookStep[]>(() => {
     if (!recipe) return []
-    const ings = ingredientsOf(recipe.id)
+    // Variante (Light/Protein) und Schritt-Version (Thermomix) kommen von der Rezeptkarte bzw. der Woche
+    const v = params.get('v')
+    const ings = v === 'light' || v === 'protein' ? variantShopping(recipe, ingredientsOf(recipe.id), v) : ingredientsOf(recipe.id)
     const byId = new Map(ings.map((i) => [i.id, i]))
-    const real = stepsOf(recipe.id)
+    const real = stepsOf(recipe.id, params.get('s') === 'tm' ? 'thermomix' : 'original')
     const prep: CookStep = {
       num: 0,
       title: 'Bereitlegen',
@@ -58,7 +61,7 @@ export function Kochen() {
       prep: false,
     }))
     return [prep, ...rest]
-  }, [recipe, ingredientsOf, stepsOf])
+  }, [recipe, ingredientsOf, stepsOf, params])
 
   const portions = Math.max(1, Number(params.get('p')) || recipe?.portions || 1)
   const factor = recipe ? portions / Math.max(1, recipe.portions) : 1

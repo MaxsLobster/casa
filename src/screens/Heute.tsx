@@ -234,20 +234,20 @@ export function Heute() {
   const meals = mealsOn(casa.milaDays, date)
   const dinner = meals.abend ? casa.milaRecipe(meals.abend.recipe_id) : null
   const lunch = meals.mittag ? casa.milaRecipe(meals.mittag.recipe_id) : null
-  const cookLink = (id: string, servings: number | null) => `/mila/kochen/${id}${servings ? `?p=${servings}` : ''}`
+  // Antippen öffnet die Rezeptkarte dieses Tages (Kochen geht von dort)
+  const cardLink = (id: string, meal: 'mittag' | 'abend') => `/mila/rezept/${id}?tag=${date}&m=${meal}`
   if (lunch && meals.mittag && nowH < 14) {
     const left = meals.mittag.is_leftover
-    rows.push({ key: 'mm', sort: 12, time: null, kind: 'plan', title: left ? `Mittag: Reste vom ${shortName(lunch.name)}` : `Mittag: ${lunch.name}`, sub: left ? 'aufwärmen' : 'aus der Box', link: cookLink(lunch.id, meals.mittag.servings) })
+    rows.push({ key: 'mm', sort: 12, time: null, kind: 'plan', title: left ? `Mittag: Reste vom ${shortName(lunch.name)}` : `Mittag: ${lunch.name}`, sub: left ? 'aufwärmen' : 'aus der Box', link: cardLink(lunch.id, 'mittag') })
   }
-  const dinnerPortions = meals.abend ? (meals.abend.servings ?? 0) + (casa.milaDays.find((x) => x.is_leftover && x.recipe_id === meals.abend!.recipe_id && x.date === addDays(date, 1))?.servings ?? 0) : 0
   const es = day.abend_essen
   if (es?.value && !es.is_open && nowH < 19.5) {
     const person = isPersonName(es.value, members, people)
     const who = person ? cap(verb(es.value, voice, 'kochst', 'kocht')) : `Essen ${es.value}`
-    if (dinner) rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: `${who}: ${dinner.name}`, sub: ['Abend', minutes(dinner.time_min)].filter(Boolean).join(' · '), link: cookLink(dinner.id, dinnerPortions || null) })
+    if (dinner) rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: `${who}: ${dinner.name}`, sub: ['Abend', minutes(dinner.time_min)].filter(Boolean).join(' · '), link: cardLink(dinner.id, 'abend') })
     else rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: who, sub: 'Abend', slots: present(['abend_essen', 'abend_bett']) })
   } else if (dinner && nowH < 19.5) {
-    rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: dinner.name, sub: ['Abend', minutes(dinner.time_min), 'wer kocht? offen'].filter(Boolean).join(' · '), link: cookLink(dinner.id, dinnerPortions || null) })
+    rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: dinner.name, sub: ['Abend', minutes(dinner.time_min), 'wer kocht? offen'].filter(Boolean).join(' · '), link: cardLink(dinner.id, 'abend') })
   }
   const bt = day.abend_bett
   if (bt?.value && !bt.is_open && nowH < 20.5) rows.push({ key: 'bt', sort: 19.5, time: null, kind: 'plan', title: cap(verb(bt.value, voice, 'bringst ins Bett', 'bringt ins Bett')), sub: 'Abend', slots: present(['abend_essen', 'abend_bett']) })
