@@ -21,6 +21,7 @@ import { MwfIcon } from '../mwf/MwfIcon'
 import { isMilaEvent, mealsOn } from '../mila/casa-link'
 import { minutes } from '../mila/rhythm'
 import { alarmOpen } from '../lib/freizeit'
+import { heuteDran } from '../mila/wahl'
 import { shortName } from '../mila/engine'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
@@ -248,7 +249,11 @@ export function Heute() {
     else rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: who, sub: 'Abend', slots: present(['abend_essen', 'abend_bett']) })
   } else if (dinner && nowH < 19.5) {
     rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: dinner.name, sub: ['Abend', minutes(dinner.time_min), 'wer kocht? offen'].filter(Boolean).join(' · '), link: cardLink(dinner.id, 'abend') })
-  }
+  }  // Wochenwahl: noch nichts für heute Abend eingetragen → Milas Vorschlag aus der Kombo
+  const suggest = !dinner && isToday && nowH < 19.5 ? heuteDran(casa.milaPlanItems, date).abend : null
+  const suggestR = suggest && suggest.status === 'offen' ? casa.milaRecipe(suggest.recipe_id) : null
+  if (suggestR) rows.push({ key: 'ms', sort: 18.5, time: null, kind: 'plan', title: `Mila schlägt vor: ${suggestR.name}`, sub: ['Abend', minutes(suggestR.time_min)].filter(Boolean).join(' · '), link: '/mila/heute' })
+
   const bt = day.abend_bett
   if (bt?.value && !bt.is_open && nowH < 20.5) rows.push({ key: 'bt', sort: 19.5, time: null, kind: 'plan', title: cap(verb(bt.value, voice, 'bringst ins Bett', 'bringt ins Bett')), sub: 'Abend', slots: present(['abend_essen', 'abend_bett']) })
   const we = day.wochenende
@@ -308,7 +313,7 @@ export function Heute() {
       <Link to="/einstellungen" className="heute__gear" aria-label="Einstellungen">
         <GearIcon />
       </Link>
-      <Link to="/mila/woche" className="heute__gear heute__pot" aria-label="Mila, der Essensplaner">
+      <Link to="/mila/heute" className="heute__gear heute__pot" aria-label="Mila, der Essensplaner">
         <PotIcon />
       </Link>
       <Link to="/freizeit" className="heute__gear heute__frei" aria-label="Freizeit">

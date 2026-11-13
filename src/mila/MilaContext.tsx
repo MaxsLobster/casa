@@ -10,9 +10,10 @@ import type {
 import { categorize } from './shopping'
 import { DEMO_MAX_ID } from '../lib/seed'
 import { addDays, startOfWeek, toISO } from '../lib/dates'
-import { DEFAULT_RHYTHM, cardWeek, computePlan, generateCard, menuTimes, shoppingFor, type LocalStamp, type Rhythm, type WeekCtx } from './engine'
+import { DEFAULT_RHYTHM, shoppingFor, type LocalStamp, type Rhythm, type WeekCtx } from './engine'
 import { weekKey } from './week-list'
 import { variantShopping } from './recipe-view'
+import { useWahl, type Wahl } from './useWahl'
 
 export interface Mila {
   ready: boolean
@@ -42,6 +43,7 @@ export interface Mila {
   photoUrl(path: string | null | undefined): string | null
   prepStepsOf(recipeId: string): MilaPrepStep[]
   reload(table?: MilaTableName): Promise<void>
+  wahl: Wahl
 
   /** Rezepte: neu anlegen oder (mit id) ersetzen; Zutaten, Schritte und Prep-Schritte kommen komplett mit */
   saveRecipe(recipe: RecipeInput, ingredients: IngredientInput[], steps: StepInput[], prep: PrepInput[], id?: string): Promise<string>
@@ -112,8 +114,6 @@ export function withDefaults(r: MilaRecipe): MilaRecipe {
 export function nowStamp(d = new Date()): LocalStamp {
   return `${toISO(d)}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
-/** Lokaler Zeitpunkt → ISO (die App läuft in Berlin) */
-const toIso = (s: LocalStamp) => new Date(s).toISOString()
 
 /** Demo-Modus: die 30 Rezepte einmalig in den Browser legen (nur ein Lauf, auch wenn React im Dev-Modus doppelt lädt) */
 let seeding: Promise<void> | null = null
@@ -139,8 +139,6 @@ async function seedDemoOnce(store: Store, hid: string) {
   await store.insertMany('mila_steps', steps)
 }
 
-/** Karte nur einmal anlegen, auch wenn zwei Effekte gleichzeitig laufen */
-let creating: string | null = null
 
 export function MilaProvider({ children }: { children: ReactNode }) {
   const casa = useCasa()
@@ -246,17 +244,23 @@ export function MilaProvider({ children }: { children: ReactNode }) {
   const stepsByRecipe = useMemo(() => group(steps), [steps])
   const prepByRecipe = useMemo(() => group(prepSteps), [prepSteps])
 
-  // ---------- Takt im Hintergrund: Karte anlegen, nach Frist aufdecken, Verteilung rechnen, automatisch übernehmen ----------
-  const tickRef = useRef<() => Promise<void>>(async () => {})
-  useEffect(() => {
-    if (!ready) return
-    tickRef.current()
-    const t = setInterval(() => tickRef.current(), 30_000)
-    return () => clearInterval(t)
-  }, [ready])
-  useEffect(() => {
-    if (ready) tickRef.current()
-  }, [ready, menus, votes])
+  // ---------- Wochenwahl: Pläne, Wischen, Kombo, Heute dran ----------
+  const wahl = useWahl({
+    store,
+    hid: hid ?? '',
+    me: me ?? casa.members[0],
+    members: casa.members,
+    recipes,
+    recipeById: (id) => (id ? (byId.get(id) ?? null) : null),
+    ingredientsOf: (id) => ingByRecipe.get(id) ?? [],
+    weekDays,
+    items,
+    rhythm,
+    ready,
+    setError,
+    reloadMila: async (t) => loadRef.current(t),
+    reloadCasa: () => void casa.reloadMila(),
+  })
 
   if (!me || !hid) return null
 
@@ -480,50 +484,8 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     await loadRef.current('mila_settings')
   }
 
-  // Takt: was gerade fällig ist
-  tickRef.current = async () => {
-    try {
-      const now = nowStamp()
-      // 1. Karte für die nächste Woche
-      const wk = cardWeek(now, rhythm)
-      if (wk && !menus.some((m) => m.week === wk) && creating !== wk && recipes.length) {
-        creating = wk
-        try {
-          const t = menuTimes(wk, rhythm)
-          const fresh = await store.select('mila_menus', { household_id: hid, week: wk })
-          if (!fresh.length) {
-            const card = generateCard({ week: wk, recipes, weekDays, votes, rhythm })
-            await store.insert('mila_menus', { household_id: hid, week: wk, ...card, opens_at: toIso(t.opens), closes_at: toIso(t.closes), adopt_at: toIso(t.adopt), done_by: [], revealed_at: null, plan: null, adopted_at: null, adopted_by: null, prep_done: [], created_by: me.id })
-          }
-          await loadRef.current('mila_menus')
-        } finally {
-          creating = null
-        }
-        return
-      }
-      const iso = new Date().toISOString()
-      const past = (x: string) => new Date(x).getTime() <= Date.now()
-      for (const m of menus) {
-        if (m.week < addDays(toISO(new Date()), -7)) continue
-        // 2. Frist vorbei: aufdecken
-        if (!m.revealed_at && past(m.closes_at)) {
-          await store.claim('mila_menus', { id: m.id, revealed_at: null }, { revealed_at: iso })
-          await Promise.all([loadRef.current('mila_menus'), loadRef.current('mila_votes')])
-          return
-        }
-        // 3. Aufgedeckt: Verteilung rechnen (jetzt sind alle Stimmen sichtbar)
-        if (m.revealed_at && !m.plan) {
-          const all = await store.select('mila_votes', { menu_id: m.id })
-          const plan = computePlan(m, all, recipes, rhythm, ctx)
-          await store.claim('mila_menus', { id: m.id, plan: null }, { plan })
-          await loadRef.current('mila_menus')
-          return
-        }
-      }
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
+  // Der alte Takt der Wochenkarte (mila_menus) ist abgelöst: Wochenwahl läuft in useWahl
+
 
   const addItems = async (rows: NewItem[]) => {
     const now = new Date().toISOString()
@@ -613,6 +575,7 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     photoUrl: (path) => (path ? (/^https?:/.test(path) ? path : (photos[path] ?? null)) : null),
     prepStepsOf: (id) => prepByRecipe.get(id) ?? [],
     reload: load,
+    wahl,
     saveRecipe,
     setMeal,
     updateMeal,

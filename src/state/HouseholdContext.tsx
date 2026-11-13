@@ -2,9 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { DemoAuth, SupabaseAuth, type Auth, type AuthUser } from '../lib/auth'
 import { LocalStore, SupabaseStore, type Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
-import type { MedSettings, MilaRecipe, MilaSettings, MilaWeekDay, FreizeitRadar, FreizeitStatus, FreizeitTipp } from '../lib/types'
+import type { MedSettings, MilaPlanItem, MilaRecipe, MilaSettings, MilaWeekDay, FreizeitRadar, FreizeitStatus, FreizeitTipp } from '../lib/types'
 import type { Anchor, AnchorLog, AnchorLogKind, AnchorPhase, AnchorPin, AnchorQuestion, AnchorVisibility, Area, Event, EventEffect, Fair, Household, Idea, ItemSeen, Member, NormalWeekRow, Person, Settings, Shout, Slot, Task, TaskStatus, TemplateRow, WeekOverride, TableName, Repeat } from '../lib/types'
-import { addDays, fromISO, toISO, today } from '../lib/dates'
+import { addDays, fromISO, startOfWeek, toISO, today } from '../lib/dates'
 import { subscribePush, unsubscribePush, type PushKeys } from '../lib/push'
 import { phaseLabel } from '../lib/anchors'
 import { dueFor, fairEvents, nextFair, roundStart } from '../lib/mwf'
@@ -43,6 +43,8 @@ export interface Casa {
   shouts: Shout[]
   // Mila: die Woche für Heute und Woche
   milaDays: MilaWeekDay[]
+  /** übernommene Kombo der laufenden Woche */
+  milaPlanItems: MilaPlanItem[]
   milaRecipe(id: string | null | undefined): MilaRecipe | null
   reloadMila(): Promise<void>
   milaRhythm: Rhythm
@@ -171,6 +173,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   const [milaDays, setMilaDays] = useState<MilaWeekDay[]>([])
   const [milaRecipes, setMilaRecipes] = useState<MilaRecipe[]>([])
   const [milaSettings, setMilaSettings] = useState<MilaSettings | null>(null)
+  const [milaPlanItems, setMilaPlanItems] = useState<MilaPlanItem[]>([])
   const [freizeitRadars, setFreizeitRadars] = useState<FreizeitRadar[]>([])
   const [freizeitTipps, setFreizeitTipps] = useState<FreizeitTipp[]>([])
   const [med, setMed] = useState<MedSettings | null>(null)
@@ -255,7 +258,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
           void loadFreizeit(hid)
           return
         }
-        if (table === 'mila_week_days' || table === 'mila_settings') {
+        if (table === 'mila_week_days' || table === 'mila_settings' || table === 'mila_plan_items' || table === 'mila_week_plans') {
           if (householdId) await loadMila(householdId)
           return
         }
@@ -336,6 +339,9 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       setMilaDays(w)
       setMilaRecipes(r)
       setMilaSettings(st[0] ?? null)
+      // Wochenwahl: übernommene Kombo der laufenden Woche (für „Mila schlägt vor“)
+      const plan = (await store.select('mila_week_plans', { household_id: hid, week: startOfWeek(today()) }))[0]
+      setMilaPlanItems(plan?.adopted_at ? await store.select('mila_plan_items', { plan_id: plan.id }) : [])
     } catch {
       /* Mila noch nicht eingerichtet */
     }
@@ -373,7 +379,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   // Live: Änderungen (auch vom anderen) nachladen
   useEffect(() => {
     if (!user) return
-    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins', 'fairs', 'checklist_template', 'ideas', 'shouts', 'mila_week_days', 'mila_settings', 'freizeit_radar', 'freizeit_tipps'], (t) => loadRef.current(t))
+    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins', 'fairs', 'checklist_template', 'ideas', 'shouts', 'mila_week_days', 'mila_settings', 'mila_plan_items', 'mila_week_plans', 'freizeit_radar', 'freizeit_tipps'], (t) => loadRef.current(t))
     const onVisible = () => {
       if (document.visibilityState === 'visible') loadRef.current()
     }
@@ -514,6 +520,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     ideas,
     shouts,
     milaDays,
+    milaPlanItems,
     milaRecipe: (id) => (id ? (milaById.get(id) ?? null) : null),
     reloadMila: async () => {
       if (householdId) await loadMila(householdId)

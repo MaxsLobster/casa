@@ -6,7 +6,7 @@ import { MilaPage } from './Mila'
 import { useMila } from './MilaContext'
 import { isThermomix, minutes } from './rhythm'
 import { cookOn, dayInfo, servingsFor, shortName, workDays } from './engine'
-import { deadline, openMenu } from './menu-view'
+import { countdown } from './Wochenwahl'
 import { weekKey } from './week-list'
 import { Sheet } from '../components/ui'
 import { useCasa } from '../state/HouseholdContext'
@@ -57,7 +57,7 @@ function Hits({ menu, plan, placed, onPick }: { menu: MilaMenu; plan: MilaPlan; 
 }
 
 function WeekView() {
-  const { recipes, weekDays, recipeById, menus, me, partner, ctx, items, setMeal, removeMeal, weekToList } = useMila()
+  const { recipes, weekDays, recipeById, menus, me, ctx, items, setMeal, removeMeal, weekToList, wahl } = useMila()
   const casa = useCasa()
   const nav = useNavigate()
   // Ist die Karte für die nächste Woche aufgedeckt (oder dort schon etwas eingetragen), gleich dort öffnen
@@ -85,9 +85,7 @@ function WeekView() {
 
   const dates = weekDates(monday)
   const work = workDays(monday)
-  const menu = openMenu(menus)
   const day = (date: string, meal: MealSlot) => weekDays.find((w) => w.date === date && w.meal === meal) ?? null
-  const iVoted = menu?.done_by.includes(me.id)
 
   // Treffer der gezeigten Woche und was davon schon eingetragen ist
   const weekMenu = menus.find((m) => m.week === monday && m.revealed_at && m.plan) ?? null
@@ -114,10 +112,8 @@ function WeekView() {
         <button type="button" className="m-wk__arrow" aria-label="Nächste Woche" onClick={() => setMonday(addDays(monday, 7))}>›</button>
       </header>
       <div className="between">
-        {menu && !menu.revealed_at ? (
-          <Link to="/mila/karte" className="m-banner">
-            {iVoted ? `Du hast gewählt${partner && !menu.done_by.includes(partner.id) ? ` · ${partner.display_name} wählt noch` : ''}` : `Die Wochenkarte ist da · bis ${deadline(menu.closes_at)} wählen ›`}
-          </Link>
+        {wahl.nextPlan?.status === 'wischen' ? (
+          <Link to="/mila/wahl" className="m-banner">Wochenwahl läuft · {countdown(wahl.nextPlan.deadline).replace(/^noch /, '')} ›</Link>
         ) : (
           <span />
         )}

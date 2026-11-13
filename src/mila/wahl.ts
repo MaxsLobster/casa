@@ -12,6 +12,18 @@ export const RESTE_PORTIONEN = 2
 export const JOKER_PRO_WOCHE = 2
 export const SWIPE_PX = 110
 
+/** Startwerte der Haltbarkeit (wie in der Migration), für den Demo-Modus */
+export const DEFAULT_RULES: [string, number | null, 'kurz' | 'mittel' | 'lang' | 'vorrat'][] = [
+  ['fisch', 1, 'kurz'], ['lachs', 1, 'kurz'], ['kabeljau', 1, 'kurz'], ['garnele', 1, 'kurz'],
+  ['hack', 1, 'kurz'], ['hähnchen', 2, 'kurz'], ['huhn', 2, 'kurz'], ['pute', 2, 'kurz'], ['steak', 3, 'kurz'],
+  ['salat', 2, 'mittel'], ['spinat', 2, 'mittel'], ['pak choi', 2, 'mittel'], ['rucola', 2, 'mittel'], ['avocado', 2, 'mittel'],
+  ['petersilie', 3, 'mittel'], ['koriander', 3, 'mittel'], ['basilikum', 3, 'mittel'], ['schnittlauch', 3, 'mittel'], ['minze', 3, 'mittel'], ['dill', 3, 'mittel'], ['kräuter', 3, 'mittel'],
+  ['pilz', 3, 'mittel'], ['champignon', 3, 'mittel'], ['brokkoli', 4, 'mittel'],
+  ['tomate', 5, 'mittel'], ['gurke', 5, 'mittel'], ['zucchini', 5, 'mittel'],
+  ['joghurt', 7, 'lang'], ['sahne', 7, 'lang'], ['käse', 7, 'lang'], ['skyr', 7, 'lang'], ['quark', 7, 'lang'],
+  ['karotte', 10, 'lang'], ['kartoffel', 10, 'lang'], ['zwiebel', 10, 'lang'], ['kohl', 10, 'lang'],
+]
+
 export const daysBetween = (a: ISODate, b: ISODate) => Math.round((fromISO(b).getTime() - fromISO(a).getTime()) / DAY)
 
 // ---------------------------------------------------------------------------
@@ -172,6 +184,15 @@ export function dishDays(r: MilaRecipe, ings: MilaIngredient[], rules: MilaShelf
   if (raw === null || raw >= 5) return { days: raw, gruppe: 'schluss' }
   if (isPrepped(r)) return { days: Math.max(raw, prepOffset + (r.prep_info?.haltbar_tage ?? 3)), gruppe: 'prep' }
   return { days: raw, gruppe: 'zuerst' }
+}
+
+/** Aus allen Wischern die Art je Gericht (ohne Namen): joker, treffer, halb. Wie mila_kombo_eingang() in der Datenbank. */
+export function eingangFromSwipes(swipes: { recipe_id: string; wahl: string }[]): { recipe_id: string; art: string }[] {
+  const by = new Map<string, string[]>()
+  for (const s of swipes) by.set(s.recipe_id, [...(by.get(s.recipe_id) ?? []), s.wahl])
+  return [...by.entries()]
+    .filter(([, w]) => w.some((x) => x !== 'nein'))
+    .map(([recipe_id, w]) => ({ recipe_id, art: w.includes('stern') ? 'joker' : w.filter((x) => x !== 'nein').length >= 2 ? 'treffer' : 'halb' }))
 }
 
 // ---------------------------------------------------------------------------

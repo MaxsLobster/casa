@@ -46,7 +46,7 @@ function useBack(): { label: string; go: () => void } {
 
 function Card({ recipe }: { recipe: MilaRecipe }) {
   const mila = useMila()
-  const { ingredientsOf, stepsOf, hasThermomixSteps, weekDays, photoUrl, blends, setMeal, removeMeal, updateMeal } = mila
+  const { ingredientsOf, stepsOf, hasThermomixSteps, weekDays, photoUrl, blends, setMeal, removeMeal, updateMeal, wahl } = mila
   const nav = useNavigate()
   const back = useBack()
   const [params] = useSearchParams()
@@ -122,6 +122,9 @@ function Card({ recipe }: { recipe: MilaRecipe }) {
   const tips = [recipe.device_tips?.thermomix ? `TM6: ${recipe.device_tips.thermomix}` : null, recipe.device_tips?.airfryer ? `Airfryer: ${recipe.device_tips.airfryer}` : null].filter(Boolean) as string[]
   const swapLines = v ? v.tausch.map((t) => (isAddition(t.statt) ? `dazu: ${t.nimm}` : `statt ${t.statt} → ${t.nimm}`)) : []
   const cardEntry = upcoming
+  // Läuft eine übernommene Kombo, kommt das Gericht dorthin (Mila ordnet es nach Frist ein) statt auf einen Tag
+  const kombo = !fromDay && wahl.currentPlan?.adopted_at ? wahl.currentPlan : null
+  const inKombo = kombo ? wahl.itemsOf(kombo.id).some((i) => i.recipe_id === recipe.id && i.status === 'offen') : false
 
   return (
     <div className={'rk' + (flipped ? ' rk--back' : '')}>
@@ -297,7 +300,13 @@ function Card({ recipe }: { recipe: MilaRecipe }) {
           <FlipIcon />
           {flipped ? 'Vorderseite' : 'Umdrehen'}
         </button>
-        {cardEntry ? (
+        {kombo ? (
+          inKombo ? (
+            <button type="button" className="rk-btn rk-btn--wide rk-btn--done" onClick={() => nav('/mila/wahl')}>✓ in der Kombo</button>
+          ) : (
+            <button type="button" className="rk-btn rk-btn--wide rk-btn--main" onClick={() => void wahl.addToKombo(kombo, recipe.id, recipe.meal === 'mittag' ? 'mittag' : 'abend', portions, variant)}>Auf die Wochenkarte</button>
+          )
+        ) : cardEntry ? (
           <button type="button" className="rk-btn rk-btn--wide rk-btn--done" onClick={() => setEntrySheet(true)}>
             ✓ auf der Wochenkarte · {weekdayShort(cardEntry.date)}
           </button>

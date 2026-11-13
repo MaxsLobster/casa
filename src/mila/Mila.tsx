@@ -10,9 +10,10 @@ import { Gerichte } from './Gerichte'
 import { Rezeptkarte } from './Rezeptkarte'
 import { RezeptForm } from './RezeptForm'
 import { Kochen } from './Kochen'
-import { Karte } from './Karte'
+import { Wahl } from './Wochenwahl'
+import { HeuteDran } from './HeuteDran'
+import { Haltbarkeit } from './Haltbarkeit'
 import { Prep } from './Prep'
-import { openMenu } from './menu-view'
 import './mila.css'
 
 export function Mila() {
@@ -34,8 +35,11 @@ function MilaShell() {
       <div className="panes">
         <div className="pane">
           <Routes>
+            <Route path="/mila/heute" element={<HeuteDran />} />
+            <Route path="/mila/wahl" element={<Wahl />} />
+            <Route path="/mila/haltbarkeit" element={<Haltbarkeit />} />
             <Route path="/mila/woche" element={<Woche />} />
-            <Route path="/mila/karte" element={<Karte />} />
+            <Route path="/mila/karte" element={<Navigate to="/mila/wahl" replace />} />
             <Route path="/mila/einkauf" element={<Liste />} />
             <Route path="/mila/liste" element={<Navigate to="/mila/einkauf" replace />} />
             <Route path="/mila/prep" element={<Prep />} />
@@ -45,7 +49,7 @@ function MilaShell() {
             <Route path="/mila/rezept/:id" element={<Rezeptkarte />} />
             <Route path="/mila/gerichte/:id/bearbeiten" element={<RezeptForm />} />
             <Route path="/mila/kochen/:id" element={<Kochen />} />
-            <Route path="*" element={<Navigate to="/mila/woche" replace />} />
+            <Route path="*" element={<Navigate to="/mila/heute" replace />} />
           </Routes>
         </div>
       </div>
@@ -56,15 +60,17 @@ function MilaShell() {
 }
 
 function MilaNav() {
-  const { menus, me } = useMila()
-  const m = openMenu(menus)
-  // Punkt an „Karte“: Karte offen und ich habe noch nicht fertig gewählt
-  const dot = !!m && !m.revealed_at && !m.done_by.includes(me.id)
+  const { wahl, me } = useMila()
+  const p = wahl.nextPlan
+  // Punkt an „Wahl“: Wahl offen und mein Stapel ist noch nicht durch (oder noch nicht gemischt)
+  const mine = p ? wahl.mySwipes.filter((s) => s.plan_id === p.id).length : 0
+  const dot = !!p && p.status === 'wischen' && (!p.deck_built_at || mine < p.deck.length)
+  void me
   return (
     <nav className="nav" aria-label="Mila">
-      <NavLink to="/mila/woche" className="nav__item">Woche</NavLink>
-      <NavLink to="/mila/karte" className="nav__item">
-        Karte{dot && <span className="m-navdot" aria-label="neu" />}
+      <NavLink to="/mila/heute" className="nav__item">Heute</NavLink>
+      <NavLink to="/mila/wahl" className="nav__item">
+        Wahl{dot && <span className="m-navdot" aria-label="neu" />}
       </NavLink>
       <NavLink to="/mila/einkauf" className="nav__item">Einkauf</NavLink>
       <NavLink to="/mila/prep" className="nav__item">Prep</NavLink>
