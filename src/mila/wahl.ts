@@ -251,20 +251,25 @@ export function buildKombo(input: {
     }
   }
   choose('abend', plan.abend_anzahl)
-  choose('mittag', plan.mittag_anzahl)
-  return order(out, byId)
+  // Mittag-Anzahl = alle Mittagessen der Woche. Reste gehen vor: die Abende mit der kürzesten Haltbarkeit werden doppelt gekocht.
+  const doubles = out
+    .filter((i) => i.slot === 'abend' && i.status === 'offen' && byId.get(i.recipe_id)?.cook_double)
+    .sort((a, b) => (a.frist_bis ?? '9999').localeCompare(b.frist_bis ?? '9999'))
+    .slice(0, plan.mittag_anzahl)
+  const reste = new Set(doubles.map((i) => i.key))
+  choose('mittag', plan.mittag_anzahl - reste.size)
+  return order(out, reste)
 }
 
-/** Reihenfolge: zuerst → prep → schluss, innerhalb nach Frist; Reste direkt hinter ihrem Gericht */
-export function order(items: KomboItem[], byId: Map<string, MilaRecipe>): KomboItem[] {
+/** Reihenfolge: zuerst → prep → schluss, innerhalb nach Frist; Reste direkt hinter ihrem Gericht (nur für die Abende in `reste`) */
+export function order(items: KomboItem[], reste: Set<string>): KomboItem[] {
   const G: Record<MilaItemGroup, number> = { zuerst: 0, prep: 1, schluss: 2 }
   const active = items.filter((i) => i.status !== 'reserve' && i.slot !== 'reste')
   const sorted = [...active].sort((a, b) => G[a.gruppe] - G[b.gruppe] || (a.frist_bis ?? '9999').localeCompare(b.frist_bis ?? '9999') || (a.slot === 'abend' ? -1 : 1) - (b.slot === 'abend' ? -1 : 1))
   const out: KomboItem[] = []
   for (const it of sorted) {
     out.push(it)
-    const r = byId.get(it.recipe_id)
-    if (it.slot === 'abend' && r?.cook_double) {
+    if (it.slot === 'abend' && reste.has(it.key)) {
       out.push({ ...it, key: 'reste:' + it.recipe_id, parent_key: it.key, slot: 'reste', art: it.art, portionen: RESTE_PORTIONEN, frist_bis: null })
     }
   }
@@ -278,8 +283,10 @@ export function mealCount(items: Pick<MilaPlanItem, 'status' | 'slot'>[]) {
   return { gerichte: live.filter((i) => i.slot !== 'reste').length, mahlzeiten: live.length }
 }
 
-/** Grobe Schätzung vorab: wie viele Abende ergeben Reste-Mittage? */
-export const resteEstimate = (abend: number) => Math.min(2, Math.floor(abend / 2))
+/** Freie Mittag-Plätze in einer Kombo (Mittag-Anzahl minus geplante Mittage und Reste) */
+export function freeLunches(plan: Pick<MilaWeekPlan, 'mittag_anzahl'>, items: Pick<MilaPlanItem, 'slot' | 'status'>[]): number {
+  return Math.max(0, plan.mittag_anzahl - items.filter((i) => i.slot !== 'abend' && (i.status === 'offen' || i.status === 'gekocht')).length)
+}
 
 // ---------------------------------------------------------------------------
 // Prep-Stunde

@@ -6,7 +6,7 @@ import { MilaBand, Initial } from './Band'
 import { Kombo } from './Kombo'
 import { minutes } from './rhythm'
 import { kicker as recipeKicker, stats } from './recipe-view'
-import { SWIPE_PX, deckFor, resteEstimate } from './wahl'
+import { SWIPE_PX, deckFor } from './wahl'
 import { tileKind } from './portions'
 import { TileIcon } from './icons'
 import { addDays, fromISO, isoWeek } from '../lib/dates'
@@ -58,7 +58,6 @@ function Anzahl({ plan }: { plan: MilaWeekPlan }) {
   const { wahl, partner } = useMila()
   const a = plan.abend_anzahl
   const m = plan.mittag_anzahl
-  const rest = resteEstimate(a)
   const set = (na: number, nm: number) => void wahl.setCounts(plan, Math.min(6, Math.max(3, na)), Math.min(4, Math.max(0, nm)))
   return (
     <div className="page mw">
@@ -71,8 +70,8 @@ function Anzahl({ plan }: { plan: MilaWeekPlan }) {
           <Stepper title="Mittaggerichte" sub="für 2 · 0 bis 4 · meist als Box" value={m} minus={() => set(a, m - 1)} plus={() => set(a, m + 1)} label="Mittaggericht" />
         </div>
         <div className="mw__sum">
-          <span className="mw__hand mw__hand--34">{a + m} Gerichte = {a + m + rest} Mahlzeiten</span>
-          <span className="m-hint">davon ca. {rest} Mittag aus Resten („doppelt → Mittag“)</span>
+          <span className="mw__hand mw__hand--34">{a} Abend + {m} Mittag = {a + m} Mahlzeiten</span>
+          <span className="m-hint">{m > 0 ? 'Mittag zuerst aus Resten („doppelt → Mittag“), den Rest füllen eigene Mittaggerichte' : 'ohne Mittagessen'}</span>
         </div>
         <div className="mw__note">
           <span><b>Euer Stapel:</b> {a * 3} Abend- und {m * 3} Mittagskarten pro Person</span>

@@ -9,7 +9,7 @@ import { addDays, startOfWeek, today as todayISO, toISO } from '../lib/dates'
 import { shoppingFor, shortName, type Rhythm } from './engine'
 import { weekKey } from './week-list'
 import { variantShopping } from './recipe-view'
-import { DEFAULT_RULES, eingangFromSwipes, JOKER_PRO_WOCHE, RESTE_PORTIONEN, buildDeck, buildKombo, dishDays, daysBetween, planTimes, wahlWeek, type KomboItem } from './wahl'
+import { DEFAULT_RULES, eingangFromSwipes, freeLunches, JOKER_PRO_WOCHE, RESTE_PORTIONEN, buildDeck, buildKombo, dishDays, daysBetween, planTimes, wahlWeek, type KomboItem } from './wahl'
 
 export interface Wahl {
   plans: MilaWeekPlan[]
@@ -339,7 +339,9 @@ export function useWahl(d: Deps): Wahl {
         const id = crypto.randomUUID()
         if (reserve) await store.update('mila_plan_items', { id: reserve.id }, { status: 'offen', slot: item.slot, gruppe, frist_bis, position: item.position })
         else await store.insert('mila_plan_items', { id, household_id: hid, plan_id: plan.id, recipe_id: recipeId, slot: item.slot, gruppe, position: item.position, art: 'dazu', portionen: item.portionen, variante: 'original', status: 'offen', frist_bis, parent_id: null, geplant_am: null, gekocht_am: null })
-        if (item.slot === 'abend' && r.cook_double) {
+        // Reste-Mittag nur, wenn noch ein Mittag-Platz frei ist (der alte Reste-Mittag ist schon weg)
+        const free = freeLunches(plan, itemsOf(plan.id).filter((i) => i.id !== item.id && !children.some((c) => c.id === i.id)))
+        if (item.slot === 'abend' && r.cook_double && free > 0) {
           await store.insert('mila_plan_items', { household_id: hid, plan_id: plan.id, recipe_id: recipeId, slot: 'reste', gruppe, position: item.position, art: reserve?.art ?? 'dazu', portionen: RESTE_PORTIONEN, variante: 'original', status: 'offen', frist_bis: null, parent_id: reserve?.id ?? id, geplant_am: null, gekocht_am: null })
         }
       } catch (err) {
