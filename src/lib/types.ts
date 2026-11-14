@@ -267,7 +267,8 @@ export interface Settings {
   show_legend: boolean
   workday_on: string | null // Arbeitstag an diesem Datum (sonst aus)
   mwf_notify: 'aus' | 'briefing' | 'sofort'
-  med_partner_ok?: boolean // Zustimmung zur Abendfrage des Partners (Bereich Medikament)
+  med_partner_ok?: boolean
+  mila_notify?: boolean // Mila-Mitteilungen zur Wochenwahl (Standard an) // Zustimmung zur Abendfrage des Partners (Bereich Medikament)
   updated_at: string
 }
 
@@ -708,7 +709,7 @@ export interface FreizeitTableRow {
 // Mila · Wochenwahl (Anzahl, Wischen, Treffer, Kombo, Heute dran)
 // ---------------------------------------------------------------------------
 
-export type MilaPlanStatus = 'wischen' | 'kombo' | 'aktiv' | 'fertig'
+export type MilaPlanStatus = 'wischen' | 'kombo' | 'aktiv' | 'fertig' | 'verworfen'
 export interface MilaDeckCard {
   recipe_id: Id
   meal: MealSlot
@@ -730,6 +731,7 @@ export interface MilaWeekPlan {
   einkauf_tag: string | null
   prep_tag: string | null
   prep_done: string[]
+  erinnert_at?: string | null
   created_at: string
   updated_at: string
 }
