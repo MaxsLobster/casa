@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useMila } from './MilaContext'
 import { MilaBand } from './Band'
 import { itemNote } from './Kombo'
+import { SwipeRemove, useUndo } from './SwipeRemove'
 import { minutes } from './rhythm'
 import { shortName } from './engine'
 import { ampelOf, daysBetween, fridge, heuteDran, ingredientDays, spoilsToday } from './wahl'
@@ -17,6 +18,7 @@ export function HeuteDran() {
   const { ready, wahl, recipeById, ingredientsOf } = useMila()
   const nav = useNavigate()
   const [swap, setSwap] = useState(false)
+  const undo = useUndo()
   if (!ready) return <div className="page"><span className="hint">Einen Moment …</span></div>
   const today = todayISO()
   const d = fromISO(today)
@@ -68,6 +70,7 @@ export function HeuteDran() {
       <MilaBand kicker={`${kicker} · Tag ${tag}`} title="Heute dran" chip={chip} />
       <div className="mw__pad mw__stack">
         {!swap && h.abend && abendR && (
+          <SwipeRemove onRemove={async () => undo.offer(shortName(abendR.name), await wahl.removeItem(h.abend!))}>
           <div className="mh__main">
             <span className="rk-tape" aria-hidden />
             <div className="mh__line">
@@ -95,6 +98,7 @@ export function HeuteDran() {
               </>
             )}
           </div>
+          </SwipeRemove>
         )}
 
         {swap && h.abend && abendR && (
@@ -128,6 +132,7 @@ export function HeuteDran() {
         {!h.abend && <p className="mw__lead">Alle Abendgerichte der Kombo sind gekocht. Schön!</p>}
 
         {h.mittag && mittagR && (
+          <SwipeRemove onRemove={async () => undo.offer(shortName(mittagR.name), await wahl.removeItem(h.mittag!))}>
           <div className="mh__lunch">
             <span className="mk__meal mk__meal--mittag">Mittag</span>
             <button type="button" className="mk__text mh__lunchtext" onClick={() => nav(`/mila/rezept/${mittagR.id}`)}>
@@ -136,6 +141,7 @@ export function HeuteDran() {
             </button>
             {h.mittag.status !== 'gekocht' && <button type="button" className="mh__take" onClick={() => void wahl.cookItem(h.mittag!)}>gegessen</button>}
           </div>
+          </SwipeRemove>
         )}
 
         <span className="rk-caps" style={{ marginTop: 4 }}>Kühlschrank-Ampel</span>
@@ -155,8 +161,9 @@ export function HeuteDran() {
         <span className="mw__fine">
           Haltbarkeit geschätzt · rot = heute oder einfrieren · gelb = bald · grün = entspannt · <Link to="/mila/haltbarkeit" className="mh__rules">Regeln ›</Link>
         </span>
+        {undo.bar()}
         <div className="mh__links">
-          <Link to="/mila/wahl" className="m-day__link">Kombo ›</Link>
+          <Link to="/mila/kombo" className="m-day__link">Kombo der Woche ›</Link>
           <Link to="/mila/woche" className="m-day__link">Woche ›</Link>
           <Link to="/mila/gerichte" className="m-day__link">Alle Gerichte ›</Link>
         </div>

@@ -6,9 +6,7 @@ import type { Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
 import type { MealSlot, Member, MilaIngredient, MilaMatch, MilaPlanItem, MilaRecipe, MilaShelfRule, MilaShoppingItem, MilaSwipe, MilaVariantKey, MilaWahl, MilaWeekDay, MilaWeekPlan, TableName } from '../lib/types'
 import { addDays, startOfWeek, today as todayISO, toISO } from '../lib/dates'
-import { shoppingFor, shortName, type Rhythm } from './engine'
-import { weekKey } from './week-list'
-import { variantShopping } from './recipe-view'
+import type { Rhythm } from './engine'
 import { DEFAULT_RULES, eingangFromSwipes, freeLunches, JOKER_PRO_WOCHE, RESTE_PORTIONEN, buildDeck, buildKombo, dishDays, daysBetween, planTimes, wahlWeek, type KomboItem } from './wahl'
 
 export interface Wahl {
@@ -35,6 +33,10 @@ export interface Wahl {
   pickToday(item: MilaPlanItem, freezeOther: MilaPlanItem | null): Promise<void>
   addToKombo(plan: MilaWeekPlan, recipeId: string, meal: MealSlot, portions: number, variant: MilaVariantKey): Promise<void>
   togglePlanPrep(plan: MilaWeekPlan, key: string): Promise<void>
+  /** Gericht aus der Kombo nehmen (samt Reste-Mittag, Prep, Zutaten); gibt „Rückgängig“ zurück */
+  removeItem(item: MilaPlanItem): Promise<() => Promise<void>>
+  /** Übernommene Woche verwerfen: alles Nicht-Gekochte raus */
+  discardPlan(plan: MilaWeekPlan): Promise<void>
   saveRule(rule: Partial<MilaShelfRule> & { stichwort: string; tage: number | null }): Promise<void>
   removeRule(id: string): Promise<void>
 }
@@ -54,6 +56,7 @@ interface Deps {
   setError(msg: string): void
   reloadMila(table?: 'mila_week_days' | 'mila_shopping_items'): Promise<void>
   reloadCasa(): void
+  rebuildList(monday: string, force?: boolean): Promise<void>
 }
 
 const toIso = (local: string) => new Date(local).toISOString()
@@ -115,8 +118,9 @@ export function useWahl(d: Deps): Wahl {
 
   const today = todayISO()
   const thisMonday = startOfWeek(today)
-  const nextPlan = plans.find((p) => p.week === addDays(thisMonday, 7)) ?? null
-  const currentPlan = plans.find((p) => p.week === thisMonday) ?? null
+  // Verworfene Wochen zählen nicht mehr (die Zeile bleibt, damit der Takt sie nicht neu anlegt)
+  const nextPlan = plans.find((p) => p.week === addDays(thisMonday, 7) && p.status !== 'verworfen') ?? null
+  const currentPlan = plans.find((p) => p.week === thisMonday && p.status !== 'verworfen') ?? null
   const itemsByPlan = useMemo(() => {
     const m = new Map<string, MilaPlanItem[]>()
     for (const i of [...planItems].sort((a, b) => a.position - b.position)) m.set(i.plan_id, [...(m.get(i.plan_id) ?? []), i])
@@ -354,32 +358,7 @@ export function useWahl(d: Deps): Wahl {
       const ok = await store.claim('mila_week_plans', { id: plan.id, adopted_at: null }, { status: 'aktiv', adopted_at: new Date().toISOString(), adopted_by: me.id })
       if (ok) {
         try {
-          // Einkaufszettel: offene Gerichte der Kombo, Reste werden beim Gericht mitgekocht
-          const live = itemsOf(plan.id).filter((i) => i.status === 'offen')
-          const date = plan.einkauf_tag ?? plan.week
-          const shopRecipes = [...d.recipes]
-          const shopIngs: MilaIngredient[] = []
-          const slots = live
-            .filter((i) => i.slot !== 'reste')
-            .map((i) => {
-              const r = d.recipeById(i.recipe_id)!
-              const key = i.variante !== 'original' ? `${r.id}:${i.variante}` : r.id
-              if (key !== r.id && !shopRecipes.some((x) => x.id === key)) {
-                shopRecipes.push({ ...r, id: key })
-                shopIngs.push(...variantShopping(r, d.ingredientsOf(r.id), i.variante).map((x) => ({ ...x, recipe_id: key })))
-              }
-              const reste = live.find((x) => x.parent_id === i.id)
-              return { date, meal: (i.slot === 'abend' ? 'abend' : 'mittag') as MealSlot, recipe_id: key, leftover: false, servings: i.portionen + (reste?.portionen ?? 0) }
-            })
-          const ings = [...d.recipes.flatMap((r) => d.ingredientsOf(r.id)), ...shopIngs]
-          const wk = weekKey(plan.week)
-          for (const it of d.items.filter((x) => x.source_week === wk && !x.checked && x.source_label)) await store.remove('mila_shopping_items', { id: it.id })
-          const rows = shoppingFor(plan.week, slots, shopRecipes, ings).map((row) => {
-            const rids = [...new Set(row.source_recipe_ids.map((x) => x.split(':')[0]))]
-            const names = rids.map((x) => shortName(d.recipeById(x)?.name ?? '')).filter(Boolean)
-            return { ...row, source_recipe_ids: rids, source_label: names.length > 2 ? `${names.length} Gerichte` : names.join(' + ') }
-          })
-          await store.insertMany('mila_shopping_items', rows.map((r) => ({ household_id: hid, ...r, added_by: me.id, checked: false, checked_by: null, checked_at: null })))
+          await d.rebuildList(plan.week, true)
         } catch (err) {
           fail(err)
         }
@@ -428,6 +407,45 @@ export function useWahl(d: Deps): Wahl {
         fail(err)
       }
       await load('mila_plan_items')
+    },
+
+    async removeItem(item) {
+      const plan = plans.find((p) => p.id === item.plan_id)
+      const rows = [item, ...planItems.filter((i) => i.parent_id === item.id)]
+      setPlanItems((prev) => prev.filter((i) => !rows.some((r) => r.id === i.id)))
+      try {
+        for (const r of [...rows].reverse()) await store.remove('mila_plan_items', { id: r.id })
+        if (plan) await d.rebuildList(plan.week)
+      } catch (err) {
+        fail(err)
+      }
+      await load('mila_plan_items')
+      d.reloadCasa()
+      return async () => {
+        try {
+          await store.insert('mila_plan_items', rows[0])
+          if (rows.length > 1) await store.insertMany('mila_plan_items', rows.slice(1))
+          if (plan) await d.rebuildList(plan.week)
+        } catch (err) {
+          fail(err)
+        }
+        await load('mila_plan_items')
+        d.reloadCasa()
+      }
+    },
+
+    async discardPlan(plan) {
+      try {
+        await store.update('mila_week_plans', { id: plan.id }, { status: 'verworfen' })
+        // Gekochtes bleibt (steht auch in der Woche, für „zuletzt gekocht“), Eingefrorenes kommt nächste Woche wieder
+        for (const i of itemsOf(plan.id).filter((x) => x.status !== 'gekocht' && x.status !== 'eingefroren' && x.parent_id)) await store.remove('mila_plan_items', { id: i.id })
+        for (const i of itemsOf(plan.id).filter((x) => x.status !== 'gekocht' && x.status !== 'eingefroren' && !x.parent_id)) await store.remove('mila_plan_items', { id: i.id })
+        await d.rebuildList(plan.week)
+      } catch (err) {
+        fail(err)
+      }
+      await Promise.all([load('mila_week_plans'), load('mila_plan_items')])
+      d.reloadCasa()
     },
 
     async togglePlanPrep(plan, key) {

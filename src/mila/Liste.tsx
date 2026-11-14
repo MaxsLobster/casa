@@ -2,6 +2,9 @@
 // „meist Vorrat“ steht grau vorab abgehakt; Antippen setzt es doch auf den Zettel.
 import { useMemo, useState, type FormEvent } from 'react'
 import { MilaPage } from './Mila'
+import { SwipeRemove, useUndo } from './SwipeRemove'
+import { weekKey } from './week-list'
+import { addDays, startOfWeek, today } from '../lib/dates'
 import { useMila } from './MilaContext'
 import { SHOP_LABELS, SHOP_ORDER, parseManualInput } from './shopping'
 import { Collapse } from '../components/ui'
@@ -9,7 +12,15 @@ import { weekdayLongByIndex } from '../lib/dates'
 import type { MilaShoppingItem } from '../lib/types'
 
 export function Liste() {
-  const { items, me, partner, members, rhythm, addItems, setChecked, setStock, finishShopping } = useMila()
+  const { items: allItems, me, partner, members, rhythm, addItems, setChecked, setStock, finishShopping, removeShopItem } = useMila()
+  // Nur die laufende und die nächste Woche; selbst eingetragene Zeilen immer. Ältere bleiben gespeichert, nur nicht hier.
+  const weeks = useMemo(() => {
+    const m = startOfWeek(today())
+    return new Set([weekKey(m), weekKey(addDays(m, 7))])
+  }, [])
+  const items = useMemo(() => allItems.filter((i) => !i.source_week || weeks.has(i.source_week)), [allItems, weeks])
+  const undo = useUndo()
+  const removeRow = async (it: MilaShoppingItem) => undo.offer(it.name, await removeShopItem(it.id))
   const [text, setText] = useState('')
   const [showDone, setShowDone] = useState(true)
 
@@ -60,7 +71,8 @@ export function Liste() {
           <h2 className="m-group__label">{g.label}</h2>
           {g.items.map((it) =>
             it.is_stock ? (
-              <button key={it.id} type="button" className="m-item m-item--stock" onClick={() => setStock(it.id, false)} aria-label={`${it.name}: doch kaufen`}>
+              <SwipeRemove key={it.id} onRemove={() => void removeRow(it)}>
+              <button type="button" className="m-item m-item--stock" onClick={() => setStock(it.id, false)} aria-label={`${it.name}: doch kaufen`}>
                 <span className="m-check m-check--stock">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M5 12.5l4.5 4.5L19 7.5" />
@@ -72,8 +84,11 @@ export function Liste() {
                   <span className="m-item__src">Vorrat</span>
                 </span>
               </button>
+              </SwipeRemove>
             ) : (
-              <Row key={it.id} item={it} who={it.source_label ? null : nameOf(it.added_by)} mine={it.added_by === me.id} onToggle={() => setChecked(it.id, true)} />
+              <SwipeRemove key={it.id} onRemove={() => void removeRow(it)}>
+                <Row item={it} who={it.source_label ? null : nameOf(it.added_by)} mine={it.added_by === me.id} onToggle={() => setChecked(it.id, true)} />
+              </SwipeRemove>
             ),
           )}
         </section>
@@ -104,6 +119,7 @@ export function Liste() {
           </Collapse>
         </section>
       )}
+      {undo.bar()}
     </MilaPage>
   )
 }

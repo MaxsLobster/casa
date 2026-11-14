@@ -10,7 +10,7 @@ import { Gerichte } from './Gerichte'
 import { Rezeptkarte } from './Rezeptkarte'
 import { RezeptForm } from './RezeptForm'
 import { Kochen } from './Kochen'
-import { Wahl } from './Wochenwahl'
+import { LaufendeKombo, Wahl } from './Wochenwahl'
 import { HeuteDran } from './HeuteDran'
 import { Haltbarkeit } from './Haltbarkeit'
 import { Prep } from './Prep'
@@ -37,6 +37,7 @@ function MilaShell() {
           <Routes>
             <Route path="/mila/heute" element={<HeuteDran />} />
             <Route path="/mila/wahl" element={<Wahl />} />
+            <Route path="/mila/kombo" element={<LaufendeKombo />} />
             <Route path="/mila/haltbarkeit" element={<Haltbarkeit />} />
             <Route path="/mila/woche" element={<Woche />} />
             <Route path="/mila/karte" element={<Navigate to="/mila/wahl" replace />} />

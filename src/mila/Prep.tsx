@@ -9,7 +9,8 @@ import { useState } from 'react'
 import { minutes } from './rhythm'
 import { fromISO, weekdayLong, weekdayShort } from '../lib/dates'
 import { prepMinutes } from './wahl'
-import type { MilaRecipe, MilaWeekPlan } from '../lib/types'
+import { SwipeRemove, useUndo } from './SwipeRemove'
+import type { MealSlot, MilaRecipe, MilaWeekPlan } from '../lib/types'
 
 export function Prep() {
   const { wahl } = useMila()
@@ -38,6 +39,7 @@ function KomboPrep({ plan }: { plan: MilaWeekPlan }) {
   })
   const all = rows.flatMap((x) => x.list)
   const left = all.filter((s) => !done.has(s.key)).length
+  const undo = useUndo()
   return (
     <MilaPage>
       <PrepHead when={`${weekdayLong(day)}, ${fromISO(day).getDate()}.${fromISO(day).getMonth() + 1}. · ${rhythm.prep_time}`} />
@@ -48,7 +50,9 @@ function KomboPrep({ plan }: { plan: MilaWeekPlan }) {
       </div>
       {rows.map(({ item, r, list }) => (
         <section key={item.id} className="m-group">
-          <h2 className="m-group__label">{r.name}{item.frist_bis ? ` · Box hält bis ${weekdayShort(item.frist_bis)}` : ''}</h2>
+          <SwipeRemove onRemove={async () => undo.offer(r.name, await wahl.removeItem(item))}>
+            <h2 className="m-group__label m-prep__dish">{r.name}{item.frist_bis ? ` · Box hält bis ${weekdayShort(item.frist_bis)}` : ''}</h2>
+          </SwipeRemove>
           {r.prep_info?.satz && <p className="m-hint" style={{ margin: '0 0 4px' }}>{r.prep_info.satz}</p>}
           {list.map((p) => {
             const d = done.has(p.key)
@@ -70,12 +74,21 @@ function KomboPrep({ plan }: { plan: MilaWeekPlan }) {
           })}
         </section>
       ))}
+      <p className="m-hint" style={{ fontSize: 12 }}>Gericht nach links wischen, um es aus der Woche zu nehmen.</p>
+      {undo.bar()}
     </MilaPage>
   )
 }
 
 function WochenPrep() {
-  const { menus, weekDays, recipes, prepSteps, rhythm, togglePrep } = useMila()
+  const { menus, weekDays, recipes, prepSteps, rhythm, togglePrep, removeMeal, recipeById } = useMila()
+  const undo = useUndo()
+  // Schlüssel „Datum|Mahlzeit|n“ → das Gericht an diesem Tag aus der Woche nehmen
+  const removeByKey = async (key: string) => {
+    const [date, meal] = key.split('|') as [string, MealSlot]
+    const name = recipeById(weekDays.find((w) => w.date === date && w.meal === meal)?.recipe_id)?.name ?? 'Gericht'
+    undo.offer(name, await removeMeal(date, meal))
+  }
   const [local, setLocal] = useState<string[]>([])
   const week = focusWeek(weekDays)
   const menu = menus.find((m) => m.week === week) ?? null
@@ -88,6 +101,7 @@ function WochenPrep() {
         <PrepHead when={`${weekdayLongFor(rhythm.prep_weekday)} ${rhythm.prep_time}`} />
         <p className="m-hint">Noch keine Gerichte in der Woche. Der Prep-Plan entsteht, sobald ihr welche eintragt.</p>
         <Link to="/mila/woche" className="link" style={{ alignSelf: 'flex-start' }}>Zur Woche ›</Link>
+        {undo.bar()}
       </MilaPage>
     )
   }
@@ -113,7 +127,8 @@ function WochenPrep() {
           {plan.items.map((p) => {
             const d = done.has(p.key)
             return (
-              <button key={p.key} type="button" className={'m-prep' + (d ? ' m-prep--done' : '')} onClick={() => toggle(p.key)} aria-pressed={d}>
+              <SwipeRemove key={p.key} onRemove={() => void removeByKey(p.key)}>
+              <button type="button" className={'m-prep' + (d ? ' m-prep--done' : '')} onClick={() => toggle(p.key)} aria-pressed={d}>
                 <span className={'m-check' + (d ? ' m-check--done' : '')}>
                   {d && (
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -126,6 +141,7 @@ function WochenPrep() {
                   <span className="m-prep__meta">{p.meta}</span>
                 </span>
               </button>
+              </SwipeRemove>
             )
           })}
         </section>
@@ -136,10 +152,12 @@ function WochenPrep() {
           <h2 className="m-group__label">Boxen für den Kühlschrank</h2>
           <div className="m-boxes">
             {plan.boxes.map((b) => (
-              <div key={b.key} className="m-box">
+              <SwipeRemove key={b.key} onRemove={() => void removeByKey(b.key)}>
+              <div className="m-box">
                 <span className={'m-box__tape' + (b.lunch ? ' m-box__tape--lunch' : '')}>{b.day}</span>
                 <span className="m-box__what">{b.what}</span>
               </div>
+              </SwipeRemove>
             ))}
           </div>
         </section>
@@ -153,6 +171,7 @@ function WochenPrep() {
           ))}
         </section>
       )}
+      {undo.bar()}
     </MilaPage>
   )
 }

@@ -9,7 +9,7 @@ import { kicker as recipeKicker, stats } from './recipe-view'
 import { SWIPE_PX, deckFor } from './wahl'
 import { tileKind } from './portions'
 import { TileIcon } from './icons'
-import { addDays, fromISO, isoWeek } from '../lib/dates'
+import { addDays, fromISO, isoWeek, startOfWeek, today as todayISO } from '../lib/dates'
 import type { MilaDeckCard, MilaWahl, MilaWeekPlan } from '../lib/types'
 
 const MONTHS = ['Jan', 'Feb', 'März', 'Apr', 'Mai', 'Juni', 'Juli', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
@@ -33,6 +33,20 @@ export function countdown(deadline: string, now = Date.now()): string {
   return `noch ${Math.max(1, Math.round(ms / 60000))} Min · ${when}`
 }
 
+/** Kombo der laufenden Woche (auch während die Wahl für die nächste läuft) */
+export function LaufendeKombo() {
+  const { ready, wahl } = useMila()
+  if (!ready) return <div className="page"><span className="hint">Einen Moment …</span></div>
+  const plan = wahl.currentPlan
+  if (plan && plan.status !== 'wischen') return <Kombo plan={plan} />
+  return (
+    <div className="page mw">
+      <MilaBand kicker="Diese Woche" title="Keine Kombo" />
+      <p className="m-hint mw__pad">Für diese Woche gibt es keine Kombo.</p>
+    </div>
+  )
+}
+
 export function Wahl() {
   const { ready, wahl } = useMila()
   if (!ready) return <div className="page"><span className="hint">Einen Moment …</span></div>
@@ -42,10 +56,11 @@ export function Wahl() {
     return <Kombo plan={plan} />
   }
   if (wahl.currentPlan && wahl.currentPlan.status !== 'wischen') return <Kombo plan={wahl.currentPlan} />
+  const gone = wahl.plans.some((p) => p.status === 'verworfen' && p.week >= startOfWeek(todayISO()))
   return (
     <div className="page mw">
       <MilaBand kicker="Wochenwahl" title="Noch nichts zu wählen" />
-      <p className="m-hint mw__pad">Ab Freitag stellt ihr hier die Anzahl für die nächste Woche ein und wischt euren Stapel.</p>
+      <p className="m-hint mw__pad">{gone ? 'Die Woche ist verworfen. ' : ''}Ab Freitag stellt ihr hier die Anzahl für die nächste Woche ein und wischt euren Stapel.</p>
     </div>
   )
 }

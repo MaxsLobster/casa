@@ -9,6 +9,7 @@ import { cookOn, dayInfo, servingsFor, shortName, workDays } from './engine'
 import { countdown } from './Wochenwahl'
 import { weekKey } from './week-list'
 import { Sheet } from '../components/ui'
+import { SwipeRemove } from './SwipeRemove'
 import { useCasa } from '../state/HouseholdContext'
 import type { MealSlot, MilaMenu, MilaPlan, MilaRecipe } from '../lib/types'
 import { addDays, fromISO, isoWeek, startOfWeek, today, weekDates, weekRange, weekdayShort } from '../lib/dates'
@@ -135,8 +136,8 @@ function WeekView() {
                 let sub = ''
                 if (meal === 'mittag' && w) sub = w.is_leftover ? 'Reste · aufwärmen' : 'aus der Box'
                 if (meal === 'abend' && cook && !cook.open && cook.value) sub = cook.member?.id === me.id ? 'du kochst' : cook.member ? `${cook.value} kocht` : `Essen ${cook.value}`
-                return (
-                  <div key={meal} className="m-meal">
+                const body = (
+                  <div className="m-meal">
                     <span className="m-day__when">
                       {i === 0 && (
                         <>
@@ -169,6 +170,11 @@ function WeekView() {
                       </div>
                     )}
                   </div>
+                )
+                return w?.recipe_id ? (
+                  <SwipeRemove key={meal} onRemove={() => remove(date, meal)}>{body}</SwipeRemove>
+                ) : (
+                  <div key={meal}>{body}</div>
                 )
               })}
             </div>

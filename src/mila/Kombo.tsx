@@ -8,6 +8,7 @@ import { weekLabel } from './Wochenwahl'
 import { mealCount, prepMinutes } from './wahl'
 import { shortName } from './engine'
 import { Sheet } from '../components/ui'
+import { SwipeRemove, useUndo } from './SwipeRemove'
 import { today as todayISO, weekdayShort } from '../lib/dates'
 import type { MilaItemGroup, MilaPlanItem, MilaWeekPlan } from '../lib/types'
 
@@ -32,6 +33,9 @@ export function Kombo({ plan }: { plan: MilaWeekPlan }) {
   const nav = useNavigate()
   const [swap, setSwap] = useState<null | { item?: MilaPlanItem }>(null)
   const [busy, setBusy] = useState(false)
+  const [ask, setAsk] = useState(false)
+  const undo = useUndo()
+  const remove = async (i: MilaPlanItem, name: string) => undo.offer(name, await wahl.removeItem(i))
   const all = wahl.itemsOf(plan.id)
   const live = all.filter((i) => i.status !== 'reserve' && i.status !== 'getauscht')
   const reserve = all.filter((i) => i.status === 'reserve')
@@ -85,7 +89,8 @@ export function Kombo({ plan }: { plan: MilaWeekPlan }) {
                   const r = recipeById(i.recipe_id)
                   if (!r) return null
                   return (
-                    <button key={i.id} type="button" className={'mk__row' + (i.status === 'gekocht' || i.status === 'eingefroren' ? ' mk__row--done' : '')} onClick={() => nav(`/mila/rezept/${r.id}`)}>
+                    <SwipeRemove key={i.id} onRemove={() => void remove(i, i.slot === 'reste' ? `Reste ${shortName(r.name)}` : shortName(r.name))}>
+                    <button type="button" className={'mk__row' + (i.status === 'gekocht' || i.status === 'eingefroren' ? ' mk__row--done' : '')} onClick={() => nav(`/mila/rezept/${r.id}`)}>
                       <span className={'mk__badge mk__badge--' + (i.slot === 'reste' ? 'reste' : i.art)}>{i.slot === 'reste' ? '↺' : BADGE[i.art]}</span>
                       <span className="mk__text">
                         <span className="mk__dish">{i.slot === 'reste' ? `${shortName(r.name)} – Reste` : r.name}</span>
@@ -93,6 +98,7 @@ export function Kombo({ plan }: { plan: MilaWeekPlan }) {
                       </span>
                       <span className={'mk__meal' + (i.slot === 'abend' ? '' : ' mk__meal--mittag')}>{i.slot === 'abend' ? 'Abend' : 'Mittag'}</span>
                     </button>
+                    </SwipeRemove>
                   )
                 })}
               </div>
@@ -125,8 +131,20 @@ export function Kombo({ plan }: { plan: MilaWeekPlan }) {
             )}
           </div>
         )}
-        <span className="mw__fine">Haltbarkeiten pro Zutat geschätzt · keine festen Tage – Mila sagt jeden Tag, was dran ist.</span>
+        <span className="mw__fine">Haltbarkeiten pro Zutat geschätzt · keine festen Tage – Mila sagt jeden Tag, was dran ist. Nach links wischen nimmt ein Gericht heraus.</span>
+        {all.length > 0 && <button type="button" className="mw__danger" onClick={() => setAsk(true)}>Woche verwerfen</button>}
       </div>
+      {undo.bar()}
+      {ask && (
+        <Sheet onClose={() => setAsk(false)} title="Woche verwerfen?">
+          <div className="stack" style={{ gap: 12 }}>
+            <span className="mw__hand mw__hand--28">Woche verwerfen?</span>
+            <p className="m-hint">Alle Gerichte, die noch nicht gekocht sind, gehen raus – samt Prep und offenen Zeilen auf dem Einkaufszettel. Was schon gekocht ist, bleibt in der Woche stehen. Das lässt sich nicht rückgängig machen.</p>
+            <button type="button" className="rk-btn rk-btn--main" style={{ background: '#A33A20', borderColor: '#A33A20', color: '#F5F1E8' }} onClick={async () => { setAsk(false); await wahl.discardPlan(plan) }}>Ja, Woche verwerfen</button>
+            <button type="button" className="link" onClick={() => setAsk(false)}>Abbrechen</button>
+          </div>
+        </Sheet>
+      )}
 
       {swap && <SwapSheet plan={plan} item={swap.item} onPick={(item) => setSwap({ item })} onClose={() => setSwap(null)} />}
     </div>

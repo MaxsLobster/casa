@@ -767,3 +767,13 @@ button.m-hit { width: 100%; background: transparent; border: none; border-bottom
 .mh__daysval { width: 64px; text-align: center; font-size: 13px; color: var(--ink-soft); }
 .mw__photo--img { background: #2F3328; }
 .mw__pills .m-hint { white-space: nowrap; }
+
+/* Nach links wischen → Entfernen */
+.sr { position: relative; overflow: hidden; }
+.sr__content { position: relative; background: inherit; touch-action: pan-y; }
+.sr__btn { position: absolute; top: 0; bottom: 0; right: 0; width: 96px; border: none; cursor: pointer; background: #A33A20; color: #F5F1E8; font-family: var(--font-ui); font-size: 13px; letter-spacing: 0.06em; }
+:root[data-theme="dark"] .sr__btn { background: #B9583D; }
+.mk__list .sr__content, .mh__main .sr__content, .m-day .sr__content { background: var(--paper-2); }
+.m-days .sr__content, .m-items .sr__content { background: var(--paper); }
+.mw__danger { align-self: center; min-height: 44px; padding: 0 12px; border: none; background: transparent; cursor: pointer; font-family: var(--font-ui); font-size: 12.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #A33A20; }
+:root[data-theme="dark"] .mw__danger { color: #E7967A; }
