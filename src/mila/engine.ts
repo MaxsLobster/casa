@@ -57,7 +57,8 @@ export function menuTimes(week: ISODate, r: Rhythm): { opens: LocalStamp; closes
 
 /** Tag der Prep-Stunde vor der Woche */
 export function prepDate(week: ISODate, r: Rhythm): ISODate {
-  return addDays(week, -7 + r.prep_weekday - 1)
+  // Prep-Tag liegt in der Woche selbst (Standard Montag = Tag 1, nach dem Einkauf)
+  return addDays(week, r.prep_weekday - 1)
 }
 
 /** Mo–Fr der Woche */

@@ -22,7 +22,7 @@ export function prepEvents(householdId: string, r: Pick<Rhythm, 'prep_weekday' |
     id: MILA_EVENT_PREFIX + 'prep:' + monday,
     household_id: householdId,
     title: 'Prep-Stunde',
-    date: addDays(monday, -7 + r.prep_weekday - 1),
+    date: addDays(monday, r.prep_weekday - 1),
     end_date: null,
     start_time: r.prep_time.slice(0, 5),
     end_time: end,

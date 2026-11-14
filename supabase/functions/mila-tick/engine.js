@@ -305,18 +305,19 @@ function buildKombo(input) {
     };
   };
   choose("abend", plan.abend_anzahl);
-  choose("mittag", plan.mittag_anzahl);
-  return order(out, byId);
+  const doubles = out.filter((i) => i.slot === "abend" && i.status === "offen" && byId.get(i.recipe_id)?.cook_double).sort((a, b) => (a.frist_bis ?? "9999").localeCompare(b.frist_bis ?? "9999")).slice(0, plan.mittag_anzahl);
+  const reste = new Set(doubles.map((i) => i.key));
+  choose("mittag", plan.mittag_anzahl - reste.size);
+  return order(out, reste);
 }
-function order(items, byId) {
+function order(items, reste) {
   const G = { zuerst: 0, prep: 1, schluss: 2 };
   const active = items.filter((i) => i.status !== "reserve" && i.slot !== "reste");
   const sorted = [...active].sort((a, b) => G[a.gruppe] - G[b.gruppe] || (a.frist_bis ?? "9999").localeCompare(b.frist_bis ?? "9999") || (a.slot === "abend" ? -1 : 1) - (b.slot === "abend" ? -1 : 1));
   const out = [];
   for (const it of sorted) {
     out.push(it);
-    const r = byId.get(it.recipe_id);
-    if (it.slot === "abend" && r?.cook_double) {
+    if (it.slot === "abend" && reste.has(it.key)) {
       out.push({ ...it, key: "reste:" + it.recipe_id, parent_key: it.key, slot: "reste", art: it.art, portionen: RESTE_PORTIONEN, frist_bis: null });
     }
   }
