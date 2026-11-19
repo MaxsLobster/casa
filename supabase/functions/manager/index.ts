@@ -44,10 +44,13 @@ So arbeitest du:
 
 Hinweise zu Casa:
 - Datumsangaben immer als YYYY-MM-DD in Werkzeugen. Personen heißen "max", "anna" oder "offen".
+- Im Text an Max und Anna Datum so schreiben: „Di 24.11.“ (nie YYYY-MM-DD). Reiner Text ohne Markdown: keine Sternchen, keine Überschriften; Aufzählungen mit „– “.
+- Wer eine Mitteilung bekommt, steht im Ergebnis des Vorschlags („Betrifft …“). Sag nur das, nichts anderes.
 - Normalwoche-Felder (slot): valerie_bringen, valerie_holen, valerie_tag, anna_arbeit, nachmittag, abend_essen, abend_bett, wochenende. Eine Abweichung gilt nur für ein Datum. "wert": null heißt „offen – wer übernimmt?“.
 - Ist jemand einen Tag weg (z. B. „Ich bin Dienstag in München“), lege einen Termin mit art "eltern_weg" für diese Person an; dann werden ihre Aufgaben an dem Tag offen. Frag nach, wer Valerie bringt bzw. holt, und schlage die Abweichung erst nach der Antwort vor.
+- Mila: Steht die Woche als Kombo (ohne feste Tage) im Plan, nutze mila_kombo statt einzelner Gerichte. „Nicht eingekauft“ heißt meist: Kombo auf nächste Woche schieben.
 - Gelöscht wird nichts endgültig: Aufgaben werden erledigt oder archiviert. Gerichte aus dem Essensplan dürfen entfernt werden.
-- „Aufräumen“: lies Überfälliges, Doppeltes, Erledigtes und Uraltes und schlage eine Runde vor (erledigt?, verschieben, zusammenführen = eine behalten und die andere archivieren, archivieren). Nenne die Runde in einem Satz, z. B. „4 erledigt, 3 auf nächste Woche, 2 doppelt zusammenführen, 5 ins Archiv“.`
+- „Aufräumen“: lies Überfälliges, Doppeltes, Erledigtes und Uraltes und schlage die Runde gleich mit den Schreib-Werkzeugen vor (eine Karte zum Okay), nicht nur als Text. Aufgaben der anderen Person nur verschieben oder archivieren, wenn es eindeutig ist (erledigt?, verschieben, zusammenführen = eine behalten und die andere archivieren, archivieren). Nenne die Runde in einem Satz, z. B. „4 erledigt, 3 auf nächste Woche, 2 doppelt zusammenführen, 5 ins Archiv“.`
 
 // ---------------------------------------------------------------------------
 // Datum (Europe/Berlin)
@@ -93,6 +96,7 @@ const WRITE_TOOLS: Anthropic.Tool[] = [
   { name: 'mila_gericht_setzen', description: 'VORSCHLAG: ein Gericht aus dem Fundus für einen Tag eintragen.', input_schema: P({ datum: str('YYYY-MM-DD'), mahlzeit: { type: 'string', enum: ['mittag', 'abend'] }, rezept_id: { type: 'string' }, portionen: { type: 'integer' } }, ['datum', 'mahlzeit', 'rezept_id']) as never },
   { name: 'mila_gerichte_entfernen', description: 'VORSCHLAG: eingetragene Gerichte aus einem Zeitraum entfernen.', input_schema: P({ von: { type: 'string' }, bis: { type: 'string' }, mahlzeit: { type: 'string', enum: ['mittag', 'abend', 'beide'] } }, ['von', 'bis']) as never },
   { name: 'mila_gerichte_verschieben', description: 'VORSCHLAG: eingetragene Gerichte eines Zeitraums um n Tage verschieben (positiv = später).', input_schema: P({ von: { type: 'string' }, bis: { type: 'string' }, tage: { type: 'integer' } }, ['von', 'bis', 'tage']) as never },
+  { name: 'mila_kombo', description: 'VORSCHLAG: die übernommene Kombo einer Woche (Gerichte ohne feste Tage) als Ganzes auf die nächste Woche schieben (aktion naechste_woche, z. B. wenn nicht eingekauft wurde) oder verwerfen (aktion verwerfen: Nicht-Gekochtes raus). Der Einkaufszettel wird dabei automatisch angepasst.', input_schema: P({ aktion: { type: 'string', enum: ['naechste_woche', 'verwerfen'] }, woche: str('irgendein Datum der Woche, YYYY-MM-DD') }, ['aktion', 'woche']) as never },
   { name: 'einkaufsliste', description: 'VORSCHLAG: Einkaufszettel einer Woche neu aus dem Essensplan erstellen (aktion neu) oder die offenen Zeilen aus dem Plan leeren (aktion leeren). Abgehakte und selbst eingetragene Zeilen bleiben.', input_schema: P({ aktion: { type: 'string', enum: ['neu', 'leeren'] }, woche: str('irgendein Datum der Woche, YYYY-MM-DD') }, ['aktion', 'woche']) as never },
   { name: 'freizeit_uebernehmen', description: 'VORSCHLAG: Freizeit-Tipp als „Machen wir“ markieren und als Termin in die Woche übernehmen.', input_schema: P({ tipp_id: { type: 'string' } }, ['tipp_id']) as never },
   { name: 'anker_schritt', description: 'VORSCHLAG: nächsten Schritt eines Ankers setzen oder aktualisieren.', input_schema: P({ anker_id: { type: 'string' }, titel: str('der nächste Schritt, kurz'), person, datum: str('bis wann, YYYY-MM-DD') }, ['anker_id', 'titel', 'person', 'datum']) as never },
@@ -277,7 +281,9 @@ async function propose(c: Ctx, name: string, input: Record<string, unknown>): Pr
       else if (input.status) parts.push(String(input.status))
       if (input.archivieren) parts.push('ins Archiv')
       if (!parts.length) throw new Error('nichts zu ändern')
-      return { id, tool: name, input, summary: `„${t.title}“: ${parts.join(', ')}`, betrifft: [...new Set([...others(owner), ...(input.person !== undefined ? others(t.owner_member_id) : [])])] }
+      // Erledigen und reines Archivieren lösen (wie in der App) keine Mitteilung aus
+      const quiet = input.status === 'erledigt' || (input.archivieren && ['person', 'datum', 'titel', 'notiz', 'status'].every((k) => input[k] === undefined))
+      return { id, tool: name, input, summary: `„${t.title}“: ${parts.join(', ')}`, betrifft: quiet ? [] : [...new Set([...others(owner), ...(input.person !== undefined ? others(t.owner_member_id) : [])])] }
     }
     case 'termin_anlegen': {
       const d = date(input.datum, 'datum')
@@ -286,7 +292,7 @@ async function propose(c: Ctx, name: string, input: Record<string, unknown>): Pr
       const who = input.person ? memberFor(c, input.person) : null
       const art = String(input.art ?? 'termin')
       const label = art === 'eltern_weg' ? `${nameOf(c, who)} ist weg` : art === 'kita_zu' ? 'Kita zu' : art === 'valerie_weg' ? 'Valerie ist weg' : 'Termin'
-      return { id, tool: name, input, summary: `${label}: „${input.titel}“ am ${nice(d)}${input.bis_datum ? ` bis ${nice(String(input.bis_datum))}` : ''}${input.start ? ` um ${input.start}` : ''}${who && art === 'termin' ? ` (${nameOf(c, who)})` : ''}`, betrifft: who ? others(who) : c.members.filter((m) => m.id !== c.me.id && m.role === 'partner').map((m) => m.display_name) }
+      return { id, tool: name, input, summary: `${label}: „${input.titel}“ am ${nice(d)}${input.bis_datum ? ` bis ${nice(String(input.bis_datum))}` : ''}${input.start ? ` um ${input.start}` : ''}${who && art === 'termin' ? ` (${nameOf(c, who)})` : ''}`, betrifft: who && art !== 'eltern_weg' ? others(who) : c.members.filter((m) => m.id !== c.me.id && m.role === 'partner').map((m) => m.display_name) }
     }
     case 'termin_aendern': {
       const e = (must(await db.from('events').select('*').eq('id', String(input.id)).eq('household_id', hid), 'Termin') ?? [])[0] as any
@@ -319,6 +325,18 @@ async function propose(c: Ctx, name: string, input: Record<string, unknown>): Pr
       if (!n) throw new Error('In dem Zeitraum stehen keine Gerichte.')
       const t = Number(input.tage ?? 0)
       return { id, tool: name, input, summary: name === 'mila_gerichte_entfernen' ? `${n} ${n === 1 ? 'Gericht' : 'Gerichte'} von ${nice(von)} bis ${nice(bis)} aus dem Essensplan nehmen` : `${n} ${n === 1 ? 'Gericht' : 'Gerichte'} (${nice(von)}–${nice(bis)}) um ${Math.abs(t)} ${Math.abs(t) === 1 ? 'Tag' : 'Tage'} ${t > 0 ? 'nach hinten' : 'nach vorn'} schieben`, betrifft: [] }
+    }
+    case 'mila_kombo': {
+      const k = await komboOf(c, monday(date(input.woche, 'woche')))
+      if (!k.plan) throw new Error('In dieser Woche gibt es keine übernommene Kombo.')
+      if (!k.movable.some((x: any) => x.status === 'offen')) throw new Error('In der Kombo ist nichts mehr offen.')
+      const n = new Set(k.movable.filter((x: any) => x.status === 'offen').map((x: any) => x.recipe_id)).size
+      const was = `${n} ${n === 1 ? 'Gericht' : 'Gerichte'}`
+      if (input.aktion === 'verwerfen') return { id, tool: name, input, summary: `Kombo der Woche ab ${nice(k.plan.week)} verwerfen (${was} raus, Gekochtes bleibt), Einkaufszettel passt sich an`, betrifft: [] }
+      const next = addDays(k.plan.week, 7)
+      const taken = (must(await db.from('mila_week_plans').select('id').eq('household_id', hid).eq('week', next), 'Kombo') ?? []).length
+      if (taken) throw new Error(`Für die Woche ab ${nice(next)} gibt es schon eine Wahl. Dann lieber verwerfen oder einzeln eintragen.`)
+      return { id, tool: name, input, summary: `Kombo (${was}) auf die Woche ab ${nice(next)} schieben, Haltbarkeit und Einkaufszettel wandern mit`, betrifft: [] }
     }
     case 'einkaufsliste': {
       const w = monday(date(input.woche, 'woche'))
@@ -430,6 +448,39 @@ async function execute(c: Ctx, p: Proposal): Promise<LogEntry[]> {
       }
       break
     }
+    case 'mila_kombo': {
+      const k = await komboOf(c, monday(String(i.woche)))
+      if (!k.plan || !k.movable.length) throw new Error('In der Kombo ist nichts mehr offen.')
+      const old = k.plan.week as string
+      const children = k.movable.filter((x: any) => x.parent_id)
+      const parents = k.movable.filter((x: any) => !x.parent_id)
+      let next: string | null = null
+      if (i.aktion === 'verwerfen') {
+        await upd('mila_week_plans', k.plan.id, { status: 'verworfen' })
+        for (const r of [...children, ...parents]) await del('mila_plan_items', r)
+      } else {
+        next = addDays(old, 7)
+        const shift = (d: string | null) => (d ? addDays(String(d).slice(0, 10), 7) : null)
+        const rest = k.items.length > k.movable.length // schon Gekochtes/Eingefrorenes bleibt in dieser Woche
+        let target = k.plan.id
+        if (rest) {
+          const { id: _i, created_at: _c, updated_at: _u, ...copy } = k.plan
+          target = (await ins('mila_week_plans', { ...copy, week: next, einkauf_tag: shift(k.plan.einkauf_tag), prep_tag: shift(k.plan.prep_tag), prep_done: [] })).id
+        } else {
+          await upd('mila_week_plans', k.plan.id, { week: next, einkauf_tag: shift(k.plan.einkauf_tag), prep_tag: shift(k.plan.prep_tag), prep_done: [] })
+        }
+        for (const r of [...parents, ...children]) await upd('mila_plan_items', r.id, { plan_id: target, frist_bis: shift(r.frist_bis), geplant_am: null })
+      }
+      // Einkaufszettel: alte Woche (und ggf. neue) aus dem Plan neu aufbauen, Abgehaktes und Eigenes bleibt
+      const bought: string[] = [] // schon Gekauftes der alten Woche kommt nicht noch einmal auf den neuen Zettel
+      for (const w of next ? [old, next] : [old]) {
+        const items = (must(await db.from('mila_shopping_items').select('*').eq('household_id', hid).eq('source_week', S.weekKey(w)), 'Einkauf') ?? []) as any[]
+        bought.push(...items.filter((x) => x.checked).map((x) => x.name.toLowerCase()))
+        for (const r of items.filter((x) => !x.checked && x.source_label)) await del('mila_shopping_items', r)
+        for (const row of await shoppingRows(c, w, [...bought])) await ins('mila_shopping_items', row)
+      }
+      break
+    }
     case 'einkaufsliste': {
       const w = monday(String(i.woche))
       const wk = S.weekKey(w)
@@ -461,6 +512,14 @@ async function execute(c: Ctx, p: Proposal): Promise<LogEntry[]> {
       throw new Error('unbekannter Vorschlag')
   }
   return log
+}
+
+/** Übernommene Kombo einer Woche mit allen Gerichten; „movable“ = noch nicht gekocht oder eingefroren */
+async function komboOf(c: Ctx, w: string) {
+  const plan = (must(await c.db.from('mila_week_plans').select('*').eq('household_id', c.hid).eq('week', w), 'Kombo') ?? [])[0] as any
+  if (!plan?.adopted_at || plan.status !== 'aktiv') return { plan: null, items: [], movable: [] } as { plan: any; items: any[]; movable: any[] }
+  const items = (must(await c.db.from('mila_plan_items').select('*').eq('plan_id', plan.id), 'Kombo') ?? []) as any[]
+  return { plan, items, movable: items.filter((x) => x.status !== 'gekocht' && x.status !== 'eingefroren') }
 }
 
 /** Einkaufszettel aus dem Plan der Woche (wie in der App): Kombo (offen) + eingetragene Tage ab heute */
@@ -580,7 +639,7 @@ async function chat(c: Ctx, history: { role: 'user' | 'assistant'; text: string 
         if (WRITE_NAMES.has(call.name)) {
           const p = await propose(c, call.name, (call.input ?? {}) as Record<string, unknown>)
           proposals.push(p)
-          results.push({ type: 'tool_result', tool_use_id: call.id, content: `Vorschlag notiert: ${p.summary}.${p.betrifft.length ? ` Betrifft ${p.betrifft.join(' und ')} (bekommt eine Mitteilung).` : ''} Wird erst nach Okay ausgeführt.` })
+          results.push({ type: 'tool_result', tool_use_id: call.id, content: `Vorschlag notiert: ${p.summary}.${p.betrifft.length ? ` Betrifft ${p.betrifft.join(' und ')} (bekommt eine Mitteilung).` : ' Niemand bekommt dafür eine Mitteilung.'} Wird erst nach Okay ausgeführt.` })
         } else {
           const out = await runRead(c, call.name, (call.input ?? {}) as Record<string, unknown>)
           results.push({ type: 'tool_result', tool_use_id: call.id, content: JSON.stringify(out).slice(0, 30000) })
