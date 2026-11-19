@@ -84,6 +84,8 @@ const READ_TOOLS: Anthropic.Tool[] = [
   { name: 'fundus_lesen', description: 'Gerichte im Fundus mit Filtern. Gibt id, Name, Mahlzeit, Zeit, Tags zurück.', input_schema: P({ suche: str('Teil des Namens'), mahlzeit: { type: 'string', enum: ['mittag', 'abend'] }, max_minuten: { type: 'integer' }, nur_prep: { type: 'boolean' } }) as never },
   { name: 'freizeit_lesen', description: 'Freizeit-Tipps (aktuelle und kommende) mit Status.', input_schema: P({}) as never },
   { name: 'anker_lesen', description: 'Anker (Themen, um die sich Max und Anna kümmern): Titel, Phase, nächster Schritt mit Person und Datum.', input_schema: P({}) as never },
+  { name: 'hausbuch_lesen', description: 'Hausbuch: Einträge für Gäste (z. B. WLAN), Handwerker & Firmen, Zähler, rund ums Haus und freie Bereiche, mit Wert, Datum und Notiz. Optional mit Suchtext.', input_schema: P({ text: str('Suchtext, optional') }) as never },
+  { name: 'geschenke_lesen', description: 'Geschenk-Dose: Personen mit Geburtstag (Tag/Monat, optional Jahr) und Geschenk-Ideen. Ideen, die nur die fragende Person sehen darf, sind als privat markiert: die darfst du niemals der anderen Person zeigen oder vorlesen.', input_schema: P({ name: str('Name der Person, optional') }) as never },
   { name: 'verlauf_suchen', description: 'Im Verlauf suchen: Aufgaben (auch erledigt/archiviert), Termine, Anker und frühere Änderungen des Managers. Für Fragen wie „wann hatten wir das mit der Versicherung?“.', input_schema: P({ text: str('Suchtext') }, ['text']) as never },
 ]
 
@@ -232,6 +234,23 @@ async function runRead(c: Ctx, name: string, input: Record<string, unknown>): Pr
           const s = (must(st, 'Schritte') ?? []).find((t: any) => t.anchor_id === a.id) as any
           return { id: a.id, titel: a.title, phase: a.phase, naechster_schritt: s ? { titel: s.title, wer: nameOf(c, s.owner_member_id), bis: s.due_date } : null }
         })
+    }
+    case 'hausbuch_lesen': {
+      const t = String(input.text ?? '').trim().toLowerCase()
+      const rows = (must(await db.from('house_entries').select('id,section,title,value,date,note').eq('household_id', hid).order('section').limit(200), 'Hausbuch') ?? []) as any[]
+      const hit = t ? rows.filter((r) => [r.section, r.title, r.value, r.note].some((x) => x && String(x).toLowerCase().includes(t))) : rows
+      return { eintraege: (t && !hit.length ? rows : hit).map((r) => ({ id: r.id, bereich: r.section, titel: r.title, wert: r.value, datum: r.date, notiz: r.note })), hinweis: t && !hit.length ? 'Kein Treffer für den Suchtext, hier alles.' : undefined }
+    }
+    case 'geschenke_lesen': {
+      const n = String(input.name ?? '').trim().toLowerCase()
+      const [pp, ii] = await Promise.all([
+        db.from('gift_people').select('id,name,birthday_day,birthday_month,birth_year,member_id').eq('household_id', hid).is('archived_at', null),
+        db.from('gift_ideas').select('id,person_id,text,created_by,done_at').eq('household_id', hid).is('done_at', null),
+      ])
+      const people = ((must(pp, 'Geschenke') ?? []) as any[]).filter((p) => !n || p.name.toLowerCase().includes(n))
+      // RLS liefert nur, was die fragende Person sehen darf; privat = Idee für Max oder Anna selbst
+      const ideas = (must(ii, 'Ideen') ?? []) as any[]
+      return people.map((p) => ({ id: p.id, name: p.name, geburtstag: p.birthday_day ? `${p.birthday_day}.${p.birthday_month}.${p.birth_year ?? ''}` : null, nutzt_casa: !!p.member_id, ideen: ideas.filter((i) => i.person_id === p.id).map((i) => ({ id: i.id, text: i.text, privat: !!p.member_id, von: nameOf(c, i.created_by) })) }))
     }
     case 'verlauf_suchen': {
       const t = String(input.text ?? '').trim().replace(/[%,()]/g, ' ')

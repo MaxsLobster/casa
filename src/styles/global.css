@@ -1182,3 +1182,5 @@ body:has(.sheet-backdrop) .pill, body:has(.overlay) .pill, body:has(.mgr-sheet) 
 .nix__ok { flex: 1; min-height: 48px; border-radius: 24px; border: none; background: var(--navy); color: var(--on-navy); font-family: var(--font-ui); font-size: 16px; font-weight: 600; cursor: pointer; }
 .nix__ok:disabled { opacity: 0.5; }
 .nix__no { min-height: 48px; padding: 0 16px; border: none; background: transparent; font-family: var(--font-ui); font-size: 15px; color: var(--grey); cursor: pointer; }
+button.heute__gear { background: transparent; border: none; padding: 0; cursor: pointer; }
+.heute__frei.heute__gear--s1 { right: 46px; }

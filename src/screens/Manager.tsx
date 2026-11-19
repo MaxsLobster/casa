@@ -1,7 +1,7 @@
 // Casa-Manager: Chat, der Casa für Max und Anna bedient. Er schlägt Änderungen vor (Vorschau-Karte),
 // ausgeführt wird erst nach „Okay“. Danach gibt es „Rückgängig“. Verlauf pro Person im Gerät (letzte 30 Nachrichten).
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCasa } from '../state/HouseholdContext'
 import { isDemo, supabase } from '../lib/supabase'
 
@@ -67,6 +67,18 @@ export function Manager() {
   const [kb, setKb] = useState(0)
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const location = useLocation()
+  const nav = useNavigate()
+  // Frage von außen (Hausbuch, Casa aufräumen): einmal schicken, dann aus dem Verlauf der Seite nehmen
+  const asked = useRef(false)
+  useEffect(() => {
+    const ask = (location.state as { ask?: string } | null)?.ask
+    if (!ask || asked.current) return
+    asked.current = true
+    nav(location.pathname, { replace: true, state: null })
+    void send(ask)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (me) save(me.id, msgs)

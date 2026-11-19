@@ -22,6 +22,8 @@ import { Mwf } from './mwf/Mwf'
 import { Med } from './med/Med'
 import { Freizeit } from './freizeit/Freizeit'
 import { Manager } from './screens/Manager'
+import { Aufraeumen, Geschenke, Hausbuch } from './sonstiges/Sonstiges'
+import { useAreaTracking } from './sonstiges/useSonstiges'
 
 export default function App() {
   return (
@@ -50,6 +52,7 @@ function Shell() {
   const loc = useLocation()
   const splashGone = useSplashGone()
   const [recovery, setRecovery] = useState(pendingRecovery)
+  useAreaTracking()
 
   // Zettel vom Kaltstart wegnehmen, sobald klar ist, was darunter liegt.
   const ready = casa.authReady && (!casa.user || recovery || casa.dataReady)
@@ -138,6 +141,9 @@ function Shell() {
             <Route path="/anker/:id" element={<AnkerDetail />} />
             <Route path="/sonntag" element={<Navigate to="/anker" replace />} />
             <Route path="/einstellungen" element={<Einstellungen />} />
+            <Route path="/hausbuch" element={<Hausbuch />} />
+            <Route path="/geschenke" element={<Geschenke />} />
+            <Route path="/aufraeumen" element={<Aufraeumen />} />
             <Route path="/neu" element={wide ? <Woche /> : <Heute />} />
             <Route path="*" element={<Navigate to="/heute" replace />} />
           </Routes>

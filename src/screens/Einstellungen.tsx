@@ -5,6 +5,7 @@ import { Chips, Toggle } from '../components/ui'
 import { isWorkday } from '../lib/mwf'
 import { setPaper, usePaper } from '../state/paper'
 import { SetPassword } from './SetPassword'
+import { AREAS } from '../sonstiges/useSonstiges'
 import { currentPushSubscription, isIOS, isStandalone, permissionState, pushSupported } from '../lib/push'
 
 const WD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
@@ -231,6 +232,17 @@ export function Einstellungen() {
         <DayTime label="Einkauf" day={milaRhythm.shop_weekday} onChange={(d) => saveMilaRhythm({ shop_weekday: d })} />
         <DayTime label="Prep" day={milaRhythm.prep_weekday} time={milaRhythm.prep_time} onChange={(d, t) => saveMilaRhythm({ prep_weekday: d, prep_time: t })} />
         <p className="hint">Wahl in der Woche davor, Einkauf und Prep in der Woche selbst (Montag = Tag 1). Die Anzahl der Gerichte stellt ihr jeweils in der Wahl ein.</p>
+      </div>
+
+      {/* ---------- Bereiche (Casa aufräumen) ---------- */}
+      <div className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+        <span className="label">Bereiche</span>
+        {AREAS.map((a) => {
+          const hidden = settings?.hidden_areas ?? []
+          const on = !hidden.includes(a.key)
+          return <Toggle key={a.key} on={on} onChange={(v) => updateSettings({ hidden_areas: v ? hidden.filter((h) => h !== a.key) : [...hidden, a.key] })} label={a.label} hint={on ? undefined : 'ausgeblendet – die Daten bleiben'} />
+        })}
+        <p className="hint">Gilt nur für dich. Vorschläge, was ihr nicht nutzt, stehen unter Sonstiges › Casa aufräumen.</p>
       </div>
 
       {/* ---------- Dunkelmodus ---------- */}

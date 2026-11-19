@@ -270,6 +270,7 @@ export interface Settings {
   mwf_notify: 'aus' | 'briefing' | 'sofort'
   med_partner_ok?: boolean
   mila_notify?: boolean // Mila-Mitteilungen zur Wochenwahl (Standard an) // Zustimmung zur Abendfrage des Partners (Bereich Medikament)
+  hidden_areas?: string[] // ausgeblendete Bereiche (Casa aufräumen), pro Person
   updated_at: string
 }
 
@@ -296,8 +297,9 @@ export type TableName =
   | MedTableName
   | FreizeitTableName
   | MilaTableName
+  | SonstigesTableName
 
-export interface TableRow extends MilaTableRow, MedTableRow, FreizeitTableRow {
+export interface TableRow extends MilaTableRow, MedTableRow, FreizeitTableRow, SonstigesTableRow {
   households: Household
   members: Member
   tasks: Task
@@ -782,4 +784,61 @@ export interface MilaShelfRule {
   stichwort: string
   tage: number | null // null = unbegrenzt
   gruppe: 'kurz' | 'mittel' | 'lang' | 'vorrat'
+}
+
+// ---------------------------------------------------------------------------
+// Sonstiges: Hausbuch, Geschenk-Dose, Casa aufräumen
+// ---------------------------------------------------------------------------
+export interface HouseEntry {
+  id: Id
+  household_id: Id
+  section: string
+  title: string
+  value: string | null
+  date: string | null
+  note: string | null
+  hidden: boolean // erst nach Antippen sichtbar
+  position: number
+  created_by: Id | null
+  updated_by: Id | null
+  created_at: string
+  updated_at: string
+}
+export interface GiftPerson {
+  id: Id
+  household_id: Id
+  name: string
+  birthday_day: number | null
+  birthday_month: number | null
+  birth_year: number | null
+  member_id: Id | null // Max oder Anna selbst: Ideen privat
+  note: string | null
+  archived_at: string | null
+  created_by: Id | null
+  created_at: string
+  updated_at: string
+}
+export interface GiftIdea {
+  id: Id
+  household_id: Id
+  person_id: Id
+  text: string
+  done_at: string | null
+  created_by: Id
+  created_at: string
+  updated_at: string
+}
+export interface AreaVisit {
+  id?: Id
+  member_id: Id
+  household_id: Id
+  area: string
+  last_at: string
+}
+export type SonstigesTableName = 'house_entries' | 'gift_people' | 'gift_ideas' | 'area_visits'
+export interface SonstigesTableRow {
+  house_entries: HouseEntry
+  gift_people: GiftPerson
+  gift_ideas: GiftIdea
+  area_visits: AreaVisit
 }

@@ -128,7 +128,7 @@ export interface Casa {
   clearOverride(date: string, slot: Slot): Promise<void>
   setTemplate(input: { weekday: number; slot: Slot; value: string | null; at?: string | null; is_open: boolean; note?: string | null }): Promise<void>
 
-  updateSettings(patch: Partial<Pick<Settings, 'dark_mode_auto' | 'briefing_time' | 'quiet_enabled' | 'quiet_hours_start' | 'quiet_hours_end' | 'show_legend' | 'workday_on' | 'mwf_notify' | 'med_partner_ok' | 'mila_notify'>>): Promise<void>
+  updateSettings(patch: Partial<Pick<Settings, 'dark_mode_auto' | 'briefing_time' | 'quiet_enabled' | 'quiet_hours_start' | 'quiet_hours_end' | 'show_legend' | 'workday_on' | 'mwf_notify' | 'med_partner_ok' | 'mila_notify' | 'hidden_areas'>>): Promise<void>
 
   /** Push auf diesem Gerät anmelden (braucht einen Tipp des Nutzers) */
   enablePush(): Promise<void>

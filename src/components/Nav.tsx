@@ -1,6 +1,7 @@
 // Schwebende Leiste (Milchglas-Pille): nur Zeichen. Heute · Woche · [+] · [Manager] · To-Dos · Anker
 import type { ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useCasa } from '../state/HouseholdContext'
 
 const ICON = { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const
 
@@ -52,6 +53,7 @@ function Tab({ to, label, cls = '', children }: { to: string; label: string; cls
 /** Manager-Knopf: Antippen öffnet den Manager. (Teil 3: Blatt und Gedrückthalten zum Sprechen) */
 export function Nav({ manager }: { manager?: ReactNode }) {
   const nav = useNavigate()
+  const hidden = useCasa().settings?.hidden_areas ?? []
   return (
     <nav className="pill" aria-label="Hauptnavigation">
       <Tab to="/heute" label="Heute" cls=" pill__tab--heute"><HeuteIcon /></Tab>
@@ -69,7 +71,7 @@ export function Nav({ manager }: { manager?: ReactNode }) {
         )}
       </span>
       <Tab to="/todos" label="To-Dos"><TodoIcon /></Tab>
-      <Tab to="/anker" label="Anker"><AnkerIcon /></Tab>
+      {!hidden.includes('anker') && <Tab to="/anker" label="Anker"><AnkerIcon /></Tab>}
     </nav>
   )
 }

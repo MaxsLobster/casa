@@ -9,6 +9,7 @@ import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import { toH } from '../lib/band'
 import { Check } from '../components/ui'
 import { GehtNix } from './GehtNix'
+import { SonstigesSheet } from '../sonstiges/Sonstiges'
 import type { Event, Slot, Task } from '../lib/types'
 import { wantsStagger } from '../state/splash'
 import { PotIcon } from '../mila/icons'
@@ -180,6 +181,12 @@ export function Heute() {
   const [editSlots, setEditSlots] = useState<Slot[] | null>(null)
   const [editTask, setEditTask] = useState<Task | null>(null)
   const [nix, setNix] = useState(false)
+  const hiddenAreas = settings?.hidden_areas ?? []
+  // Zahnrad → Blatt „Sonstiges“ (auch beim Zurück aus Hausbuch und Co.)
+  const [sonst, setSonst] = useState(() => !!(location.state as { sonstiges?: boolean } | null)?.sonstiges)
+  useEffect(() => {
+    if ((location.state as { sonstiges?: boolean } | null)?.sonstiges) setSonst(true)
+  }, [location.state])
   const [undoNix, setUndoNix] = useState<{ n: number; run: () => Promise<void> } | null>(null)
   useEffect(() => {
     if (!undoNix) return
@@ -306,19 +313,23 @@ export function Heute() {
 
   return (
     <div className={'page heute' + slideCls} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <Link to="/einstellungen" className="heute__gear" aria-label="Einstellungen">
+      <button type="button" className="heute__gear" aria-label="Sonstiges und Einstellungen" onClick={() => setSonst(true)}>
         <GearIcon />
-      </Link>
-      <Link to="/mila/start" className="heute__gear heute__pot" aria-label="Mila, der Essensplaner">
-        <PotIcon />
-      </Link>
-      <Link to="/freizeit" className="heute__gear heute__frei" aria-label="Freizeit">
+      </button>
+      {!hiddenAreas.includes('mila') && (
+        <Link to="/mila/start" className="heute__gear heute__pot" aria-label="Mila, der Essensplaner">
+          <PotIcon />
+        </Link>
+      )}
+      {!hiddenAreas.includes('freizeit') && (
+      <Link to="/freizeit" className={'heute__gear heute__frei' + (hiddenAreas.includes('mila') ? ' heute__gear--s1' : '')} aria-label="Freizeit">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M2.5 19.5l6-9 4 5.5 2.5-3 6.5 6.5z" />
           <circle cx="17" cy="6.5" r="2.3" />
         </svg>
         {freizeitNeu && <span className="mwf__dot mwf__dot--icon" style={{ top: 9, right: 9 }} aria-label="neue Tipps" />}
       </Link>
+      )}
       {casa.med?.enabled && (
         <Link to="/med" className="heute__gear heute__med" aria-label="Medikament">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -494,6 +505,7 @@ export function Heute() {
       {editEvent && <EventEditor event={editEvent} onClose={() => setEditEvent(null)} />}
       {editSlots && <SlotEditor slots={editSlots} date={date} state={day} onClose={() => setEditSlots(null)} />}
       {editTask && <TaskEditor task={editTask} onClose={() => setEditTask(null)} />}
+      {sonst && <SonstigesSheet onClose={() => { setSonst(false); if ((location.state as { sonstiges?: boolean } | null)?.sonstiges) nav(location.pathname, { replace: true, state: null }) }} />}
       {nix && (
         <GehtNix
           moved={rows.filter((r) => r.task && r.task.owner_member_id === me?.id && r.task.area === 'casa' && !isShared(r.task)).map((r) => r.task!)}

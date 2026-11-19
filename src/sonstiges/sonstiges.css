@@ -1,0 +1,62 @@
+/* Sonstiges · Hausbuch · Geschenk-Dose · Casa aufräumen */
+.so { gap: 12px; }
+.so__back { align-self: flex-start; background: transparent; border: none; padding: 4px 0; font-family: var(--font-ui); font-size: 14px; color: var(--grey); cursor: pointer; min-height: 36px; }
+.so__h1 { font-size: 46px; line-height: 1; }
+.so__lead { margin: 0; font-size: 15px; line-height: 1.4; color: var(--ink-soft); }
+.so__tear { height: 0; border-top: 2px dotted var(--navy-line); margin: 4px 0; }
+.so__label { font-size: 11.5px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; color: var(--grey); }
+.so__empty { font-size: 14px; color: var(--grey-2); font-style: italic; }
+
+/* Blatt */
+.so__sheettitle { font-family: var(--font-hand); font-size: 32px; line-height: 1; color: var(--ink); }
+.so__rows { display: flex; flex-direction: column; }
+.so__row { display: flex; align-items: center; gap: 14px; padding: 12px 2px; min-height: 60px; background: transparent; border: none; border-bottom: 1px solid var(--line-soft); text-align: left; cursor: pointer; font: inherit; color: var(--ink); }
+.so__row:last-child { border-bottom: none; }
+.so__row > svg { flex: none; color: var(--grey-2); }
+.so__icon { flex: none; width: 28px; font-size: 21px; text-align: center; }
+.so__rowtext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.so__rowtitle { font-family: var(--font-hand); font-size: 25px; line-height: 1.05; color: var(--ink); }
+.so__rowsub { font-size: 13.5px; color: var(--grey); }
+
+/* Hausbuch */
+.so__ask { display: flex; align-items: center; gap: 10px; padding: 0 16px; min-height: 46px; border-radius: 23px; background: var(--paper-2); border: 1px solid var(--line); color: var(--grey); }
+.so__askfield { flex: 1; min-width: 0; border: none; background: transparent; font-family: var(--font-ui); font-size: 16px; color: var(--ink); outline: none; }
+.so__sec { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+.so__sechead { display: flex; align-items: center; justify-content: space-between; }
+.so__plus { width: 36px; height: 36px; border-radius: 18px; border: 1px solid var(--line); background: transparent; color: var(--grey); font-size: 20px; line-height: 1; cursor: pointer; }
+.so__entry { display: flex; flex-direction: column; gap: 2px; padding: 9px 0; min-height: 44px; background: transparent; border: none; border-bottom: 1px solid var(--line-soft); text-align: left; cursor: pointer; font: inherit; color: var(--ink); }
+.so__entrytop { display: flex; align-items: baseline; gap: 12px; }
+.so__entrytitle { flex: 1; min-width: 0; font-family: var(--font-hand); font-size: 24px; line-height: 1.05; }
+.so__entryval { flex: none; max-width: 55%; text-align: right; font-size: 14.5px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.so__entryval--veil { color: var(--brown); font-style: italic; font-size: 13.5px; }
+.so__entrynote { font-size: 13px; color: var(--grey); }
+.so__add { align-self: flex-start; margin-top: 8px; min-height: 44px; padding: 0 16px; border-radius: 22px; border: 1.2px dashed var(--navy-line-strong); background: transparent; font-family: var(--font-hand); font-size: 21px; color: var(--ink); cursor: pointer; }
+.so__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.so__chip { min-height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--line); background: var(--paper-2); font-family: var(--font-ui); font-size: 14px; color: var(--ink); cursor: pointer; white-space: nowrap; }
+.so__chip--on { border-color: var(--gold); background: rgba(176, 138, 69, 0.18); }
+.so__datelabel { display: flex; flex-direction: column; gap: 6px; }
+.so__actions { display: flex; gap: 10px; align-items: center; }
+.so__ok { min-height: 48px; padding: 0 22px; border-radius: 24px; border: none; background: var(--navy); color: var(--on-navy); font-family: var(--font-ui); font-size: 16px; font-weight: 600; cursor: pointer; }
+.so__ok:disabled { opacity: 0.45; }
+.so__ok--small { min-height: 44px; padding: 0 16px; font-size: 15px; }
+.so__ghost { min-height: 40px; padding: 0 10px; border: none; background: transparent; font-family: var(--font-ui); font-size: 14px; color: var(--grey); cursor: pointer; }
+.so__x { flex: none; width: 36px; height: 36px; border: none; background: transparent; font-size: 22px; color: var(--grey-2); cursor: pointer; }
+
+/* Geschenk-Dose */
+.so__gift { display: flex; flex-direction: column; gap: 3px; padding: 10px 14px; border-radius: 14px; background: var(--paper-2); border: 1px solid var(--line-soft); text-align: left; cursor: pointer; font: inherit; color: var(--ink); }
+.so__gift--soon { border: 1.5px solid var(--gold); }
+.so__gifttop { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.so__giftname { font-family: var(--font-hand); font-size: 26px; line-height: 1.05; }
+.so__giftwhen { flex: none; font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--grey-2); }
+.so__giftwhen--soon { color: var(--brown); font-weight: 600; }
+:root[data-theme="dark"] .so__giftwhen--soon { color: var(--gold); }
+.so__idea { font-size: 14.5px; color: var(--ink-soft); }
+.so__lock { font-size: 12.5px; color: var(--grey); }
+.so__bday { display: grid; grid-template-columns: 0.8fr 1.4fr 1fr; gap: 8px; }
+.so__idearow { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--line-soft); padding: 2px 0; }
+.so__ideatext { flex: 1; min-width: 0; font-size: 15.5px; }
+.so__ideaform { display: flex; gap: 8px; }
+.so__ideaform .input-ui { flex: 1; min-width: 0; }
+
+/* Aufräumen */
+.so__arearow { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
