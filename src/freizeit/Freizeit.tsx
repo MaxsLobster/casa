@@ -193,17 +193,21 @@ function Card({ t, alarm, small, focus }: { t: FreizeitTipp; alarm?: boolean; sm
   const facts = [preis, signup, alarm ? null : frist].filter(Boolean).join(' · ')
   const who = t.feedback_von ? members.find((m) => m.id === t.feedback_von)?.display_name : null
 
-  const body = (
+  // Eingeklappt: nur Titel und eine Zeile Wann/Wo. Antippen klappt den Rest auf.
+  const [expanded, setExpanded] = useState(!!focus)
+  useEffect(() => {
+    if (focus) setExpanded(true)
+  }, [focus])
+  const line = [when, place].filter(Boolean).join(' · ')
+  const state = t.status !== 'neu' ? `${ACTIONS.find((a) => a.status === t.status)?.label.slice(0, 2)} ${DONE_LABEL[t.status]}` : null
+
+  const details = (
     <>
-      {alarm && <span className="frei__alarm">🔔 Jetzt kümmern{frist ? ` · ${frist}` : ''}</span>}
-      <span className="frei__title">{t.titel}</span>
-      {when && <span className="frei__when">{when}</span>}
-      {place && <span className="frei__fact">{place}</span>}
       {facts && <span className="frei__fact">{facts}</span>}
       {alarm && t.grund && <p className="frei__why">{t.grund}</p>}
       {t.warum_valerie && (
         <p className="frei__why">
-          <b>Warum für Valerie</b> {t.warum_valerie}
+          <b>Für Valerie</b> {t.warum_valerie}
         </p>
       )}
       {t.fuer_euch && (
@@ -212,47 +216,57 @@ function Card({ t, alarm, small, focus }: { t: FreizeitTipp; alarm?: boolean; sm
         </p>
       )}
       {t.hinweis && <span className="frei__tag">{t.hinweis}</span>}
+      {t.link && (
+        <a href={t.link} target="_blank" rel="noopener noreferrer" className="frei__more">Zur Seite ›</a>
+      )}
     </>
   )
 
   return (
-    <article ref={ref} className={'frei__card' + (alarm ? ' frei__card--alarm' : '') + (small ? ' frei__card--small' : '') + (t.status === 'nix' ? ' frei__card--nix' : '') + (focus ? ' frei__card--focus' : '')}>
-      {t.link ? (
-        <a href={t.link} target="_blank" rel="noopener noreferrer" className="frei__body">
-          {body}
-          <span className="frei__more">Zur Seite ›</span>
-        </a>
-      ) : (
-        <div className="frei__body">{body}</div>
-      )}
+    <article ref={ref} className={'frei__card frei__card--fold' + (alarm ? ' frei__card--alarm' : '') + (small ? ' frei__card--small' : '') + (t.status === 'nix' ? ' frei__card--nix' : '') + (focus ? ' frei__card--focus' : '')}>
+      <button type="button" className="frei__fold" onClick={() => setExpanded(!expanded)} aria-expanded={expanded}>
+        <span className="frei__body">
+          {alarm && <span className="frei__alarm">🔔 Jetzt kümmern{frist ? ` · ${frist}` : ''}</span>}
+          <span className="frei__title">{t.titel}</span>
+          {line && <span className="frei__line">{line}</span>}
+          {!expanded && state && <span className="frei__line frei__line--state">{state}</span>}
+        </span>
+        <Chevron open={expanded} />
+      </button>
 
-      {t.status === 'neu' ? (
-        <div className="frei__actions">
-          {ACTIONS.map((a) => (
-            <button key={a.status} type="button" className="frei__btn" disabled={busy} onClick={() => choose(a.status)}>{a.label}</button>
-          ))}
-        </div>
-      ) : (
-        <div className="frei__state">
-          <span className="frei__stamp">
-            {ACTIONS.find((a) => a.status === t.status)?.label.slice(0, 2)} {DONE_LABEL[t.status]}
-            {who ? <i> · {who}</i> : null}
-          </span>
-          {t.status === 'machen' && <button type="button" className="frei__link" disabled={busy} onClick={() => choose('gemacht')}>✅ Waren dort</button>}
-          <button type="button" className="frei__link" disabled={busy} onClick={undo}>Rückgängig</button>
-        </div>
-      )}
-      {t.status === 'machen' && t.event_id && <span className="frei__hint">Steht in der Woche, für euch beide.</span>}
+      <Collapse open={expanded}>
+        <div className="frei__more-body">
+          {details}
 
-      {t.status !== 'neu' && !noteOpen && (
-        <button type="button" className="frei__note" onClick={() => setNoteOpen(true)}>{t.notiz ? `„${t.notiz}“` : '+ kurze Notiz'}</button>
-      )}
-      {t.status !== 'neu' && noteOpen && (
-        <div className="frei__noteedit">
-          <input className="input-ui" value={note} maxLength={200} placeholder="Kurze Notiz (freiwillig)" onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveNote()} />
-          <button type="button" className="frei__btn frei__btn--on" disabled={busy} onClick={saveNote}>Fertig</button>
+          {t.status === 'neu' ? (
+            <div className="frei__actions">
+              {ACTIONS.map((a) => (
+                <button key={a.status} type="button" className="frei__btn" disabled={busy} onClick={() => choose(a.status)}>{a.label}</button>
+              ))}
+            </div>
+          ) : (
+            <div className="frei__state">
+              <span className="frei__stamp">
+                {state}
+                {who ? <i> · {who}</i> : null}
+              </span>
+              {t.status === 'machen' && <button type="button" className="frei__link" disabled={busy} onClick={() => choose('gemacht')}>✅ Waren dort</button>}
+              <button type="button" className="frei__link" disabled={busy} onClick={undo}>Rückgängig</button>
+            </div>
+          )}
+          {t.status === 'machen' && t.event_id && <span className="frei__hint">Steht in der Woche, für euch beide.</span>}
+
+          {t.status !== 'neu' && !noteOpen && (
+            <button type="button" className="frei__note" onClick={() => setNoteOpen(true)}>{t.notiz ? `„${t.notiz}“` : '+ kurze Notiz'}</button>
+          )}
+          {t.status !== 'neu' && noteOpen && (
+            <div className="frei__noteedit">
+              <input className="input-ui" value={note} maxLength={200} placeholder="Kurze Notiz (freiwillig)" onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveNote()} />
+              <button type="button" className="frei__btn frei__btn--on" disabled={busy} onClick={saveNote}>Fertig</button>
+            </div>
+          )}
         </div>
-      )}
+      </Collapse>
       {err && <span className="hint hint--brown">{err}</span>}
     </article>
   )

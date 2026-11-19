@@ -1066,18 +1066,17 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
   align-self: center; display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 8px 12px; min-height: 40px;
   font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--grey-2); text-decoration: none;
 }
-.heute__mwf { right: 178px; }
+.heute__mwf { right: 134px; }
 /* Punkt: ungelesene Zurufe */
 .mwf__dot { display: inline-block; width: 8px; height: 8px; border-radius: 4px; background: var(--brown); box-shadow: 0 0 0 2px var(--paper); }
 .mwf__dot--icon { position: absolute; top: -2px; right: -3px; width: 7px; height: 7px; }
 .heute__mwf .mwf__dot--icon { top: 9px; right: 9px; }
 
 /* Medikament: Symbol auf Heute (links vom Topf) */
-.heute__med { right: 178px; }
+.heute__med { right: 134px; }
 /* Freizeit: Symbol auf Heute (links vom Topf) */
-.heute__frei { right: 134px; }
+.heute__frei { right: 90px; }
 /* Casa-Manager: Symbol neben dem Topf */
-.heute__mgr { right: 90px; }
 
 /* Anker-Liste kompakt: Schritt in einer Zeile */
 .ank__item--compact { gap: 2px; min-width: 0; max-width: 100%; overflow: hidden; }
@@ -1123,3 +1122,63 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 .mgr__field { flex: 1; min-width: 0; min-height: 44px; max-height: 140px; resize: none; padding: 11px 14px; border-radius: 22px; border: 1px solid var(--navy-line); background: var(--paper-2); color: var(--ink); font-family: var(--font-ui); font-size: 16px; line-height: 1.35; }
 .mgr__send { flex: none; width: 44px; height: 44px; border-radius: 22px; border: none; background: var(--navy); color: var(--on-navy); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .mgr__send:disabled { opacity: 0.35; }
+
+/* ---------- Schwebende Leiste (Milchglas-Pille) ---------- */
+:root {
+  --pill-bg: rgba(248, 245, 238, 0.74);
+  --pill-border: rgba(255, 255, 255, 0.8);
+  --pill-shadow: 0 12px 30px rgba(36, 49, 80, 0.2), 0 1px 0 rgba(36, 49, 80, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --pill-space: calc(104px + env(safe-area-inset-bottom));
+}
+:root[data-theme="dark"] {
+  --pill-bg: rgba(34, 45, 76, 0.72);
+  --pill-border: rgba(255, 255, 255, 0.1);
+  --pill-shadow: 0 12px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.pill {
+  position: fixed; z-index: 16;
+  left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
+  max-width: 520px; margin: 0 auto;
+  height: 66px; box-sizing: border-box; padding: 0 8px; border-radius: 33px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--pill-bg);
+  backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  border: 1px solid var(--pill-border); box-shadow: var(--pill-shadow);
+  transition: opacity 0.18s var(--ease), transform 0.18s var(--ease);
+}
+.pill__tab { width: 52px; height: 48px; border-radius: 24px; display: flex; align-items: center; justify-content: center; color: var(--grey); -webkit-tap-highlight-color: transparent; }
+.pill__tab[aria-current="page"] { background: rgba(176, 138, 69, 0.18); color: var(--ink); }
+.pill__mid { display: flex; gap: 8px; align-items: center; }
+.pill__plus, .pill__mgr { width: 48px; height: 48px; border-radius: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.pill__plus { border: none; background: var(--navy); color: var(--on-navy); box-shadow: 0 4px 10px rgba(36, 49, 80, 0.28); }
+.pill__mgr { border: 1.5px solid var(--gold); background: var(--paper-2); color: var(--ink); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+.pill__plus:active, .pill__mgr:active { transform: scale(0.95); }
+@media (min-width: 768px) { .pill__tab--heute { display: none; } }
+/* Inhalt läuft bis ganz unten und scrollt unter der Pille durch */
+.app--pill .page { padding-bottom: var(--pill-space); }
+/* Auf Blättern und Vollbild-Ansichten blendet die Pille aus */
+body:has(.sheet-backdrop) .pill, body:has(.overlay) .pill, body:has(.mgr-sheet) .pill { opacity: 0; transform: translateY(24px); pointer-events: none; }
+
+/* Rückgängig-Leiste über der Pille */
+.undo-bar {
+  position: fixed; z-index: 17; left: 16px; right: 16px; max-width: 500px; margin: 0 auto;
+  bottom: calc(90px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 0 6px 0 16px; border-radius: 25px;
+  background: var(--navy); color: var(--on-navy); box-shadow: 0 4px 14px var(--shadow); animation: sheet-up 0.2s var(--ease);
+}
+.undo-bar__text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.undo-bar__btn { flex: none; min-height: 44px; padding: 0 12px; border: none; background: transparent; cursor: pointer; font-family: var(--font-ui); font-size: 12.5px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: var(--gold); }
+
+/* Heute geht nix */
+.heute__nix { align-self: flex-start; margin-top: 2px; padding: 2px 0 1px; background: transparent; border: none; border-bottom: 1.2px dashed rgba(138, 100, 32, 0.5); font-family: var(--font-hand); font-size: 22px; color: #8A6420; cursor: pointer; }
+:root[data-theme="dark"] .heute__nix { color: var(--gold); }
+.nix__title { font-family: var(--font-hand); font-size: 32px; line-height: 1; color: var(--ink); }
+.nix__lead { margin: 0; font-size: 15.5px; line-height: 1.4; color: var(--ink-soft); }
+.nix__label { font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; color: var(--grey); }
+.nix__list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.nix__list li { display: flex; gap: 10px; align-items: baseline; font-size: 16px; color: var(--ink); }
+.nix__list li span:first-child { flex: none; color: var(--gold); width: 14px; }
+.nix__actions { display: flex; gap: 10px; align-items: center; }
+.nix__ok { flex: 1; min-height: 48px; border-radius: 24px; border: none; background: var(--navy); color: var(--on-navy); font-family: var(--font-ui); font-size: 16px; font-weight: 600; cursor: pointer; }
+.nix__ok:disabled { opacity: 0.5; }
+.nix__no { min-height: 48px; padding: 0 16px; border: none; background: transparent; font-family: var(--font-ui); font-size: 15px; color: var(--grey); cursor: pointer; }

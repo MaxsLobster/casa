@@ -49,6 +49,8 @@ export interface Casa {
   reloadMila(): Promise<void>
   /** wartende Mitteilungen gleich verschicken */
   pushNow(): void
+  /** „Heute geht nix“: eigene Aufgaben auf ein Datum schieben (mit Protokoll); gibt Rückgängig zurück */
+  postponeTasks(ids: string[], to: string): Promise<() => Promise<void>>
   milaRhythm: Rhythm
   saveMilaRhythm(patch: Partial<Rhythm>): Promise<void>
   // Medikament (privat): meine Einstellungen, falls ich den Bereich habe
@@ -525,6 +527,31 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     milaPlanItems,
     milaRecipe: (id) => (id ? (milaById.get(id) ?? null) : null),
     pushNow: () => flushPush(),
+    async postponeTasks(ids, to) {
+      const { hid, me } = need()
+      const before = tasks.filter((t) => ids.includes(t.id))
+      const batch = crypto.randomUUID()
+      for (const t of before) await store.update('tasks', { id: t.id }, { due_date: to, updated_by: me.id })
+      // Protokoll wie beim Casa-Manager, damit „Rückgängig“ über denselben Weg läuft
+      let logged = false
+      if (!isDemo && supabase && before.length) {
+        const rows = before.map((t, i) => ({ household_id: hid, member_id: me.id, batch_id: batch, position: i, table_name: 'tasks', row_id: t.id, op: 'update', before: t, after: { ...t, due_date: to }, summary: `Heute geht nix: „${t.title}“ auf morgen` }))
+        const { error } = await supabase.from('manager_log').insert(rows)
+        logged = !error
+      }
+      await load('tasks')
+      return async () => {
+        if (logged && supabase) {
+          const { error } = await supabase.functions.invoke('manager', { body: { action: 'undo', batch_id: batch } })
+          if (!error) {
+            await load('tasks')
+            return
+          }
+        }
+        for (const t of before) await store.update('tasks', { id: t.id }, { due_date: t.due_date, updated_by: me.id })
+        await load('tasks')
+      }
+    },
     reloadMila: async () => {
       if (householdId) await loadMila(householdId)
     },

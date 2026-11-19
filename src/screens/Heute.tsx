@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
-import { addDays, dayLabel, eventEnd, fromISO, hhmm, isoWeek, spanLabel, uhr, weekdayLong } from '../lib/dates'
+import { addDays, dayLabel, eventEnd, fromISO, hhmm, spanLabel, uhr, weekdayLong } from '../lib/dates'
 import { dayState, name as whoName, verb, type Voice } from '../lib/week'
 import { applyEffects, awayOn, dayEffects, isEffectEvent, openChips, personName } from '../lib/effects'
 import { dailyText, moonPhase, readDailyChoice, sunTimes, writeDailyChoice, type DailyKind } from '../lib/daily'
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
-import { BAND_END as T_END, BAND_START as T_START, goldSegments, navySegments, pct, toH } from '../lib/band'
+import { toH } from '../lib/band'
 import { Check } from '../components/ui'
+import { GehtNix } from './GehtNix'
 import type { Event, Slot, Task } from '../lib/types'
 import { wantsStagger } from '../state/splash'
 import { PotIcon } from '../mila/icons'
@@ -22,10 +23,7 @@ import { isMilaEvent, mealsOn } from '../mila/casa-link'
 import { minutes } from '../mila/rhythm'
 import { alarmOpen } from '../lib/freizeit'
 import { heuteDran } from '../mila/wahl'
-import { ManagerIcon } from './Manager'
 import { shortName } from '../mila/engine'
-
-const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 
 /** Wischen: erst bei deutlicher Bewegung zur Seite, damit Scrollen nicht stört */
 const SWIPE_MIN = 60
@@ -181,6 +179,13 @@ export function Heute() {
   const [editEvent, setEditEvent] = useState<Event | null>(null)
   const [editSlots, setEditSlots] = useState<Slot[] | null>(null)
   const [editTask, setEditTask] = useState<Task | null>(null)
+  const [nix, setNix] = useState(false)
+  const [undoNix, setUndoNix] = useState<{ n: number; run: () => Promise<void> } | null>(null)
+  useEffect(() => {
+    if (!undoNix) return
+    const t = window.setTimeout(() => setUndoNix(null), 15000)
+    return () => window.clearTimeout(t)
+  }, [undoNix])
   const present = (slots: Slot[]) => slots.filter((x) => day[x])
 
   const whoEvent = (o: Occurrence) => {
@@ -297,16 +302,6 @@ export function Heute() {
     else nav('/todos')
   }
 
-  // ---------- Zeitstrahl ----------
-  // Gleiche Rechnung wie das Mini-Band in der Woche
-  const gold = goldSegments(date, day, occDay, members)
-  const navy = navySegments(occDay, me?.id ?? null)
-  const fill = Math.min(Math.max(nowH, T_START), T_END)
-  const fillPct = pct(fill)
-  const inRange = isToday && nowH >= T_START && nowH <= T_END
-  // Stundenzahlen nahe am Jetzt-Etikett ausblenden
-  const nearNow = (hh: number) => inRange && Math.abs(hh - nowH) < 0.75
-
   const slideCls = slide ? ` heute--${slide}` : ''
 
   return (
@@ -316,9 +311,6 @@ export function Heute() {
       </Link>
       <Link to="/mila/start" className="heute__gear heute__pot" aria-label="Mila, der Essensplaner">
         <PotIcon />
-      </Link>
-      <Link to="/manager" className="heute__gear heute__mgr" aria-label="Casa-Manager">
-        <ManagerIcon />
       </Link>
       <Link to="/freizeit" className="heute__gear heute__frei" aria-label="Freizeit">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -336,7 +328,7 @@ export function Heute() {
         </Link>
       )}
       {workday && (
-        <Link to="/mwf/hub" className="heute__gear heute__mwf" style={casa.med?.enabled ? { right: 222 } : undefined} aria-label="Munich Watch Fair">
+        <Link to="/mwf/hub" className="heute__gear heute__mwf" style={casa.med?.enabled ? { right: 178 } : undefined} aria-label="Munich Watch Fair">
           <MwfIcon />
           {hasShouts && <span className="mwf__dot mwf__dot--icon" aria-label="ungelesene Zurufe" />}
         </Link>
@@ -350,7 +342,6 @@ export function Heute() {
           <button type="button" className="heute__num" onClick={backToToday} aria-label={isToday ? undefined : 'Zurück zu heute'} style={isToday ? { cursor: 'default' } : undefined}>{d.getDate()}</button>
           <div className="stack" style={{ gap: 2, paddingBottom: 4 }}>
             <span className="heute__wd">{weekdayLong(date)}</span>
-            <span className="kicker" style={{ fontSize: 12.5 }}>{MONTHS[d.getMonth()]} · KW {isoWeek(date)}</span>
           </div>
         </div>
         <div className={'heute__tear' + rc} style={rs(1)} />
@@ -465,6 +456,9 @@ export function Heute() {
                 ))}
               </div>
             )}
+            {isToday && (
+              <button type="button" className="heute__nix" onClick={() => setNix(true)}>☾ heute geht nix</button>
+            )}
           </section>
 
           {isToday && soon.length > 0 && (
@@ -494,31 +488,30 @@ export function Heute() {
           )}
         </div>
 
-        <div className={'tl' + rc} style={rs(3)} aria-label="Tagesverlauf">
-          {[6, 9, 12, 15, 18, 21].map((hh) => (
-            <span key={hh} className="tl__num" style={{ top: pct(hh), opacity: nearNow(hh) ? 0 : 1 }}>{hh}</span>
-          ))}
-          {Array.from({ length: 17 }, (_, i) => T_START + i).map((hh) => (
-            <span key={hh} className="tl__tick" style={{ top: pct(hh) }} />
-          ))}
-          {inRange && <span className="tl__now" style={{ top: fillPct }}>{`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`}</span>}
-          <div className="tl__tube">
-            {isToday && <div className="tl__fill" style={{ height: fillPct }} />}
-            {inRange && <div className="tl__knob" style={{ top: fillPct }} />}
-            {gold.map((g, i) => (
-              <div key={'g' + i} className="tl__seg tl__seg--gold" style={{ top: pct(g.from), height: `calc(${pct(g.to)} - ${pct(g.from)})` }} />
-            ))}
-            {navy.map((s, i) => (
-              <div key={'n' + i} className="tl__seg tl__seg--navy" style={{ top: pct(s.from), height: `calc(${pct(s.to)} - ${pct(s.from)})` }} />
-            ))}
-          </div>
-        </div>
       </div>
 
       {takeover && <Takeover date={date} state={day} fx={fx} onClose={() => setTakeover(false)} />}
       {editEvent && <EventEditor event={editEvent} onClose={() => setEditEvent(null)} />}
       {editSlots && <SlotEditor slots={editSlots} date={date} state={day} onClose={() => setEditSlots(null)} />}
       {editTask && <TaskEditor task={editTask} onClose={() => setEditTask(null)} />}
+      {nix && (
+        <GehtNix
+          moved={rows.filter((r) => r.task && r.task.owner_member_id === me?.id && r.task.area === 'casa' && !isShared(r.task)).map((r) => r.task!)}
+          kept={rows.filter((r) => !(r.task && r.task.owner_member_id === me?.id && r.task.area === 'casa' && !isShared(r.task))).map((r) => (r.time ? `${r.time} ${r.title}` : r.title))}
+          partner={partner?.display_name ?? null}
+          onClose={() => setNix(false)}
+          onDone={(n, run) => {
+            setNix(false)
+            setUndoNix({ n, run })
+          }}
+        />
+      )}
+      {undoNix && (
+        <div className="undo-bar" role="status">
+          <span className="undo-bar__text">{undoNix.n === 1 ? '1 Sache' : `${undoNix.n} Sachen`} auf morgen</span>
+          <button type="button" className="undo-bar__btn" onClick={() => { const u = undoNix; setUndoNix(null); void u.run() }}>Rückgängig</button>
+        </div>
+      )}
     </div>
   )
 }

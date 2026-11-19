@@ -120,7 +120,7 @@ function Shell() {
   const isNeu = loc.pathname === '/neu'
 
   return (
-    <div className="app">
+    <div className="app app--pill">
       <div className="panes">
         {wide && (
           <div className="pane pane--side">
@@ -147,7 +147,7 @@ function Shell() {
       {splashGone && <div className="edge" aria-hidden="true" />}
       {isNeu && <Neu />}
       {casa.error && (
-        <div style={{ position: 'fixed', left: 16, right: 16, bottom: 'calc(var(--nav-h) + 12px)', zIndex: 40 }}>
+        <div style={{ position: 'fixed', left: 16, right: 16, bottom: 'calc(96px + env(safe-area-inset-bottom))', zIndex: 40 }}>
           <div className="note" style={{ transform: 'none' }}>
             <span className="hand" style={{ fontSize: 23 }}>{casa.error}</span>
           </div>

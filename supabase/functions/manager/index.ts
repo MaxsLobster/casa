@@ -577,6 +577,8 @@ async function undo(c: Ctx, batchId: string) {
       void _id
       void _c
       void _u
+      // Wer zurücknimmt, ist der Bearbeiter (sonst sähe der Push-Trigger den alten Bearbeiter als Absender)
+      if ('updated_by' in back) back.updated_by = c.me.id
       must(await db.from(r.table_name).update(back).eq('id', r.row_id), r.table_name)
     } else if (r.op === 'delete') must(await db.from(r.table_name).insert(r.before), r.table_name)
   }

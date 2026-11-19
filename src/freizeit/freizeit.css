@@ -50,3 +50,16 @@
 .frei__tripday { flex: none; width: 58px; font-size: 13.5px; font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; }
 .frei__tripname { font-family: var(--font-hand); font-size: 24px; line-height: 1.1; color: var(--navy); text-decoration: none; }
 .frei__tripnote { font-size: 14px; color: var(--ink-soft); }
+
+/* Kompakt: jede Karte eingeklappt (Titel + eine Zeile), Antippen klappt auf */
+.frei__card--fold { gap: 0; padding: 0; border-radius: 14px; box-shadow: 0 2px 8px rgba(36, 49, 80, 0.05); }
+.frei__card--fold.frei__card--alarm { border: 1.5px solid var(--gold); }
+.frei__fold { display: flex; gap: 12px; align-items: flex-start; width: 100%; padding: 12px 14px; background: transparent; border: none; text-align: left; cursor: pointer; font: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
+.frei__fold .frei__body { flex: 1; min-width: 0; gap: 3px; }
+.frei__fold .chev { flex: none; margin-top: 6px; color: var(--grey); }
+.frei__card--fold .frei__title { font-size: 26px; }
+.frei__card--fold .frei__alarm { font-size: 10.5px; }
+.frei__line { font-size: 14px; line-height: 1.35; color: var(--grey); }
+.frei__line--state { color: var(--brown); }
+.frei__more-body { display: flex; flex-direction: column; gap: 10px; padding: 0 14px 14px; }
+.frei__more-body .frei__more { align-self: flex-start; text-decoration: none; }
