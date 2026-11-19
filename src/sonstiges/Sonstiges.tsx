@@ -5,6 +5,7 @@ import { Sheet, Toggle } from '../components/ui'
 import { useCasa, useToday } from '../state/HouseholdContext'
 import type { GiftPerson, HouseEntry } from '../lib/types'
 import { AREAS, SECTIONS, birthdayLabel, daysUntil, nextBirthday, unusedAreas, useSonstiges, TRACK_START } from './useSonstiges'
+import { managerBus } from '../screens/managerBus'
 import './sonstiges.css'
 
 const back = { state: { sonstiges: true } }
@@ -74,7 +75,6 @@ function forbidden(v: string): boolean {
 }
 
 export function Hausbuch() {
-  const nav = useNavigate()
   const so = useSonstiges()
   const [q, setQ] = useState('')
   const [edit, setEdit] = useState<Partial<HouseEntry> | null>(null)
@@ -83,7 +83,8 @@ export function Hausbuch() {
 
   const ask = (e: FormEvent) => {
     e.preventDefault()
-    if (q.trim()) nav('/manager', { state: { ask: `Frag das Hausbuch: ${q.trim()}` } })
+    if (q.trim()) managerBus.open(`Frag das Hausbuch: ${q.trim()}`)
+    setQ('')
   }
 
   return (
@@ -297,7 +298,6 @@ function PersonSheet({ person, onClose }: { person: GiftPerson | null; onClose: 
 // Casa aufräumen
 // ---------------------------------------------------------------------------
 export function Aufraeumen() {
-  const nav = useNavigate()
   const { settings, updateSettings, members } = useCasa()
   const today = useToday()
   const so = useSonstiges()
@@ -338,7 +338,7 @@ export function Aufraeumen() {
         ))}
         <span className="hint">Ausblenden gilt nur für dich. Die Daten bleiben, Einblenden geht jederzeit hier oder in den Einstellungen.</span>
       </section>
-      <button type="button" className="so__ok" onClick={() => nav('/manager', { state: { ask: 'Aufräumen' } })}>🧹 Wochenputz mit dem Manager</button>
+      <button type="button" className="so__ok" onClick={() => managerBus.open('Aufräumen')}>🧹 Wochenputz mit dem Manager</button>
     </div>
   )
 }

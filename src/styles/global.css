@@ -1184,3 +1184,52 @@ body:has(.sheet-backdrop) .pill, body:has(.overlay) .pill, body:has(.mgr-sheet) 
 .nix__no { min-height: 48px; padding: 0 16px; border: none; background: transparent; font-family: var(--font-ui); font-size: 15px; color: var(--grey); cursor: pointer; }
 button.heute__gear { background: transparent; border: none; padding: 0; cursor: pointer; }
 .heute__frei.heute__gear--s1 { right: 46px; }
+
+/* ---------- Casa-Manager als Blatt von unten ---------- */
+.mgs-backdrop { position: fixed; inset: 0; z-index: 25; background: rgba(36, 49, 80, 0.28); animation: fade-in 0.18s var(--ease); }
+.mgr-sheet {
+  position: absolute; left: 0; right: 0; max-width: 600px; margin: 0 auto;
+  display: flex; flex-direction: column; box-sizing: border-box;
+  padding: 8px 16px calc(12px + env(safe-area-inset-bottom)) 18px; border-radius: 26px 26px 0 0;
+  background-color: var(--paper); background-image: var(--paper-layers); background-size: var(--paper-sizes); background-position: var(--paper-pos);
+  box-shadow: 0 -10px 30px rgba(36, 49, 80, 0.18); color: var(--ink); font-family: var(--font-ui);
+  animation: sheet-up 0.26s var(--ease);
+}
+.mgs__grip { flex: none; align-self: center; width: 40px; height: 5px; border-radius: 3px; background: rgba(36, 49, 80, 0.18); }
+:root[data-theme="dark"] .mgs__grip { background: rgba(233, 225, 207, 0.25); }
+.mgs__head { flex: none; display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.mgs__icon { flex: none; width: 38px; height: 38px; border-radius: 19px; border: 1.5px solid var(--gold); display: flex; align-items: center; justify-content: center; color: var(--ink); }
+.mgs__titles { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mgs__title { font-family: var(--font-hand); font-size: 26px; line-height: 1; color: var(--ink); white-space: nowrap; }
+.mgs__sub { font-size: 12px; color: var(--grey-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mgs__close { flex: none; width: 40px; height: 40px; border: none; background: transparent; font-size: 26px; line-height: 1; color: var(--grey); cursor: pointer; }
+.mgs__list { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 14px 2px 10px; display: flex; flex-direction: column; gap: 10px; }
+.mgs__card { background: var(--paper-2); border: 1.5px solid var(--gold); border-radius: 16px; transform: none; box-shadow: none; max-width: 100%; align-self: stretch; }
+.mgs__cancel { border-color: transparent; color: var(--grey); }
+.mgs__hint { flex: none; font-size: 13.5px; color: var(--brown); padding: 0 4px 6px; }
+.mgs__photo { flex: none; display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.mgs__photo img { width: 54px; height: 54px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.mgs__photo .hint { flex: 1; min-width: 0; font-size: 12.5px; }
+.mgs__input { flex: none; display: flex; gap: 8px; align-items: flex-end; padding-top: 8px; }
+.mgs__cam { flex: none; width: 44px; height: 44px; border-radius: 22px; border: 1px solid var(--navy-line); background: var(--paper-2); color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.mgs__cam:disabled { opacity: 0.4; }
+
+/* Gedrückthalten: Aufnahme-Anzeige über der Pille */
+.pill__mgr--on { background: var(--navy); color: var(--on-navy); transform: scale(1.06); box-shadow: 0 0 0 6px rgba(176, 138, 69, 0.25); }
+.listen {
+  position: fixed; z-index: 17; left: 16px; right: 16px; max-width: 420px; margin: 0 auto;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 18px; border-radius: 26px;
+  background: var(--navy); color: var(--on-navy); box-shadow: 0 8px 24px rgba(36, 49, 80, 0.3); animation: sheet-up 0.18s var(--ease);
+  pointer-events: none;
+}
+.listen__wave { flex: none; display: flex; gap: 3px; align-items: center; height: 22px; }
+.listen__wave i { width: 3px; height: 8px; border-radius: 2px; background: var(--gold); animation: wave 0.9s ease-in-out infinite; }
+.listen__wave i:nth-child(2) { animation-delay: 0.12s; }
+.listen__wave i:nth-child(3) { animation-delay: 0.24s; }
+.listen__wave i:nth-child(4) { animation-delay: 0.36s; }
+.listen__wave i:nth-child(5) { animation-delay: 0.48s; }
+@keyframes wave { 0%, 100% { height: 6px; } 50% { height: 20px; } }
+.listen__text { flex: 1; min-width: 0; font-family: var(--font-hand); font-size: 22px; line-height: 1.1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.mgs__title { overflow: hidden; text-overflow: ellipsis; font-size: 25px; }
+.mgs__head .mgr__new { flex: none; font-size: 10.5px; white-space: nowrap; }

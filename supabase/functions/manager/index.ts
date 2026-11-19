@@ -49,6 +49,8 @@ Hinweise zu Casa:
 - Normalwoche-Felder (slot): valerie_bringen, valerie_holen, valerie_tag, anna_arbeit, nachmittag, abend_essen, abend_bett, wochenende. Eine Abweichung gilt nur für ein Datum. "wert": null heißt „offen – wer übernimmt?“.
 - Ist jemand einen Tag weg (z. B. „Ich bin Dienstag in München“), lege einen Termin mit art "eltern_weg" für diese Person an; dann werden ihre Aufgaben an dem Tag offen. Frag nach, wer Valerie bringt bzw. holt, und schlage die Abweichung erst nach der Antwort vor.
 - Mila: Steht die Woche als Kombo (ohne feste Tage) im Plan, nutze mila_kombo statt einzelner Gerichte. „Nicht eingekauft“ heißt meist: Kombo auf nächste Woche schieben.
+- Hausbuch und Geschenk-Dose: erst mit hausbuch_lesen bzw. geschenke_lesen nachsehen. Geschenk-Ideen, die als privat markiert sind, gehören nur der fragenden Person: nie der anderen Person zeigen, vorlesen oder in Aufgaben/Termine schreiben, die die andere sieht.
+- Fotos (Kindergarten-Zettel, Brief, Rechnung, Einladung, kaputte Sache): lies Datum, Uhrzeit, Ort, Frist und wer betroffen ist heraus und schlage passende Termine oder Aufgaben vor (mit Person und Frist). Das Foto wird nicht gespeichert; sag das nicht extra. Ist etwas unleserlich, frag nach.
 - Gelöscht wird nichts endgültig: Aufgaben werden erledigt oder archiviert. Gerichte aus dem Essensplan dürfen entfernt werden.
 - „Aufräumen“: lies Überfälliges, Doppeltes, Erledigtes und Uraltes und schlage die Runde gleich mit den Schreib-Werkzeugen vor (eine Karte zum Okay), nicht nur als Text. Aufgaben der anderen Person nur verschieben oder archivieren, wenn es eindeutig ist (erledigt?, verschieben, zusammenführen = eine behalten und die andere archivieren, archivieren). Nenne die Runde in einem Satz, z. B. „4 erledigt, 3 auf nächste Woche, 2 doppelt zusammenführen, 5 ins Archiv“.`
 
@@ -65,6 +67,7 @@ const weekday = (d: string) => ((fromISO(d).getUTCDay() + 6) % 7) + 1 // 1 = Mo
 const monday = (d: string) => addDays(d, 1 - weekday(d))
 const nice = (d: string) => `${WD[fromISO(d).getUTCDay()]} ${Number(d.slice(8, 10))}.${Number(d.slice(5, 7))}.`
 const DATE = /^\d{4}-\d{2}-\d{2}$/
+const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 const TIME = /^\d{2}:\d{2}$/
 
 // ---------------------------------------------------------------------------
@@ -101,6 +104,9 @@ const WRITE_TOOLS: Anthropic.Tool[] = [
   { name: 'mila_kombo', description: 'VORSCHLAG: die übernommene Kombo einer Woche (Gerichte ohne feste Tage) als Ganzes auf die nächste Woche schieben (aktion naechste_woche, z. B. wenn nicht eingekauft wurde) oder verwerfen (aktion verwerfen: Nicht-Gekochtes raus). Der Einkaufszettel wird dabei automatisch angepasst.', input_schema: P({ aktion: { type: 'string', enum: ['naechste_woche', 'verwerfen'] }, woche: str('irgendein Datum der Woche, YYYY-MM-DD') }, ['aktion', 'woche']) as never },
   { name: 'einkaufsliste', description: 'VORSCHLAG: Einkaufszettel einer Woche neu aus dem Essensplan erstellen (aktion neu) oder die offenen Zeilen aus dem Plan leeren (aktion leeren). Abgehakte und selbst eingetragene Zeilen bleiben.', input_schema: P({ aktion: { type: 'string', enum: ['neu', 'leeren'] }, woche: str('irgendein Datum der Woche, YYYY-MM-DD') }, ['aktion', 'woche']) as never },
   { name: 'freizeit_uebernehmen', description: 'VORSCHLAG: Freizeit-Tipp als „Machen wir“ markieren und als Termin in die Woche übernehmen.', input_schema: P({ tipp_id: { type: 'string' } }, ['tipp_id']) as never },
+  { name: 'hausbuch_eintrag', description: 'VORSCHLAG: Hausbuch-Eintrag anlegen (ohne id) oder ändern (mit id). Bereiche: Für Gäste, Handwerker & Firmen, Zähler, Rund ums Haus oder ein neuer. Niemals Konto-, Ausweis- oder Kartennummern.', input_schema: P({ id: str('bei Änderung: Eintrags-id'), bereich: { type: 'string' }, titel: { type: 'string' }, wert: { type: 'string' }, datum: str('YYYY-MM-DD, optional'), notiz: { type: 'string' }, verdeckt: { type: 'boolean', description: 'erst nach Antippen sichtbar, z. B. WLAN-Passwort' } }) as never },
+  { name: 'geschenk_person', description: 'VORSCHLAG: Person in der Geschenk-Dose anlegen (ohne id) oder ändern (mit id), z. B. Geburtstag nachtragen.', input_schema: P({ id: str('bei Änderung: Personen-id'), name: { type: 'string' }, geburtstag_tag: { type: 'integer' }, geburtstag_monat: { type: 'integer' }, geburtstag_jahr: { type: 'integer' } }) as never },
+  { name: 'geschenk_idee', description: 'VORSCHLAG: Geschenk-Idee bei einer Person eintragen („Opa Hannes mag Islay-Whisky“). person_id aus geschenke_lesen; gibt es die Person noch nicht, erst geschenk_person vorschlagen.', input_schema: P({ person_id: { type: 'string' }, text: str('die Idee, kurz') }, ['person_id', 'text']) as never },
   { name: 'anker_schritt', description: 'VORSCHLAG: nächsten Schritt eines Ankers setzen oder aktualisieren.', input_schema: P({ anker_id: { type: 'string' }, titel: str('der nächste Schritt, kurz'), person, datum: str('bis wann, YYYY-MM-DD') }, ['anker_id', 'titel', 'person', 'datum']) as never },
 ]
 const WRITE_NAMES = new Set(WRITE_TOOLS.map((t) => t.name))
@@ -366,6 +372,36 @@ async function propose(c: Ctx, name: string, input: Record<string, unknown>): Pr
       if (!t) throw new Error('Tipp nicht gefunden')
       return { id, tool: name, input, summary: `Freizeit: „${t.titel}“ – machen wir, als Termin in die Woche${t.start_tag ? ` (${nice(t.start_tag)})` : ''}`, betrifft: c.members.filter((m) => m.id !== c.me.id && m.role === 'partner').map((m) => m.display_name) }
     }
+    case 'hausbuch_eintrag': {
+      const bad = (v: unknown) => { const t = String(v ?? '').replace(/[\s-]/g, ''); return /[A-Z]{2}\d{10,}/i.test(t) || /\d{15,19}/.test(t) }
+      if (bad(input.wert) || bad(input.notiz)) throw new Error('Das sieht nach einer Konto- oder Kartennummer aus – die gehören nicht ins Hausbuch.')
+      if (input.datum) date(input.datum, 'datum')
+      if (input.id) {
+        const e = (must(await db.from('house_entries').select('id,title').eq('id', String(input.id)).eq('household_id', hid), 'Hausbuch') ?? [])[0] as any
+        if (!e) throw new Error('Eintrag nicht gefunden')
+        return { id, tool: name, input, summary: `Hausbuch „${e.title}“ ändern${input.wert !== undefined ? `: ${input.verdeckt ? '(verdeckt)' : input.wert}` : ''}`, betrifft: [] }
+      }
+      if (!String(input.titel ?? '').trim()) throw new Error('titel fehlt')
+      return { id, tool: name, input, summary: `Hausbuch · ${String(input.bereich ?? 'Rund ums Haus')}: „${input.titel}“${input.wert ? ` – ${input.verdeckt ? 'verdeckt' : input.wert}` : ''}`, betrifft: [] }
+    }
+    case 'geschenk_person': {
+      const d = input.geburtstag_tag, m = input.geburtstag_monat
+      if ((d == null) !== (m == null)) throw new Error('Geburtstag: Tag und Monat beide oder keins')
+      if (d != null && (Number(d) < 1 || Number(d) > 31 || Number(m) < 1 || Number(m) > 12)) throw new Error('Geburtstag ungültig')
+      const bday = d != null ? ` · Geburtstag ${d}.${m}.${input.geburtstag_jahr ?? ''}` : ''
+      if (input.id) {
+        const p = (must(await db.from('gift_people').select('id,name').eq('id', String(input.id)).eq('household_id', hid), 'Person') ?? [])[0] as any
+        if (!p) throw new Error('Person nicht gefunden')
+        return { id, tool: name, input, summary: `Geschenk-Dose: ${input.name ?? p.name}${bday}`, betrifft: [] }
+      }
+      if (!String(input.name ?? '').trim()) throw new Error('name fehlt')
+      return { id, tool: name, input, summary: `Geschenk-Dose: neue Person ${input.name}${bday}`, betrifft: [] }
+    }
+    case 'geschenk_idee': {
+      const p = (must(await db.from('gift_people').select('id,name,member_id').eq('id', String(input.person_id)).eq('household_id', hid), 'Person') ?? [])[0] as any
+      if (!p) throw new Error('Person nicht gefunden')
+      return { id, tool: name, input, summary: `Geschenk-Idee für ${p.name}: „${String(input.text).trim()}“${p.member_id ? ' (🔒 nur du siehst sie)' : ''}`, betrifft: [] }
+    }
     case 'anker_schritt': {
       const a = (must(await db.from('anchors').select('id,title,area').eq('id', String(input.anker_id)).eq('household_id', hid), 'Anker') ?? [])[0] as any
       if (!a) throw new Error('Anker nicht gefunden')
@@ -519,6 +555,30 @@ async function execute(c: Ctx, p: Proposal): Promise<LogEntry[]> {
       await upd('freizeit_tipps', tip.id, { status: 'machen', event_id: eventId, feedback_von: me.id, feedback_am: new Date().toISOString() })
       break
     }
+    case 'hausbuch_eintrag': {
+      const row: Record<string, unknown> = { updated_by: me.id }
+      if (i.bereich !== undefined) row.section = String(i.bereich).trim() || 'Rund ums Haus'
+      if (i.titel !== undefined) row.title = String(i.titel).trim()
+      if (i.wert !== undefined) row.value = String(i.wert).trim() || null
+      if (i.datum !== undefined) row.date = i.datum || null
+      if (i.notiz !== undefined) row.note = String(i.notiz).trim() || null
+      if (i.verdeckt !== undefined) row.hidden = !!i.verdeckt
+      if (i.id) await upd('house_entries', String(i.id), row)
+      else await ins('house_entries', { household_id: hid, created_by: me.id, section: 'Rund ums Haus', hidden: false, position: Date.now() % 1e9, ...row })
+      break
+    }
+    case 'geschenk_person': {
+      const row: Record<string, unknown> = {}
+      if (i.name !== undefined) row.name = String(i.name).trim()
+      if (i.geburtstag_tag !== undefined) { row.birthday_day = i.geburtstag_tag; row.birthday_month = i.geburtstag_monat }
+      if (i.geburtstag_jahr !== undefined) row.birth_year = i.geburtstag_jahr
+      if (i.id) await upd('gift_people', String(i.id), row)
+      else await ins('gift_people', { household_id: hid, created_by: me.id, ...row })
+      break
+    }
+    case 'geschenk_idee':
+      await ins('gift_ideas', { household_id: hid, person_id: i.person_id, text: String(i.text).trim(), created_by: me.id })
+      break
     case 'anker_schritt': {
       const owner = memberFor(c, i.person)
       const step = (must(await db.from('tasks').select('*').eq('anchor_id', String(i.anker_id)).eq('is_step', true).neq('status', 'erledigt'), 'Schritt') ?? [])[0] as any
@@ -590,7 +650,9 @@ async function undo(c: Ctx, batchId: string) {
   const rows = (must(await db.from('manager_log').select('*').eq('household_id', hid).eq('batch_id', batchId).eq('member_id', c.me.id).is('undone_at', null).gte('created_at', since).order('position', { ascending: false }), 'Verlauf') ?? []) as any[]
   if (!rows.length) throw new Error('Diese Änderung lässt sich nicht mehr zurücknehmen.')
   for (const r of rows) {
-    if (r.op === 'insert') must(await db.from(r.table_name).delete().eq('id', r.row_id), r.table_name)
+    // Personen der Geschenk-Dose werden nicht gelöscht, nur aus der Dose genommen
+    if (r.op === 'insert' && r.table_name === 'gift_people') must(await db.from('gift_people').update({ archived_at: new Date().toISOString() }).eq('id', r.row_id), r.table_name)
+    else if (r.op === 'insert') must(await db.from(r.table_name).delete().eq('id', r.row_id), r.table_name)
     else if (r.op === 'update') {
       const { id: _id, created_at: _c, updated_at: _u, ...back } = r.before ?? {}
       void _id
@@ -608,7 +670,7 @@ async function undo(c: Ctx, batchId: string) {
 // ---------------------------------------------------------------------------
 // Chat mit Claude (Werkzeug-Schleife)
 // ---------------------------------------------------------------------------
-async function chat(c: Ctx, history: { role: 'user' | 'assistant'; text: string }[]) {
+async function chat(c: Ctx, history: { role: 'user' | 'assistant'; text: string }[], image?: { media_type: string; data: string }) {
   if (!API_KEY) return { text: 'Der Manager ist noch nicht eingerichtet: Es fehlt der API-Schlüssel.', proposals: [] }
   const client = new Anthropic({ apiKey: API_KEY })
   const partner = c.members.find((m) => m.id !== c.me.id && m.role === 'partner')
@@ -617,6 +679,11 @@ async function chat(c: Ctx, history: { role: 'user' | 'assistant'; text: string 
   const msgs = history.filter((m) => m.text?.trim()).slice(-30)
   while (msgs.length && msgs[0].role !== 'user') msgs.shift()
   const messages: any[] = msgs.map((m) => ({ role: m.role, content: m.text }))
+  // Foto nur für diese Anfrage (wird nirgends gespeichert)
+  const lastUser = messages.length - 1
+  if (image && lastUser >= 0 && messages[lastUser].role === 'user' && IMAGE_TYPES.has(image.media_type) && typeof image.data === 'string' && image.data.length < 6_000_000) {
+    messages[lastUser] = { role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: image.media_type, data: image.data } }, { type: 'text', text: messages[lastUser].content }] }
+  }
   const proposals: Proposal[] = []
   let text = ''
 
@@ -695,7 +762,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}))
     if (body.action === 'chat') {
       const history = Array.isArray(body.messages) ? body.messages : []
-      return json(200, await chat(c, history))
+      return json(200, await chat(c, history, body.image))
     }
     if (body.action === 'apply') {
       const list = (Array.isArray(body.proposals) ? body.proposals : []) as Proposal[]

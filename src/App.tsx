@@ -21,7 +21,8 @@ import { Mila } from './mila/Mila'
 import { Mwf } from './mwf/Mwf'
 import { Med } from './med/Med'
 import { Freizeit } from './freizeit/Freizeit'
-import { Manager } from './screens/Manager'
+import { ManagerButton, ManagerSheet } from './screens/Manager'
+import { managerBus } from './screens/managerBus'
 import { Aufraeumen, Geschenke, Hausbuch } from './sonstiges/Sonstiges'
 import { useAreaTracking } from './sonstiges/useSonstiges'
 
@@ -115,8 +116,6 @@ function Shell() {
   // Medikament: privater Bereich
   if (loc.pathname.startsWith('/med')) return <Med />
 
-  // Casa-Manager: Chat als eigene Ansicht
-  if (loc.pathname.startsWith('/manager')) return <Manager />
   // Freizeit: Wochenend-Tipps
   if (loc.pathname.startsWith('/freizeit')) return <Freizeit />
 
@@ -144,12 +143,14 @@ function Shell() {
             <Route path="/hausbuch" element={<Hausbuch />} />
             <Route path="/geschenke" element={<Geschenke />} />
             <Route path="/aufraeumen" element={<Aufraeumen />} />
+            <Route path="/manager" element={<OpenManager />} />
             <Route path="/neu" element={wide ? <Woche /> : <Heute />} />
             <Route path="*" element={<Navigate to="/heute" replace />} />
           </Routes>
         </div>
       </div>
-      <Nav />
+      <Nav manager={<ManagerButton />} />
+      <ManagerSheet />
       {splashGone && <div className="edge" aria-hidden="true" />}
       {isNeu && <Neu />}
       {casa.error && (
@@ -161,6 +162,14 @@ function Shell() {
       )}
     </div>
   )
+}
+
+/** Alte Adresse #/manager: Startseite, darüber das Manager-Blatt */
+function OpenManager() {
+  useEffect(() => {
+    managerBus.open()
+  }, [])
+  return <Navigate to="/heute" replace />
 }
 
 function Blank({ text }: { text?: string }) {
