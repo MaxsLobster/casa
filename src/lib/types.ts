@@ -44,6 +44,7 @@ export interface Task {
   is_running: boolean // laufend: kein Abhaken, endet am Messetag
   is_yearly: boolean // Jahres-Checkliste
   is_skipped: boolean // Altlast: bei der Ersteinrichtung übersprungen, zählt weder als erledigt noch als offen
+  archived_at?: string | null // archiviert (nicht gelöscht), z. B. beim Aufräumen mit dem Casa-Manager
 }
 
 // ---------------------------------------------------------------------------

@@ -47,6 +47,8 @@ export interface Casa {
   milaPlanItems: MilaPlanItem[]
   milaRecipe(id: string | null | undefined): MilaRecipe | null
   reloadMila(): Promise<void>
+  /** wartende Mitteilungen gleich verschicken */
+  pushNow(): void
   milaRhythm: Rhythm
   saveMilaRhythm(patch: Partial<Rhythm>): Promise<void>
   // Medikament (privat): meine Einstellungen, falls ich den Bereich habe
@@ -238,7 +240,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
             store.select('ideas', { household_id: hid }),
             store.select('shouts', { household_id: hid }),
           ])
-          setTasks(t)
+          setTasks(t.filter((x) => !x.archived_at)) // archivierte Aufgaben (z. B. vom Casa-Manager) nicht zeigen
           setEvents(e)
           setNormalWeek(n)
           setOverrides(o)
@@ -267,7 +269,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
           await loadFreizeit(householdId)
           return
         }
-        if (table === 'tasks') setTasks(await store.select('tasks', { household_id: householdId }))
+        if (table === 'tasks') setTasks((await store.select('tasks', { household_id: householdId })).filter((x) => !x.archived_at))
         if (table === 'events') setEvents(await store.select('events', { household_id: householdId }))
         if (table === 'normal_week') setNormalWeek(await store.select('normal_week', { household_id: householdId }))
         if (table === 'week_overrides') setOverrides(await store.select('week_overrides', { household_id: householdId }))
@@ -522,6 +524,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     milaDays,
     milaPlanItems,
     milaRecipe: (id) => (id ? (milaById.get(id) ?? null) : null),
+    pushNow: () => flushPush(),
     reloadMila: async () => {
       if (householdId) await loadMila(householdId)
     },

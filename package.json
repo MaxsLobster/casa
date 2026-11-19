@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "icons": "node scripts/make-icons.mjs",
-    "build:mila-tick": "node scripts/build-mila-tick.mjs"
+    "build:mila-tick": "node scripts/build-mila-tick.mjs",
+    "build:manager": "node scripts/build-manager.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.58.0",

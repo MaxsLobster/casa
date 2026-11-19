@@ -21,6 +21,7 @@ import { Mila } from './mila/Mila'
 import { Mwf } from './mwf/Mwf'
 import { Med } from './med/Med'
 import { Freizeit } from './freizeit/Freizeit'
+import { Manager } from './screens/Manager'
 
 export default function App() {
   return (
@@ -111,6 +112,8 @@ function Shell() {
   // Medikament: privater Bereich
   if (loc.pathname.startsWith('/med')) return <Med />
 
+  // Casa-Manager: Chat als eigene Ansicht
+  if (loc.pathname.startsWith('/manager')) return <Manager />
   // Freizeit: Wochenend-Tipps
   if (loc.pathname.startsWith('/freizeit')) return <Freizeit />
 

@@ -22,6 +22,7 @@ import { isMilaEvent, mealsOn } from '../mila/casa-link'
 import { minutes } from '../mila/rhythm'
 import { alarmOpen } from '../lib/freizeit'
 import { heuteDran } from '../mila/wahl'
+import { ManagerIcon } from './Manager'
 import { shortName } from '../mila/engine'
 
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
@@ -316,6 +317,9 @@ export function Heute() {
       <Link to="/mila/start" className="heute__gear heute__pot" aria-label="Mila, der Essensplaner">
         <PotIcon />
       </Link>
+      <Link to="/manager" className="heute__gear heute__mgr" aria-label="Casa-Manager">
+        <ManagerIcon />
+      </Link>
       <Link to="/freizeit" className="heute__gear heute__frei" aria-label="Freizeit">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M2.5 19.5l6-9 4 5.5 2.5-3 6.5 6.5z" />
@@ -332,7 +336,7 @@ export function Heute() {
         </Link>
       )}
       {workday && (
-        <Link to="/mwf/hub" className="heute__gear heute__mwf" style={casa.med?.enabled ? { right: 178 } : undefined} aria-label="Munich Watch Fair">
+        <Link to="/mwf/hub" className="heute__gear heute__mwf" style={casa.med?.enabled ? { right: 222 } : undefined} aria-label="Munich Watch Fair">
           <MwfIcon />
           {hasShouts && <span className="mwf__dot mwf__dot--icon" aria-label="ungelesene Zurufe" />}
         </Link>
