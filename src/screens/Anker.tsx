@@ -3,8 +3,8 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import type { Anchor } from '../lib/types'
-import { GROUP_TITLE, groupOf, isResting, movedLabel, stepMeta, stepOf, type AnchorGroup } from '../lib/anchors'
-import { AnchorIcon, AnchorSheet, PhaseBars } from './AnkerTeile'
+import { GROUP_TITLE, groupOf, stepMeta, stepOf, type AnchorGroup } from '../lib/anchors'
+import { AnchorIcon, AnchorSheet } from './AnkerTeile'
 import { Chevron, Collapse } from '../components/ui'
 import { areaBase, useArea } from '../state/area'
 import { MwfIcon } from '../mwf/MwfIcon'
@@ -13,7 +13,7 @@ import { unreadShouts } from '../lib/mwf'
 const ORDER: AnchorGroup[] = ['bewegung', 'ruht', 'laeuft']
 
 export function Anker() {
-  const { me, anchors: allAnchors, tasks, members, pins, shouts, archiveAnchor } = useCasa()
+  const { me, anchors: allAnchors, tasks, members, shouts, archiveAnchor } = useCasa()
   const hasShouts = unreadShouts(shouts, me?.id ?? null).length > 0
   const area = useArea()
   const base = areaBase(area)
@@ -64,21 +64,15 @@ export function Anker() {
             </div>
             {groups[k].map((a) => {
               const step = stepOf(a.id, tasks)
-              const rest = k === 'ruht'
               return (
-                <button type="button" className="ank__item" key={a.id} onClick={() => nav(base + '/anker/' + a.id)}>
+                <button type="button" className="ank__item ank__item--compact" key={a.id} onClick={() => nav(base + '/anker/' + a.id)}>
+                  {/* Kompakt: Titel, nächster Schritt (eine Zeile), wer · wann. Alles Weitere in der Detailansicht. */}
                   <span className="ank__row">
                     <AnchorIcon />
                     <span className="ank__title">{a.title}</span>
-                    {a.visibility === 'private' && <span className="ank__pinned">nur ich</span>}
-                    {pins.has(a.id) && <span className="ank__pinned">Startseite</span>}
                   </span>
-                  <span className="ank__in"><PhaseBars phase={a.phase} /></span>
-                  <span className={'ank__in ank__step' + (step ? '' : ' ank__step--none')}>{step ? `→ ${step.title}` : a.ask_next ? 'Und der nächste Schritt?' : 'Nächsten Schritt festlegen'}</span>
-                  <span className="ank__in" style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
-                    {step && <span className="ank__small">{stepMeta(step, members, today)}</span>}
-                    <span className={'ank__moved' + (rest || isResting(a, now) ? ' ank__moved--rest' : '')}>{movedLabel(a.moved_at, today)}</span>
-                  </span>
+                  <span className={'ank__in ank__step ank__step--line' + (step ? '' : ' ank__step--none')}>{step ? `→ ${step.title}` : a.ask_next ? 'Und der nächste Schritt?' : 'Nächsten Schritt festlegen'}</span>
+                  {step && <span className="ank__in ank__small">{stepMeta(step, members, today)}</span>}
                 </button>
               )
             })}

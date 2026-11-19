@@ -47,6 +47,17 @@ export function tippDay(t: FreizeitTipp): string | null {
   return t.start_tag ?? (t.start ? berlin(t.start).date : null)
 }
 
+/** Letzter Tag des Tipps (Ende, sonst Start); null = ohne Datum */
+export function tippEndDay(t: FreizeitTipp): string | null {
+  return t.ende ? berlin(t.ende).date : tippDay(t)
+}
+
+/** Vorbei? Nur mit Datum; Tipps ohne Datum bleiben sichtbar */
+export function tippPast(t: FreizeitTipp, today: string): boolean {
+  const end = tippEndDay(t)
+  return !!end && end < today
+}
+
 /** Alarm noch zeigen? Bis die Frist vorbei ist oder jemand reagiert hat. Ohne Frist: bis zum Tag des Termins, sonst 14 Tage. */
 export function alarmOpen(t: FreizeitTipp, today: string): boolean {
   if (t.typ !== 'alarm' || t.status !== 'neu') return false

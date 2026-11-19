@@ -1076,3 +1076,10 @@ button.heute__note { border: 0; font: inherit; color: inherit; -webkit-appearanc
 .heute__med { right: 134px; }
 /* Freizeit: Symbol auf Heute (links vom Topf) */
 .heute__frei { right: 90px; }
+
+/* Anker-Liste kompakt: Schritt in einer Zeile */
+.ank__item--compact { gap: 2px; min-width: 0; max-width: 100%; overflow: hidden; }
+.ank__item--compact .ank__step--line { display: block; max-width: 100%; box-sizing: border-box; }
+.ank__step--line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; font-size: 21px; }
+/* Spalten dürfen nicht breiter als der Bildschirm werden (lange einzeilige Texte kürzen sich dann) */
+.panes > .pane { min-width: 0; }

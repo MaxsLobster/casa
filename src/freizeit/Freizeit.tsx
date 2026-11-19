@@ -4,7 +4,8 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useCasa, useToday } from '../state/HouseholdContext'
 import { useSplashGone } from '../state/splash'
 import { Chevron, Collapse } from '../components/ui'
-import { alarmOpen, currentRadar, tippDay, weekendLabel, whenLabel } from '../lib/freizeit'
+import { alarmOpen, currentRadar, tippDay, tippEndDay, tippPast, weekendLabel, whenLabel } from '../lib/freizeit'
+import { addDays } from '../lib/dates'
 import type { FreizeitStatus, FreizeitTipp } from '../lib/types'
 import './freizeit.css'
 
@@ -31,16 +32,23 @@ export function Freizeit() {
   const focus = params.get('tipp')
   const [open, setOpen] = useState<string | null>(null)
 
+  const [pastOpen, setPastOpen] = useState(false)
   const radar = currentRadar(freizeitRadars, today)
-  const mine = freizeitTipps.filter((t) => radar && t.radar_id === radar.id)
+  // Vergangenes (Datum bzw. Enddatum vor heute) verschwindet aus der Hauptliste
+  const current = freizeitTipps.filter((t) => !tippPast(t, today))
+  const mine = current.filter((t) => radar && t.radar_id === radar.id)
   const byTyp = (typ: FreizeitTipp['typ']) => mine.filter((t) => t.typ === typ).sort((a, b) => (a.start ?? '').localeCompare(b.start ?? ''))
-  const alarms = freizeitTipps.filter((t) => alarmOpen(t, today)).sort((a, b) => (a.frist ?? '9').localeCompare(b.frist ?? '9'))
+  const alarms = current.filter((t) => alarmOpen(t, today)).sort((a, b) => (a.frist ?? '9').localeCompare(b.frist ?? '9'))
   // Vorgemerkt: „Machen wir“ aus früheren Radaren oder Alarmen, noch nicht vorbei
-  const planned = freizeitTipps
+  const planned = current
     .filter((t) => t.status === 'machen' && !(radar && t.radar_id === radar.id) && (tippDay(t) ?? '9999') >= today)
     .sort((a, b) => (tippDay(a) ?? '').localeCompare(tippDay(b) ?? ''))
   const done = freizeitTipps.filter((t) => t.status === 'gemacht').sort((a, b) => (tippDay(b) ?? b.erstellt_am).localeCompare(tippDay(a) ?? a.erstellt_am))
   const we = radar ? weekendLabel(radar.wochenende) : null
+  // „War schön“: vergangene Tipps der letzten 30 Tage (ohne „Nix für uns“), neueste zuerst
+  const past = freizeitTipps
+    .filter((t) => tippPast(t, today) && t.status !== 'nix' && (tippEndDay(t) ?? '') >= addDays(today, -30))
+    .sort((a, b) => (tippEndDay(b) ?? '').localeCompare(tippEndDay(a) ?? ''))
 
   // Sprung aus der Woche: Gruppe des Tipps aufklappen
   useEffect(() => {
@@ -116,6 +124,19 @@ export function Freizeit() {
                     </span>
                   </div>
                 ))}
+              </section>
+            )}
+
+            {past.length > 0 && (
+              <section className="frei__group">
+                <button type="button" className="frei__grouphead" onClick={() => setPastOpen(!pastOpen)} aria-expanded={pastOpen}>
+                  <span>War schön</span>
+                  <span className="frei__peek">{pastOpen ? '' : `${past.length} ${past.length === 1 ? 'Tipp' : 'Tipps'} der letzten 30 Tage`}</span>
+                  <Chevron open={pastOpen} />
+                </button>
+                <Collapse open={pastOpen}>
+                  <div className="frei__groupbody">{past.map((t) => <Card key={t.id} t={t} small focus={focus === t.id} />)}</div>
+                </Collapse>
               </section>
             )}
           </div>

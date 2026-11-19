@@ -313,7 +313,7 @@ export function Heute() {
       <Link to="/einstellungen" className="heute__gear" aria-label="Einstellungen">
         <GearIcon />
       </Link>
-      <Link to="/mila/heute" className="heute__gear heute__pot" aria-label="Mila, der Essensplaner">
+      <Link to="/mila/start" className="heute__gear heute__pot" aria-label="Mila, der Essensplaner">
         <PotIcon />
       </Link>
       <Link to="/freizeit" className="heute__gear heute__frei" aria-label="Freizeit">

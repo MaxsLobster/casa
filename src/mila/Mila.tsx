@@ -12,6 +12,7 @@ import { RezeptForm } from './RezeptForm'
 import { Kochen } from './Kochen'
 import { LaufendeKombo, Wahl } from './Wochenwahl'
 import { HeuteDran } from './HeuteDran'
+import { Start } from './Start'
 import { Haltbarkeit } from './Haltbarkeit'
 import { Prep } from './Prep'
 import './mila.css'
@@ -28,13 +29,15 @@ function MilaShell() {
   const splashGone = useSplashGone()
   const loc = useLocation()
   // Detail, Formular und Kochmodus haben eigene Knöpfe unten, keine Reiterleiste
-  const showNav = !/^\/mila\/(gerichte\/.+|kochen|rezept)/.test(loc.pathname)
+  // Der ruhige Einstieg hat keine Reiterleiste, nur seine zwei Knöpfe und „Mehr“
+  const showNav = !/^\/mila\/(gerichte\/.+|kochen|rezept|start)/.test(loc.pathname)
   const cooking = loc.pathname.startsWith('/mila/kochen')
   return (
     <div className={'app mila' + (cooking ? ' mila--kochen' : '')}>
       <div className="panes">
         <div className="pane">
           <Routes>
+            <Route path="/mila/start" element={<Start />} />
             <Route path="/mila/heute" element={<HeuteDran />} />
             <Route path="/mila/wahl" element={<Wahl />} />
             <Route path="/mila/kombo" element={<LaufendeKombo />} />
@@ -50,7 +53,7 @@ function MilaShell() {
             <Route path="/mila/rezept/:id" element={<Rezeptkarte />} />
             <Route path="/mila/gerichte/:id/bearbeiten" element={<RezeptForm />} />
             <Route path="/mila/kochen/:id" element={<Kochen />} />
-            <Route path="*" element={<Navigate to="/mila/heute" replace />} />
+            <Route path="*" element={<Navigate to="/mila/start" replace />} />
           </Routes>
         </div>
       </div>
@@ -84,10 +87,10 @@ export function MilaTop() {
   return (
     <div className="m-top">
       <Link to="/heute" className="m-back">‹ Casa</Link>
-      <span className="m-brand">
+      <Link to="/mila/start" className="m-brand" style={{ textDecoration: 'none' }} aria-label="Mila Start">
         <PotIcon size={16} />
         Mila
-      </span>
+      </Link>
     </div>
   )
 }
