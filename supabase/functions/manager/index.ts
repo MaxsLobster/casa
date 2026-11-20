@@ -645,26 +645,11 @@ async function shoppingRows(c: Ctx, w: string, bought: string[]) {
 // Rückgängig
 // ---------------------------------------------------------------------------
 async function undo(c: Ctx, batchId: string) {
-  const { db, hid } = c
-  const since = new Date(Date.now() - UNDO_MINUTES * 60000).toISOString()
-  const rows = (must(await db.from('manager_log').select('*').eq('household_id', hid).eq('batch_id', batchId).eq('member_id', c.me.id).is('undone_at', null).gte('created_at', since).order('position', { ascending: false }), 'Verlauf') ?? []) as any[]
-  if (!rows.length) throw new Error('Diese Änderung lässt sich nicht mehr zurücknehmen.')
-  for (const r of rows) {
-    // Personen der Geschenk-Dose werden nicht gelöscht, nur aus der Dose genommen
-    if (r.op === 'insert' && r.table_name === 'gift_people') must(await db.from('gift_people').update({ archived_at: new Date().toISOString() }).eq('id', r.row_id), r.table_name)
-    else if (r.op === 'insert') must(await db.from(r.table_name).delete().eq('id', r.row_id), r.table_name)
-    else if (r.op === 'update') {
-      const { id: _id, created_at: _c, updated_at: _u, ...back } = r.before ?? {}
-      void _id
-      void _c
-      void _u
-      // Wer zurücknimmt, ist der Bearbeiter (sonst sähe der Push-Trigger den alten Bearbeiter als Absender)
-      if ('updated_by' in back) back.updated_by = c.me.id
-      must(await db.from(r.table_name).update(back).eq('id', r.row_id), r.table_name)
-    } else if (r.op === 'delete') must(await db.from(r.table_name).insert(r.before), r.table_name)
-  }
-  must(await db.from('manager_log').update({ undone_at: new Date().toISOString() }).eq('batch_id', batchId).eq('member_id', c.me.id), 'Verlauf')
-  return rows.length
+  // Ganz oder gar nicht: die Datenbank-Funktion nimmt alle Schritte der Runde in einer Transaktion zurück
+  // (prüft selbst: eigene Runde, 30 Minuten, eigener Haushalt, bekannte Tabellen)
+  const { data, error } = await c.db.rpc('manager_undo', { p_batch: batchId })
+  if (error) throw new Error(/zurücknehmen/.test(error.message) ? 'Diese Änderung lässt sich nicht mehr zurücknehmen.' : 'Rückgängig hat nicht geklappt: ' + error.message)
+  return Number(data ?? 0)
 }
 
 // ---------------------------------------------------------------------------

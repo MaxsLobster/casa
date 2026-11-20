@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Sheet, Toggle } from '../components/ui'
 import { useCasa, useToday } from '../state/HouseholdContext'
 import type { GiftPerson, HouseEntry } from '../lib/types'
-import { AREAS, SECTIONS, birthdayLabel, daysUntil, nextBirthday, unusedAreas, useSonstiges, TRACK_START } from './useSonstiges'
+import { AREAS, SECTIONS, birthdayLabel, lastOpenedText, nextBirthday, trackingDays, trackingText, unusedAreas, useSonstiges } from './useSonstiges'
 import { managerBus } from '../screens/managerBus'
 import './sonstiges.css'
 
@@ -304,12 +304,11 @@ export function Aufraeumen() {
   const hidden = settings?.hidden_areas ?? []
   const list = unusedAreas(so.visits, hidden, today)
   const unused = list.filter((a) => a.unused)
-  const tracking = daysUntil(today, TRACK_START) * -1
+  const tracking = trackingDays(today)
   const who = (area: string) => {
     const v = so.visits.filter((x) => x.area === area).sort((a, b) => b.last_at.localeCompare(a.last_at))[0]
-    if (!v) return 'seit dem 19.11. noch nicht geöffnet'
-    const d = daysUntil(today, v.last_at.slice(0, 10))
-    return `${d <= 0 ? 'heute' : d === 1 ? 'gestern' : `vor ${d} Tagen`} · ${members.find((m) => m.id === v.member_id)?.display_name ?? ''}`
+    if (!v) return lastOpenedText(null, today)
+    return `${lastOpenedText(v.last_at, today)} · ${members.find((m) => m.id === v.member_id)?.display_name ?? ''}`
   }
   const set = (key: string, hide: boolean) => updateSettings({ hidden_areas: hide ? [...new Set([...hidden, key])] : hidden.filter((h) => h !== key) })
 
@@ -320,7 +319,7 @@ export function Aufraeumen() {
       <div className="so__tear" />
       <section className="so__sec">
         <span className="so__label">Seit 30 Tagen ungenutzt</span>
-        {unused.length === 0 && <span className="so__empty">{tracking < 30 ? `Casa schreibt seit ${tracking === 0 ? 'heute' : `${tracking} Tagen`} mit – in ${30 - tracking} Tagen weiß ich mehr.` : 'Nichts. Ihr nutzt alles.'}</span>}
+        {unused.length === 0 && <span className="so__empty">{tracking < 30 ? trackingText(today) : 'Nichts. Ihr nutzt alles.'}</span>}
         {unused.map((a) => (
           <div key={a.key} className="so__arearow">
             <span className="so__rowtext"><span className="so__rowtitle">{a.label}</span><span className="so__rowsub">{who(a.key)}</span></span>

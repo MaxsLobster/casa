@@ -1,7 +1,7 @@
 // Mila · Wochenwahl: Stapel, Kombo als Kochreihenfolge, Fristen, „Heute dran“ und Kühlschrank-Ampel.
 // Reine Rechnung ohne React; läuft in der App und gebündelt in der Edge Function „mila-tick“.
 import type { MealSlot, MilaDeckCard, MilaIngredient, MilaItemArt, MilaItemGroup, MilaPlanItem, MilaRecipe, MilaShelfRule, MilaStep, MilaPrepStep, MilaWeekDay, MilaWeekPlan } from '../lib/types'
-import { addDays, fromISO } from '../lib/dates'
+import { addDays, fromISO, startOfWeek } from '../lib/dates'
 import type { Rhythm } from './engine'
 
 type ISODate = string
@@ -308,6 +308,12 @@ export function prepMinutes(recipes: MilaRecipe[], stepsOf: (id: string) => Mila
 // ---------------------------------------------------------------------------
 
 const byFrist = (a: MilaPlanItem, b: MilaPlanItem) => (a.frist_bis ?? '9999').localeCompare(b.frist_bis ?? '9999') || a.position - b.position
+
+/** Gerichte der Kombo nur, wenn der Plan zur Woche von `date` gehört, übernommen und nicht verworfen ist */
+export function itemsOfWeek(plan: Pick<MilaWeekPlan, 'week' | 'status' | 'adopted_at'> | null, items: MilaPlanItem[], date: ISODate): MilaPlanItem[] {
+  if (!plan || !plan.adopted_at || plan.status === 'verworfen' || plan.week !== startOfWeek(date)) return []
+  return items
+}
 
 /** Abend: was heute genommen wurde, sonst das offene Gericht mit der kürzesten Restfrist. Mittag: Reste vom Vortag, sonst Box. */
 export function heuteDran(items: MilaPlanItem[], today: ISODate): { abend: MilaPlanItem | null; mittag: MilaPlanItem | null; restAbend: number; restMittag: number } {

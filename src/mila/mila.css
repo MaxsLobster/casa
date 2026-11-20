@@ -771,6 +771,7 @@ button.m-hit { width: 100%; background: transparent; border: none; border-bottom
 /* Nach links wischen → Entfernen */
 .sr { position: relative; overflow: hidden; }
 .sr__content { position: relative; background: inherit; touch-action: pan-y; }
+.sr:not(.sr--on) .sr__btn { visibility: hidden; }
 .sr__btn { position: absolute; top: 0; bottom: 0; right: 0; width: 96px; border: none; cursor: pointer; background: #A33A20; color: #F5F1E8; font-family: var(--font-ui); font-size: 13px; letter-spacing: 0.06em; }
 :root[data-theme="dark"] .sr__btn { background: #B9583D; }
 .mk__list .sr__content, .mh__main .sr__content, .m-day .sr__content { background: var(--paper-2); }

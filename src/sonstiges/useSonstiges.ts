@@ -175,6 +175,31 @@ export function useAreaTracking() {
   }, [pathname, household, me])
 }
 
+/** Kalendertag in Berlin (YYYY-MM-DD) für einen Zeitstempel – nicht der UTC-Tag */
+export function berlinDay(ts: string | Date): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit' }).format(typeof ts === 'string' ? new Date(ts) : ts)
+}
+
+/** Wie viele Tage Casa schon mitschreibt (nie negativ) */
+export function trackingDays(today: string): number {
+  // daysUntil(a, b) = a − b in Tagen
+  return Math.max(0, daysUntil(today, TRACK_START))
+}
+
+export function trackingText(today: string): string {
+  const n = trackingDays(today)
+  const since = n === 0 ? 'heute' : n === 1 ? 'gestern' : `${n} Tagen`
+  const left = 30 - n
+  return `Casa schreibt seit ${since} mit – in ${left === 1 ? 'einem Tag' : `${left} Tagen`} weiß ich mehr.`
+}
+
+/** „heute“, „gestern“, „vor 3 Tagen“ oder „noch nie geöffnet“ (Berliner Kalendertage) */
+export function lastOpenedText(lastAt: string | null, today: string): string {
+  if (!lastAt) return 'noch nie geöffnet'
+  const d = Math.max(0, daysUntil(today, berlinDay(lastAt)))
+  return d === 0 ? 'heute' : d === 1 ? 'gestern' : `vor ${d} Tagen`
+}
+
 /** Bereiche, die seit 30 Tagen niemand geöffnet hat (erst, wenn Casa 30 Tage mitgeschrieben hat) */
 export function unusedAreas(visits: AreaVisit[], hidden: string[], today: string) {
   const cutoff = Date.parse(today + 'T12:00:00Z') - 30 * 86400000

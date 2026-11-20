@@ -23,7 +23,7 @@ import { MwfIcon } from '../mwf/MwfIcon'
 import { isMilaEvent, mealsOn } from '../mila/casa-link'
 import { minutes } from '../mila/rhythm'
 import { alarmOpen } from '../lib/freizeit'
-import { heuteDran } from '../mila/wahl'
+import { heuteDran, itemsOfWeek } from '../mila/wahl'
 import { shortName } from '../mila/engine'
 
 /** Wischen: erst bei deutlicher Bewegung zur Seite, damit Scrollen nicht stört */
@@ -263,7 +263,7 @@ export function Heute() {
   } else if (dinner && nowH < 19.5) {
     rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: dinner.name, sub: ['Abend', minutes(dinner.time_min), 'wer kocht? offen'].filter(Boolean).join(' · '), link: cardLink(dinner.id, 'abend') })
   }  // Wochenwahl: noch nichts für heute Abend eingetragen → Milas Vorschlag aus der Kombo
-  const suggest = !dinner && isToday && nowH < 19.5 ? heuteDran(casa.milaPlanItems, date).abend : null
+  const suggest = !dinner && isToday && nowH < 19.5 ? heuteDran(itemsOfWeek(casa.milaPlan, casa.milaPlanItems, date), date).abend : null
   const suggestR = suggest && suggest.status === 'offen' ? casa.milaRecipe(suggest.recipe_id) : null
   if (suggestR) rows.push({ key: 'ms', sort: 18.5, time: null, kind: 'plan', title: `Mila schlägt vor: ${suggestR.name}`, sub: ['Abend', minutes(suggestR.time_min)].filter(Boolean).join(' · '), link: '/mila/heute' })
 

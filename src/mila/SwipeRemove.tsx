@@ -59,7 +59,8 @@ export function SwipeRemove({ children, onRemove, label = 'Entfernen', className
   }
 
   return (
-    <div className={'sr' + (className ? ' ' + className : '')}>
+    // „Entfernen“ liegt hinter der Zeile und ist nur beim Wischen bzw. offen sichtbar (auch bei durchsichtigen Zeilen)
+    <div className={'sr' + (x !== 0 || open ? ' sr--on' : '') + (className ? ' ' + className : '')}>
       <button type="button" className="sr__btn" tabIndex={open ? 0 : -1} aria-hidden={!open} onClick={() => { setOpen(false); setX(0); onRemove() }}>
         {label}
       </button>
