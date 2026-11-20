@@ -73,7 +73,7 @@ export interface Casa {
   isNew(type: SeenType, item: { id: string; updated_at: string; created_by: string | null; updated_by: string | null; date?: string; end_date?: string | null; occ_end?: string }): boolean
   markSeen(type: SeenType, ids: string[]): Promise<void>
 
-  addTask(input: { title: string; owner_member_id: string | null; due_date: string; note?: string | null; repeat?: Repeat | null; repeat_until?: string | null; anchor_id?: string | null; is_step?: boolean; area?: Area; is_yearly?: boolean }): Promise<Task>
+  addTask(input: { title: string; owner_member_id: string | null; due_date: string; note?: string | null; repeat?: Repeat | null; repeat_until?: string | null; anchor_id?: string | null; is_step?: boolean; area?: Area; is_yearly?: boolean; valerie_cleared?: boolean }): Promise<Task>
   updateTask(id: string, patch: Partial<Pick<Task, 'title' | 'owner_member_id' | 'due_date' | 'status' | 'note' | 'repeat' | 'repeat_until' | 'anchor_id'>>): Promise<void>
   setTaskDone(id: string, done: boolean): Promise<void>
   removeTask(id: string): Promise<void>
@@ -134,8 +134,9 @@ export interface Casa {
     dropoff_at?: string | null
     pickup_by?: string | null
     pickup_at?: string | null
+    valerie_cleared?: boolean
   }): Promise<void>
-  updateEvent(id: string, patch: Partial<Pick<Event, 'title' | 'date' | 'end_date' | 'start_time' | 'end_time' | 'member_id' | 'person_id' | 'note' | 'repeat' | 'repeat_until' | 'effect' | 'dropoff_by' | 'dropoff_at' | 'pickup_by' | 'pickup_at'>>): Promise<void>
+  updateEvent(id: string, patch: Partial<Pick<Event, 'title' | 'date' | 'end_date' | 'start_time' | 'end_time' | 'member_id' | 'person_id' | 'note' | 'repeat' | 'repeat_until' | 'effect' | 'dropoff_by' | 'dropoff_at' | 'pickup_by' | 'pickup_at' | 'valerie_cleared'>>): Promise<void>
   removeEvent(id: string): Promise<void>
 
   setOverride(input: { date: string; slot: Slot; value: string | null; at?: string | null; note?: string | null }): Promise<void>

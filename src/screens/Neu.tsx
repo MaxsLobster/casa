@@ -1,11 +1,15 @@
 import { useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useCasa, useToday } from '../state/HouseholdContext'
-import { Chips, HandInput, MicButton, Tabs } from '../components/ui'
+import { Chips, HandInput, MicButton, Sheet, Tabs } from '../components/ui'
 import { WhenPicker } from './WhenPicker'
 import { RepeatPicker } from './RepeatPicker'
 import type { Repeat } from '../lib/types'
-import { addDays } from '../lib/dates'
+import { addDays, hhmm } from '../lib/dates'
+import { applyEffects, dayEffects } from '../lib/effects'
+import { dayState, verb, type SlotState } from '../lib/week'
+import { occurrences } from '../lib/recur'
+import { guessValerie, replaceQuestion, watchNote, type VGuess, type VSlot } from '../lib/valerie'
 import { EffectChips, EMPTY_HANDOVER, HandoverFields, parseEffect, type EffectChoice, type Handover } from './EffectPicker'
 import { defaultTitle } from '../lib/effects'
 import { useArea } from '../state/area'
@@ -37,6 +41,8 @@ export function Neu() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
+  // „Ersetzt das Anna holt 14:00?“ – Nachfrage, wenn der Eintrag nach Bringen/Holen/Aufpassen klingt
+  const [vAsk, setVAsk] = useState<{ slot: VSlot; current: SlotState; who: string; g: VGuess } | null>(null)
 
   const partners = casa.members.filter((m) => m.role === 'partner')
   const other = partners.find((m) => m.id !== casa.me?.id) ?? null // Empfänger eines Zurufs
@@ -80,7 +86,8 @@ export function Neu() {
     else nav('/heute')
   }
 
-  async function save() {
+  /** cleared: true = Nachfrage mit Nein beantwortet (normaler Eintrag, nicht noch mal fragen) */
+  async function save(cleared?: boolean) {
     if (!ready) return
     if (kind === 'idee' || kind === 'zuruf') {
       setBusy(true)
@@ -101,12 +108,25 @@ export function Neu() {
       return
     }
     if (!when || (needWho && !who)) return
+    // Klingt nach Valerie bringen/holen/aufpassen? Dann erst fragen, ob das die Woche ersetzt.
+    const g = (kind === 'aufgabe' || fx.effect === 'termin') && !multi && !repeat ? guessValerie(finalTitle) : null
+    if (g && cleared === undefined) {
+      const w = who ?? ''
+      const whoName = g.who ?? (w.startsWith('p:') ? casa.people.find((p) => 'p:' + p.id === w)?.name ?? null : casa.members.find((m) => m.id === w)?.display_name ?? null)
+      const occ = occurrences(casa.events, when, when).filter((o) => o.occ_date <= when && o.occ_end >= when)
+      const st = applyEffects(dayState(when, casa.normalWeek, casa.overrides), dayEffects(when, occ, casa.members))
+      const q = replaceQuestion(st, g, whoName)
+      if (q && whoName) {
+        setVAsk({ slot: q.slot, current: st[q.slot]!, who: whoName, g })
+        return
+      }
+    }
     setBusy(true)
     setError(null)
     try {
       if (kind === 'aufgabe') {
         if (!who) return
-        await casa.addTask({ title: title.trim(), owner_member_id: who === 'offen' ? null : who, due_date: when, repeat, anchor_id: anchor === 'keiner' ? null : anchor, area, is_yearly: !!preset.yearly })
+        await casa.addTask({ title: title.trim(), owner_member_id: who === 'offen' ? null : who, due_date: when, repeat, anchor_id: anchor === 'keiner' ? null : anchor, area, is_yearly: !!preset.yearly, ...(cleared ? { valerie_cleared: true } : {}) })
         if (preset.idea) await casa.removeIdea(preset.idea)
         if (preset.shout) await casa.readShout(preset.shout)
       } else {
@@ -124,6 +144,7 @@ export function Neu() {
           dropoff_at: fx.effect === 'valerie_weg' && handover.dropoff_by ? handover.dropoff_at || null : null,
           pickup_by: fx.effect === 'valerie_weg' ? handover.pickup_by : null,
           pickup_at: fx.effect === 'valerie_weg' && handover.pickup_by ? handover.pickup_at || null : null,
+          ...(cleared ? { valerie_cleared: true } : {}),
         })
       }
       back()
@@ -134,8 +155,42 @@ export function Neu() {
     }
   }
 
+  // Ja: daraus wird eine Ausnahme für den Tag (kein eigener Eintrag), die Tageskarte zeigt z. B. „Theresa holt 14:00“
+  async function replaceSlot() {
+    if (!vAsk || !when) return
+    setBusy(true)
+    setError(null)
+    try {
+      await casa.setOverride({ date: when, slot: vAsk.slot, value: vAsk.who, at: (kind === 'termin' && time) || vAsk.current.at || null, note: vAsk.g.watch ? watchNote(vAsk.g.until) : null })
+      setVAsk(null)
+      back()
+    } catch (err) {
+      setError('Konnte nicht speichern: ' + (err as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  const voice = { me: casa.me, members: casa.members }
+  const vCur = vAsk?.current
+  const vVerb = vAsk ? (vAsk.slot === 'valerie_holen' ? (['holst', 'holt'] as const) : (['bringst', 'bringt'] as const)) : null
+  const vCurText = vCur && vVerb ? (vCur.is_open || !vCur.value ? null : verb(vCur.value, voice, vVerb[0], vVerb[1]).replace(/^du /, 'Du ') + (vCur.at ? ` ${hhmm(vCur.at)}` : '')) : null
+
   return (
     <div className="overlay">
+      {vAsk && vVerb && (
+        <Sheet onClose={() => setVAsk(null)} title="Wer hat Valerie?">
+          <span className="hand hand--navy" style={{ fontSize: 26, lineHeight: 1.2 }}>
+            {vCurText ? `Ersetzt das „${vCurText}“?` : `${vAsk.slot === 'valerie_holen' ? 'Holen' : 'Bringen'} ist noch offen. ${vAsk.slot === 'valerie_holen' ? 'Holt' : 'Bringt'} ${vAsk.who}?`}
+          </span>
+          <span className="hint">
+            Bei Ja steht an dem Tag „{vAsk.who} {vVerb[1]}{(kind === 'termin' && time) || vCur?.at ? ` ${hhmm(((kind === 'termin' && time) || vCur?.at)!)}` : ''}{vAsk.g.watch ? ` · ${watchNote(vAsk.g.until)}` : ''}“ oben auf Heute, statt eines eigenen Eintrags.
+          </span>
+          <div className="answer__btns">
+            <button type="button" className="btn" disabled={busy} onClick={() => void replaceSlot()}>Ja</button>
+            <button type="button" className="link" disabled={busy} onClick={() => { setVAsk(null); void save(true) }}>Nein, normaler Eintrag</button>
+          </div>
+        </Sheet>
+      )}
       <div className="page">
         <div className="between">
           <h1 className="h1">Neu notieren</h1>
@@ -233,7 +288,7 @@ export function Neu() {
 
         <div className="spacer" />
 
-        <button type="button" className="btn" disabled={!ready || busy} onClick={save}>
+        <button type="button" className="btn" disabled={!ready || busy} onClick={() => void save()}>
           {busy ? 'Einen Moment …' : ready ? (kind === 'zuruf' ? 'Senden' : 'Notieren') : kind === 'idee' || kind === 'zuruf' ? 'Was fehlt noch' : missing}
         </button>
       </div>

@@ -5,6 +5,7 @@ import { addDays, spanLabel, uhr, weekdayShort, type ISODate } from './dates'
 import type { DayEffects } from './effects'
 import { personName } from './effects'
 import { verb, type DayState, type Voice } from './week'
+import { watchFrom, watchNote, type VConflict } from './valerie'
 
 export type SegKind = 'plain' | 'changed' | 'open' | 'ask'
 export interface Seg {
@@ -47,6 +48,10 @@ export interface ValerieRow {
   open: boolean
   changed: boolean
   request: SlotRequest | null
+  /** Zusatz „passt auf bis 18 Uhr“ (aus dem Hinweis der Ausnahme) */
+  watch: string | null
+  /** passt auf bis (HH:MM): so lange bleibt die Zeile heute stehen */
+  until: string | null
 }
 
 export interface ValerieDay {
@@ -86,6 +91,7 @@ export function valerieDay(date: ISODate, state: DayState, fx: DayEffects, v: Vo
     const s = state[slot]
     if (!s) continue
     const open = s.is_open || !s.value
+    const w = watchFrom(s.note)
     rows.push({
       slot,
       label,
@@ -96,6 +102,8 @@ export function valerieDay(date: ISODate, state: DayState, fx: DayEffects, v: Vo
       open,
       changed: s.overridden,
       request: openRequest(requests, date, slot),
+      watch: !open && w.watch ? watchNote(w.until) : null,
+      until: !open && w.watch ? w.until : null,
     })
   }
   return { headline: null, needsWho: false, rows }
@@ -120,7 +128,7 @@ function abendSeg(state: DayState, v: Voice, date: ISODate, requests: SlotReques
 }
 
 /** Eine Zeile pro Tag, z. B. „Anna bringt · Max holt 14 Uhr · Abend offen“ (Ausnahmen und Anfragen direkt sichtbar) */
-export function daySegments(date: ISODate, state: DayState, fx: DayEffects, v: Voice, people: Person[], requests: SlotRequest[]): Seg[] {
+export function daySegments(date: ISODate, state: DayState, fx: DayEffects, v: Voice, people: Person[], requests: SlotRequest[], conflicts: VConflict[] = []): Seg[] {
   const out: Seg[] = []
   if (state.wochenende) {
     out.push(state.wochenende.is_open ? { text: 'Familientag + ein Tag geteilt', kind: 'open' } : { text: state.wochenende.value ?? '', kind: state.wochenende.overridden ? 'changed' : 'plain' })
@@ -128,9 +136,11 @@ export function daySegments(date: ISODate, state: DayState, fx: DayEffects, v: V
   const vd = valerieDay(date, state, fx, v, people, requests)
   if (vd.headline) out.push({ text: vd.headline, kind: vd.needsWho ? 'open' : 'changed' })
   for (const r of vd.rows) {
-    if (r.request) out.push({ text: `${r.label}: ${askText(r.request, v)}`, kind: 'ask' })
+    const c = conflicts.find((x) => x.slot === r.slot)
+    if (c) out.push({ text: `${c.question} ${c.names.map((n) => (isMe(n, v) ? 'du' : n)).join(' · ')}`, kind: 'open' })
+    else if (r.request) out.push({ text: `${r.label}: ${askText(r.request, v)}`, kind: 'ask' })
     else if (r.open) out.push({ text: `${r.label} offen`, kind: 'open' })
-    else out.push({ text: r.text.replace(/^Du /, 'du ') + (r.at && (r.slot === 'valerie_holen' || r.changed) ? ` ${uhr(r.at)}` : ''), kind: r.changed ? 'changed' : 'plain' })
+    else out.push({ text: r.text.replace(/^Du /, 'du ') + (r.at && (r.slot === 'valerie_holen' || r.changed) ? ` ${uhr(r.at)}` : '') + (r.watch ? `, ${r.watch}` : ''), kind: r.changed ? 'changed' : 'plain' })
   }
   for (const a of fx.away) {
     if (a.occ.effect === 'messe') continue

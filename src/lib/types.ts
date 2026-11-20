@@ -45,6 +45,8 @@ export interface Task {
   is_yearly: boolean // Jahres-Checkliste
   is_skipped: boolean // Altlast: bei der Ersteinrichtung übersprungen, zählt weder als erledigt noch als offen
   archived_at?: string | null // archiviert (nicht gelöscht), z. B. beim Aufräumen mit dem Casa-Manager
+  /** geklärt: zählt nicht als Bringen/Holen von Valerie */
+  valerie_cleared?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -172,6 +174,8 @@ export interface Event {
   dropoff_at: string | null
   pickup_by: string | null
   pickup_at: string | null
+  /** geklärt: zählt nicht als Bringen/Holen von Valerie (Nachfrage mit Nein beantwortet) */
+  valerie_cleared?: boolean
   created_by: Id | null
   updated_by: Id | null
   created_at: string

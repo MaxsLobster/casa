@@ -4,6 +4,7 @@ import type { Slot } from '../lib/types'
 import { PERSON_SLOTS, SLOT_LABEL, TIME_SLOTS, type DayState } from '../lib/week'
 import { Chips, Sheet, Toggle } from '../components/ui'
 import { shortDate, weekdayLongByIndex, weekdayShort } from '../lib/dates'
+import { watchFrom, watchNote } from '../lib/valerie'
 
 interface Draft {
   value: string
@@ -11,6 +12,10 @@ interface Draft {
   at: string
   is_open: boolean
   note: string
+  /** passt auf (Zusatz an der Ausnahme fürs Holen) */
+  watch: boolean
+  /** passt auf bis HH:MM */
+  until: string
 }
 
 
@@ -31,7 +36,10 @@ export function SlotEditor({ slots, date, weekday, state, onClose }: { slots: Sl
       const cur = state[s]
       const v = cur?.value ?? ''
       const chip = PERSON_SLOTS.includes(s) && people.includes(v) ? v : null
-      out[s] = { value: chip ? '' : v, chip, at: (cur?.at ?? '').slice(0, 5), is_open: cur?.is_open ?? false, note: isTemplate ? (cur?.note ?? '') : (cur?.overridden ? cur?.note ?? '' : '') }
+      const note = isTemplate ? (cur?.note ?? '') : (cur?.overridden ? cur?.note ?? '' : '')
+      const w = !isTemplate && s === 'valerie_holen' ? watchFrom(note) : { watch: false, until: null }
+      const rest = w.watch ? note.replace(/passt auf(\s+bis\s+\d{1,2}([:.]\d{2})?(\s*uhr)?)?/i, '').replace(/^[\s·,]+|[\s·,]+$/g, '') : note
+      out[s] = { value: chip ? '' : v, chip, at: (cur?.at ?? '').slice(0, 5), is_open: cur?.is_open ?? false, note: rest, watch: w.watch, until: w.until ?? '' }
     }
     return out
   })
@@ -51,7 +59,9 @@ export function SlotEditor({ slots, date, weekday, state, onClose }: { slots: Sl
           const wds = weekday === 6 ? [6, 7] : [weekday!]
           for (const wd of wds) await setTemplate({ weekday: wd, slot: s, value: d.is_open ? value : value, at, is_open: d.is_open, note: d.note.trim() || null })
         } else {
-          await setOverride({ date: date!, slot: s, value, at, note: d.note.trim() || null })
+          // „passt auf bis 18 Uhr“ steht vorn im Hinweis; die Tageskarte zeigt es und hält die Zeile bis dahin
+          const watch = s === 'valerie_holen' && (d.until || d.watch) ? watchNote(d.until || null) : null
+          await setOverride({ date: date!, slot: s, value, at, note: [watch, d.note.trim()].filter(Boolean).join(' · ') || null })
         }
       }
       onClose()
@@ -101,6 +111,16 @@ export function SlotEditor({ slots, date, weekday, state, onClose }: { slots: Sl
               <div className="stack stack--tight">
                 <label className="label label--small" htmlFor={`at-${s}`}>Uhrzeit</label>
                 <input id={`at-${s}`} className="input-ui" type="time" value={d.at} onChange={(e) => set(s, { at: e.target.value })} style={{ alignSelf: 'flex-start', minWidth: 140 }} />
+              </div>
+            )}
+            {!isTemplate && s === 'valerie_holen' && (
+              <div className="stack stack--tight">
+                <label className="label label--small" htmlFor="watch-until">Passt auf bis (optional)</label>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <input id="watch-until" className="input-ui" type="time" value={d.until} onChange={(e) => set(s, { until: e.target.value, watch: !!e.target.value || d.watch })} style={{ minWidth: 140 }} />
+                  {(d.until || d.watch) && <button type="button" className="link" onClick={() => set(s, { until: '', watch: false })}>passt nicht auf</button>}
+                </div>
+                {d.watch && !d.until && <span className="hint">passt auf (ohne Uhrzeit)</span>}
               </div>
             )}
             {isTemplate && <Toggle on={d.is_open} onChange={(v) => set(s, { is_open: v })} label="Noch offen" hint="Erscheint als offener Punkt in der Woche." />}

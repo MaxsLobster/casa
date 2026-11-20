@@ -9,6 +9,7 @@ import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import { toH } from '../lib/band'
 import { Check, Sheet } from '../components/ui'
 import { dayWord, daySegments, segText, valerieDay, askText } from '../lib/day'
+import { coveredEntryIds, valerieConflicts, valerieEntries, type VConflict } from '../lib/valerie'
 import { GehtNix } from './GehtNix'
 import { SonstigesSheet } from '../sonstiges/Sonstiges'
 import type { Event, Slot, SlotRequest, Task } from '../lib/types'
@@ -156,6 +157,10 @@ export function Heute() {
   const occDay = useMemo(() => occurrences(events, date, date).filter((o) => o.occ_date <= date && o.occ_end >= date), [events, date])
   const fx = useMemo(() => dayEffects(date, occDay, members), [date, occDay, members])
   const day = useMemo(() => applyEffects(dayState(date, normalWeek, overrides), fx), [date, normalWeek, overrides, fx])
+  // Wer hat Valerie? Einträge, die nach Bringen/Holen/Aufpassen klingen, zeigt die Tageskarte (nicht doppelt in der Liste)
+  const vEntries = useMemo(() => valerieEntries(date, occDay, tasks, people), [date, occDay, tasks, people])
+  const conflicts = useMemo(() => valerieConflicts(day, vEntries), [day, vEntries])
+  const covered = useMemo(() => coveredEntryIds(day, vEntries), [day, vEntries])
   // Heute: nur, was noch kommt. Anderer Tag: der ganze Tag.
   const nowH = isToday ? now.getHours() + now.getMinutes() / 60 : -1
   const [takeover, setTakeover] = useState(false)
@@ -196,6 +201,7 @@ export function Heute() {
   // Termine, heute nur die noch nicht vorbei sind
   for (const o of occDay) {
     if (isMultiDay(o) || isEffectEvent(o)) continue
+    if (covered.has(o.base_id)) continue
     // Heute: weg, sobald die Uhrzeit vorbei ist (Ende, sonst Beginn) plus 15 Minuten Puffer
     if (isToday && timePassed(date, o.end_time ?? o.start_time, now)) continue
     const parts = [whoEvent(o)]
@@ -235,7 +241,7 @@ export function Heute() {
   const we = day.wochenende
   if (we?.value && !we.is_open && nowH < 20) rows.push({ key: 'we', sort: 9, time: null, kind: 'plan', title: we.value, sub: 'Wochenende', slots: ['wochenende'] })
   // Meine Aufgaben an dem Tag stehen in der Tageskarte oben
-  const dayTasks = tasks.filter((t) => t.status !== 'erledigt' && t.due_date === date && (t.owner_member_id === me?.id || isShared(t)))
+  const dayTasks = tasks.filter((t) => !covered.has(t.id) && t.status !== 'erledigt' && t.due_date === date && (t.owner_member_id === me?.id || isShared(t)))
   const taskSub = (t: Task) => {
     const away = !!t.owner_member_id && (t.area === 'mwf' ? awayOn(events, t.owner_member_id, date, 'mwf') : fx.away.some((a) => a.member.id === t.owner_member_id))
     return away ? 'Du bist weg – trotzdem bei dir lassen?' : isShared(t) ? 'beide' : ''
@@ -243,7 +249,7 @@ export function Heute() {
   rows.sort((a, c) => a.sort - c.sort)
   const chips = isToday ? [] : openChips(day, fx)
   // Offene Aufgaben (noch niemand): heute fällig oder überfällig, an anderen Tagen genau an dem Tag
-  const openTasks = tasks.filter((t) => t.area === 'casa' && t.status !== 'erledigt' && t.owner_member_id === null && (isToday ? t.due_date <= today : t.due_date === date)).sort((a, c) => a.due_date.localeCompare(c.due_date))
+  const openTasks = tasks.filter((t) => !covered.has(t.id) && t.area === 'casa' && t.status !== 'erledigt' && t.owner_member_id === null && (isToday ? t.due_date <= today : t.due_date === date)).sort((a, c) => a.due_date.localeCompare(c.due_date))
   // Meine gepinnten Anker (nur heute)
   const pinned = isToday ? anchors.filter((a) => pins.has(a.id) && !a.archived_at).sort((a, c) => a.title.localeCompare(c.title)) : []
 
@@ -251,7 +257,25 @@ export function Heute() {
   const vd = valerieDay(date, day, fx, voice, people, slotRequests)
   // Heute: Bringen/Holen verschwinden 15 Minuten nach ihrer Uhrzeit; Ausnahmen (Überschrift) bleiben den ganzen Tag
   // Bringen ohne Uhrzeit: Kita ab 8 (wie im Tagesband), also bis 8:15 sichtbar
-  const valRows = isToday ? vd.rows.filter((r) => !timePassed(date, r.at ?? (r.slot === 'valerie_bringen' ? '08:00' : null), now)) : vd.rows
+  // Passt jemand auf (bis 18 Uhr), bleibt die Zeile bis dahin stehen
+  const valRows = isToday ? vd.rows.filter((r) => !timePassed(date, r.until ?? r.at ?? (r.slot === 'valerie_bringen' ? '08:00' : null), now)) : vd.rows
+  const [resolving, setResolving] = useState<string | null>(null)
+  // „Wer holt? Anna · Theresa“: ein Tipp entscheidet. Gewinnt ein Eintrag, wird er zur Ausnahme für den Tag;
+  // die anderen Einträge sind danach geklärt (Aufgaben abgehakt, Termine bleiben als normaler Termin stehen).
+  async function resolve(c: VConflict, name: string) {
+    setResolving(c.slot)
+    try {
+      const same = (a: string | null, b: string) => !!a && a.trim().toLowerCase() === b.trim().toLowerCase()
+      const win = same(c.current, name) ? null : c.entries.find((e) => same(e.who, name)) ?? null
+      if (win) await casa.setOverride({ date, slot: c.slot, value: win.who, at: win.at ?? day[c.slot]?.at ?? null, note: win.note })
+      for (const e of c.entries) {
+        if (e.kind === 'task') await setTaskDone(e.id, true)
+        else if (!win || !same(e.who, win.who)) await casa.updateEvent(e.id, { valerie_cleared: true })
+      }
+    } finally {
+      setResolving(null)
+    }
+  }
   const myDeclined = (slot: string) => slotRequests.filter((r) => r.date === date && r.slot === slot && r.from_member_id === me?.id && r.status === 'abgelehnt').sort((a, c) => (c.answered_at ?? '').localeCompare(a.answered_at ?? ''))[0] ?? null
   const tomorrow = addDays(today, 1)
   const showTomorrow = isToday && now.getHours() >= 17
@@ -402,6 +426,23 @@ export function Heute() {
               </div>
             ) : (
               valRows.map((r) => {
+                const c = conflicts.find((x) => x.slot === r.slot)
+                if (c) {
+                  return (
+                    <div className="daycard__row" key={r.slot}>
+                      <span className="daycard__k">{r.label}</span>
+                      <span className="daycard__v daycard__v--open">{c.question}</span>
+                      <div className="daycard__chips daycard__who">
+                        {c.names.map((n) => (
+                          <button type="button" key={n} className="wk__chip" disabled={resolving === c.slot} onClick={() => void resolve(c, n)}>
+                            {n.trim().toLowerCase() === me?.display_name.trim().toLowerCase() ? 'Ich' : n}
+                          </button>
+                        ))}
+                      </div>
+                      <span className="daycard__note daycard__note--quiet">{c.entries.map((e) => `„${e.title}“`).join(', ')} {c.entries.length > 1 ? 'stehen' : 'steht'} auch drin</span>
+                    </div>
+                  )
+                }
                 const declined = !r.request && r.mine ? myDeclined(r.slot) : null
                 return (
                   <div className="daycard__row" key={r.slot}>
@@ -410,6 +451,7 @@ export function Heute() {
                       {r.request ? `offen · ${askText(r.request, voice)}` : r.text}
                       {r.at && !r.request && <span className="daycard__at">{hhmm(r.at)}</span>}
                     </button>
+                    {r.watch && !r.request && <span className="daycard__note daycard__note--quiet">{r.watch}</span>}
                     {r.mine && !r.request && date >= today && partner && (
                       <button type="button" className="daycard__ask" disabled={asking === r.slot} onClick={() => void ask(r.slot, r.at)}>Kannst du übernehmen?</button>
                     )}

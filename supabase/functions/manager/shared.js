@@ -352,10 +352,52 @@ function tippEvent(t, radar) {
     note: [t.ort, t.link].filter(Boolean).join(" \xB7 ") || null
   };
 }
+
+// src/lib/valerie.ts
+var REF = /\b(valerie|vali|sie|die kleine|kind|kita|kindergarten)\b/;
+var HOLEN = /\b(holt|hole|holst|holen|abholen|abgeholt|abholung)\b/;
+var BRINGEN = /\b(bringt|bringe|bringst|bringen|hinbringen|gebracht)\b/;
+var WATCH = /\b(passt|passen|passe)\b(?:\s+\S+){0,4}?\s+auf\b|\baufpassen\b|\bbabysit/;
+var NOT = /ins bett|bettgehen|müll|tonne|paket|post\b/;
+var NOT_WHO = /* @__PURE__ */ new Set(["valerie", "vali", "kita", "kindergarten", "heute", "morgen", "bitte", "die", "der", "das", "wer", "sie", "mo", "di", "mi", "do", "fr", "sa", "so"]);
+var pad2 = (n) => String(n).padStart(2, "0");
+function untilFrom(text) {
+  const m = /\bbis\s+(\d{1,2})(?:[:.](\d{2}))?\s*(?:uhr|h)?\b/i.exec(text);
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2] ?? 0);
+  if (h > 23 || min > 59) return null;
+  return `${pad2(h)}:${pad2(min)}`;
+}
+function guessValerie(title) {
+  const raw = title.trim();
+  const t = raw.toLowerCase();
+  if (!t || NOT.test(t)) return null;
+  const watch = WATCH.test(t);
+  const holen = HOLEN.test(t) && REF.test(t);
+  const bringen = BRINGEN.test(t) && REF.test(t);
+  if (!holen && !bringen && !watch) return null;
+  const slot = holen || watch && !bringen ? "valerie_holen" : "valerie_bringen";
+  let who = null;
+  const first = /^([A-ZÄÖÜ][a-zäöüß]+)\b/.exec(raw);
+  if (first && !NOT_WHO.has(first[1].toLowerCase())) who = first[1];
+  if (!who) {
+    const von = /\b(?:von|bei)\s+([A-ZÄÖÜ][a-zäöüß]+)\b/.exec(raw);
+    if (von && !NOT_WHO.has(von[1].toLowerCase())) who = von[1];
+  }
+  return { slot, who, watch, until: watch ? untilFrom(raw) : null };
+}
+function watchNote(until) {
+  if (!until) return "passt auf";
+  const [h, m] = until.split(":").map(Number);
+  return `passt auf bis ${m ? `${h}:${pad2(m)}` : h} Uhr`;
+}
 export {
+  guessValerie,
   shoppingFor,
   shortName,
   tippEvent,
   variantShopping,
+  watchNote,
   weekKey
 };

@@ -48,6 +48,7 @@ Hinweise zu Casa:
 - Wer eine Mitteilung bekommt, steht im Ergebnis des Vorschlags („Betrifft …“). Sag nur das, nichts anderes.
 - Normalwoche-Felder (slot): valerie_bringen, valerie_holen, valerie_tag, anna_arbeit, nachmittag, abend_essen, abend_bett, wochenende. Eine Abweichung gilt nur für ein Datum. "wert": null heißt „offen – wer übernimmt?“.
 - Ist jemand einen Tag weg (z. B. „Ich bin Dienstag in München“), lege einen Termin mit art "eltern_weg" für diese Person an; dann werden ihre Aufgaben an dem Tag offen. Frag nach, wer Valerie bringt bzw. holt, und schlage die Abweichung erst nach der Antwort vor.
+- Wer hat Valerie? Klingt ein neuer Termin oder eine Aufgabe nach Bringen, Holen oder Aufpassen („Theresa holt Valerie“, „Oma passt auf“), meldet das Werkzeug eine Rückfrage. Stell genau diese Frage („Ersetzt das Anna holt 14:00?“) und warte. Ja → woche_abweichung (mit notiz „passt auf bis … Uhr“, wenn jemand aufpasst). Nein → dasselbe Werkzeug mit kein_ersatz: true.
 - „Ich kann morgen nicht abholen“ oder „Frag Anna, ob sie Freitag holt“: schlage gleich uebergabe_fragen vor (der Slot bleibt offen, bis der andere zusagt). Ohne Rückfrage, außer Tag oder Slot sind unklar. Offene und abgelehnte Anfragen stehen in tage_lesen unter „anfragen“; Anfragen an dich beantwortest du mit anfrage_beantworten.
 - Aufgaben, die jemand für den anderen eingetragen hat, haben einen Stand (neu → gesehen → zugesagt → erledigt), siehe aufgaben_suchen „stand“. „Hat Anna das gesehen?“ beantwortest du damit. Zusagen = aufgabe_aendern mit status „zugesagt“ (nur für eigene Aufgaben).
 - Mila: Steht die Woche als Kombo (ohne feste Tage) im Plan, nutze mila_kombo statt einzelner Gerichte. „Nicht eingekauft“ heißt meist: Kombo auf nächste Woche schieben.
@@ -96,9 +97,9 @@ const READ_TOOLS: Anthropic.Tool[] = [
 ]
 
 const WRITE_TOOLS: Anthropic.Tool[] = [
-  { name: 'aufgabe_anlegen', description: 'VORSCHLAG: neue Aufgabe. Wird erst nach Okay angelegt.', input_schema: P({ titel: str('kurzer Titel'), person, datum: str('fällig am, YYYY-MM-DD (bei Wiederholung: das erste Mal)'), notiz: str('optional'), wiederholung }, ['titel', 'person', 'datum']) as never },
+  { name: 'aufgabe_anlegen', description: 'VORSCHLAG: neue Aufgabe. Wird erst nach Okay angelegt.', input_schema: P({ titel: str('kurzer Titel'), person, datum: str('fällig am, YYYY-MM-DD (bei Wiederholung: das erste Mal)'), notiz: str('optional'), wiederholung, kein_ersatz: { type: 'boolean', description: 'nur nach Rückfrage: true = ersetzt nicht das Bringen/Holen von Valerie (normaler Eintrag)' } }, ['titel', 'person', 'datum']) as never },
   { name: 'aufgabe_aendern', description: 'VORSCHLAG: Aufgabe ändern, verschieben, zuweisen, erledigen oder archivieren. Nur angeben, was sich ändert.', input_schema: P({ id: str('Aufgaben-id'), titel: { type: 'string' }, person, datum: str('neues Datum YYYY-MM-DD'), notiz: { type: 'string' }, status: { type: 'string', enum: ['offen', 'zugesagt', 'geparkt', 'erledigt'] }, archivieren: { type: 'boolean' } }, ['id']) as never },
-  { name: 'termin_anlegen', description: 'VORSCHLAG: Termin oder Wochen-Eintrag. art: termin (normal), eltern_weg (Person ist weg, ihre Aufgaben werden offen), kita_zu, valerie_weg.', input_schema: P({ titel: { type: 'string' }, datum: str('YYYY-MM-DD'), bis_datum: str('letzter Tag bei mehrtägig, optional'), start: str('HH:MM, optional'), ende: str('HH:MM, optional'), person, art: { type: 'string', enum: ['termin', 'eltern_weg', 'kita_zu', 'valerie_weg'] }, notiz: { type: 'string' }, wiederholung }, ['titel', 'datum']) as never },
+  { name: 'termin_anlegen', description: 'VORSCHLAG: Termin oder Wochen-Eintrag. art: termin (normal), eltern_weg (Person ist weg, ihre Aufgaben werden offen), kita_zu, valerie_weg.', input_schema: P({ titel: { type: 'string' }, datum: str('YYYY-MM-DD'), bis_datum: str('letzter Tag bei mehrtägig, optional'), start: str('HH:MM, optional'), ende: str('HH:MM, optional'), person, art: { type: 'string', enum: ['termin', 'eltern_weg', 'kita_zu', 'valerie_weg'] }, notiz: { type: 'string' }, wiederholung, kein_ersatz: { type: 'boolean', description: 'nur nach Rückfrage: true = ersetzt nicht das Bringen/Holen von Valerie (normaler Eintrag)' } }, ['titel', 'datum']) as never },
   { name: 'termin_aendern', description: 'VORSCHLAG: Termin ändern oder verschieben. Nur angeben, was sich ändert.', input_schema: P({ id: { type: 'string' }, titel: { type: 'string' }, datum: { type: 'string' }, bis_datum: { type: 'string' }, start: { type: 'string' }, ende: { type: 'string' }, person, notiz: { type: 'string' } }, ['id']) as never },
   { name: 'uebergabe_fragen', description: 'VORSCHLAG: den anderen fragen „Kannst du übernehmen?“ (z. B. „Frag Anna, ob sie Freitag holt“). Der Slot bleibt offen, bis der andere zusagt oder ablehnt; erst mit der Zusage wechselt die Person. Lieber als woche_abweichung, wenn der andere einspringen soll.', input_schema: P({ datum: str('YYYY-MM-DD'), slot: { type: 'string', enum: ['valerie_bringen', 'valerie_holen', 'valerie_tag', 'abend_essen', 'abend_bett'] }, uhrzeit: str('HH:MM, optional') }, ['datum', 'slot']) as never },
   { name: 'anfrage_beantworten', description: 'VORSCHLAG: eine offene Anfrage „Kannst du übernehmen?“, die an dich ging, beantworten (ja = übernehmen, nein = geht nicht). anfrage_id aus tage_lesen (anfragen).', input_schema: P({ anfrage_id: { type: 'string' }, ja: { type: 'boolean' } }, ['anfrage_id', 'ja']) as never },
@@ -298,6 +299,30 @@ async function runRead(c: Ctx, name: string, input: Record<string, unknown>): Pr
 // ---------------------------------------------------------------------------
 // Vorschläge (prüfen, Satz bauen) – ausgeführt wird erst bei „apply“
 // ---------------------------------------------------------------------------
+/**
+ * Wer hat Valerie? Klingt ein neuer Eintrag nach Bringen, Holen oder Aufpassen („Theresa holt Valerie“), und steht an dem Tag
+ * jemand anderes in der Woche, gibt es noch keinen Vorschlag, sondern eine Rückfrage („Ersetzt das Anna holt 14:00?“).
+ * Ja → woche_abweichung; Nein → dasselbe Werkzeug mit kein_ersatz: true.
+ */
+async function valerieQuestion(c: Ctx, tool: string, titel: string, d: string, start: string | null, chosen: string | null): Promise<string | null> {
+  const g = S.guessValerie(titel) as { slot: string; who: string | null; watch: boolean; until: string | null } | null
+  if (!g) return null
+  const who = g.who ?? chosen
+  if (!who) return null
+  const fx = (must(await c.db.from('events').select('date,end_date,effect').eq('household_id', c.hid).in('effect', ['kita_zu', 'valerie_weg']).lte('date', d), 'Termine') ?? []) as any[]
+  if (fx.some((e) => (e.end_date ?? e.date) >= d)) return null
+  const nw = ((must(await c.db.from('normal_week').select('value,at,is_open').eq('household_id', c.hid).eq('weekday', weekday(d)).eq('slot', g.slot), 'Normalwoche') ?? []) as any[])[0]
+  const ov = ((must(await c.db.from('week_overrides').select('value,at').eq('household_id', c.hid).eq('date', d).eq('slot', g.slot), 'Abweichung') ?? []) as any[])[0]
+  if (!nw && !ov) return null
+  const value: string | null = ov ? ov.value : nw.is_open ? null : nw.value
+  const at: string | null = (ov?.at ?? nw?.at ?? null)?.slice(0, 5) ?? null
+  if (value && value.trim().toLowerCase() === who.trim().toLowerCase()) return null
+  const verbWord = g.slot === 'valerie_holen' ? 'holt' : 'bringt'
+  const cur = value ? `${value} ${verbWord}${at ? ` ${at}` : ''}` : `${g.slot === 'valerie_holen' ? 'Holen' : 'Bringen'} ist offen`
+  const note = g.watch ? S.watchNote(g.until) : null
+  return `Noch kein Vorschlag – erst nachfragen. „${titel}“ klingt nach Valerie ${g.slot === 'valerie_holen' ? 'holen' : 'bringen'}${g.watch ? ' und aufpassen' : ''}. Am ${nice(d)} steht: ${cur}. Frag kurz: „Ersetzt das ${cur}?“ (bzw. bei offen: „${who} ${verbWord} dann?“). Bei Ja schlage statt des Eintrags woche_abweichung vor: datum ${d}, slot ${g.slot}, wert "${who}"${start || at ? `, uhrzeit ${start || at}` : ''}${note ? `, notiz "${note}"` : ''}. Bei Nein rufe ${tool} noch einmal genauso auf, mit kein_ersatz: true.`
+}
+
 async function propose(c: Ctx, name: string, input: Record<string, unknown>): Promise<Proposal> {
   const { db, hid } = c
   const others = (id: string | null) => (id && id !== c.me.id ? [nameOf(c, id)] : [])
@@ -307,6 +332,10 @@ async function propose(c: Ctx, name: string, input: Record<string, unknown>): Pr
       const owner = memberFor(c, input.person)
       const d = date(input.datum, 'datum')
       if (!String(input.titel ?? '').trim()) throw new Error('titel fehlt')
+      if (!input.kein_ersatz && !input.wiederholung) {
+        const q = await valerieQuestion(c, name, String(input.titel).trim(), d, null, owner ? nameOf(c, owner) : null)
+        if (q) throw new Error(q)
+      }
       return { id, tool: name, input, summary: `Aufgabe für ${nameOf(c, owner)}: „${String(input.titel).trim()}“ bis ${nice(d)}${input.wiederholung ? ` · ${REPEAT_WORD[String(input.wiederholung)] ?? ''}` : ''}`, betrifft: others(owner) }
     }
     case 'aufgabe_aendern': {
@@ -336,6 +365,10 @@ async function propose(c: Ctx, name: string, input: Record<string, unknown>): Pr
       for (const k of ['start', 'ende']) if (input[k] && !TIME.test(String(input[k]))) throw new Error(`${k}: HH:MM`)
       const who = input.person ? memberFor(c, input.person) : null
       const art = String(input.art ?? 'termin')
+      if (art === 'termin' && !input.kein_ersatz && !input.wiederholung && !input.bis_datum) {
+        const q = await valerieQuestion(c, name, String(input.titel ?? '').trim(), d, input.start ? String(input.start) : null, who ? nameOf(c, who) : null)
+        if (q) throw new Error(q)
+      }
       const label = art === 'eltern_weg' ? `${nameOf(c, who)} ist weg` : art === 'kita_zu' ? 'Kita zu' : art === 'valerie_weg' ? 'Valerie ist weg' : 'Termin'
       return { id, tool: name, input, summary: `${label}: „${input.titel}“ am ${nice(d)}${input.bis_datum ? ` bis ${nice(String(input.bis_datum))}` : ''}${input.start ? ` um ${input.start}` : ''}${who && art === 'termin' ? ` (${nameOf(c, who)})` : ''}${input.wiederholung ? ` · ${REPEAT_WORD[String(input.wiederholung)] ?? ''}` : ''}`, betrifft: who && art !== 'eltern_weg' ? others(who) : c.members.filter((m) => m.id !== c.me.id && m.role === 'partner').map((m) => m.display_name) }
     }
@@ -371,7 +404,7 @@ async function propose(c: Ctx, name: string, input: Record<string, unknown>): Pr
       if (!label[String(input.slot)]) throw new Error('slot unbekannt')
       const wert = input.wert === null || input.wert === undefined || input.wert === '' ? null : String(input.wert)
       const m = wert ? c.members.find((x) => x.display_name.toLowerCase() === wert.toLowerCase()) : null
-      return { id, tool: name, input, summary: `${nice(d)} · ${label[String(input.slot)]}: ${wert ?? 'offen – wer übernimmt?'}${input.uhrzeit ? ` um ${input.uhrzeit}` : ''}`, betrifft: m ? others(m.id) : c.members.filter((x) => x.id !== c.me.id && x.role === 'partner').map((x) => x.display_name) }
+      return { id, tool: name, input, summary: `${nice(d)} · ${label[String(input.slot)]}: ${wert ?? 'offen – wer übernimmt?'}${input.uhrzeit ? ` um ${input.uhrzeit}` : ''}${input.notiz ? ` · ${input.notiz}` : ''}`, betrifft: m ? others(m.id) : c.members.filter((x) => x.id !== c.me.id && x.role === 'partner').map((x) => x.display_name) }
     }
     case 'mila_gericht_setzen': {
       const d = date(input.datum, 'datum')
@@ -479,7 +512,7 @@ async function execute(c: Ctx, p: Proposal): Promise<LogEntry[]> {
 
   switch (p.tool) {
     case 'aufgabe_anlegen':
-      await ins('tasks', { household_id: hid, title: String(i.titel).trim(), owner_member_id: memberFor(c, i.person), due_date: i.datum, note: i.notiz ?? null, repeat: i.wiederholung ?? null, status: 'offen', area: 'casa', created_by: me.id, updated_by: me.id })
+      await ins('tasks', { household_id: hid, title: String(i.titel).trim(), owner_member_id: memberFor(c, i.person), due_date: i.datum, note: i.notiz ?? null, repeat: i.wiederholung ?? null, status: 'offen', area: 'casa', ...(i.kein_ersatz ? { valerie_cleared: true } : {}), created_by: me.id, updated_by: me.id })
       break
     case 'aufgabe_aendern': {
       const patch: Record<string, unknown> = { updated_by: me.id }
@@ -496,7 +529,7 @@ async function execute(c: Ctx, p: Proposal): Promise<LogEntry[]> {
       break
     }
     case 'termin_anlegen':
-      await ins('events', { household_id: hid, title: i.titel, date: i.datum, end_date: i.bis_datum ?? null, start_time: i.start ?? null, end_time: i.ende ?? null, member_id: i.person ? memberFor(c, i.person) : null, note: i.notiz ?? null, effect: i.art ?? 'termin', repeat: i.wiederholung ?? null, created_by: me.id, updated_by: me.id })
+      await ins('events', { household_id: hid, title: i.titel, date: i.datum, end_date: i.bis_datum ?? null, start_time: i.start ?? null, end_time: i.ende ?? null, member_id: i.person ? memberFor(c, i.person) : null, note: i.notiz ?? null, effect: i.art ?? 'termin', repeat: i.wiederholung ?? null, ...(i.kein_ersatz ? { valerie_cleared: true } : {}), created_by: me.id, updated_by: me.id })
       break
     case 'termin_aendern': {
       const patch: Record<string, unknown> = { updated_by: me.id }

@@ -1322,3 +1322,6 @@ button.heute__gear { background: transparent; border: none; padding: 0; cursor: 
   border: 1.2px dashed var(--navy-line-strong, rgba(31, 42, 68, 0.4)); background: transparent; font-family: var(--font-hand); font-size: 24px; color: var(--navy);
 }
 .heute__runde > span:first-child { color: var(--gold); font-size: 18px; }
+/* Wer hat Valerie? „Wer holt? Anna · Theresa“ und „passt auf bis 18 Uhr“ */
+.daycard__note--quiet { color: var(--ink-soft); margin-top: -4px; margin-bottom: 4px; }
+.daycard__who { width: 100%; margin: 2px 0 6px; }

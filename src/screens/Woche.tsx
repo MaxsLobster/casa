@@ -8,6 +8,7 @@ import { isFairEvent } from '../lib/mwf'
 import { isMilaEvent, mealsOn } from '../mila/casa-link'
 import { shortName } from '../mila/engine'
 import { daySegments, type Seg as DaySeg } from '../lib/day'
+import { valerieConflicts, valerieEntries } from '../lib/valerie'
 import { applyEffects, dayEffects, effectLines, handoverOpen, isEffectEvent, openChips, type DayEffects, type EffectLine } from '../lib/effects'
 import type { Event, Slot, Task } from '../lib/types'
 import { Check, Chevron, Collapse, Sheet } from '../components/ui'
@@ -94,6 +95,7 @@ export function Woche() {
         const fx = dayEffects(d, dayOcc, members)
         const state = applyEffects(dayState(d, normalWeek, overrides), fx)
         const ho = handoverOpen(fx)
+        const conflicts = valerieConflicts(state, valerieEntries(d, dayOcc, tasks, people))
         const myTasks = d >= today ? tasks.filter((t) => t.owner_member_id === me?.id && t.status !== 'erledigt' && t.due_date === d) : []
         return {
           key: d,
@@ -106,8 +108,8 @@ export function Woche() {
           events: dayOcc,
           isToday: d === today,
           isPast: d < today,
-          segs: daySegments(d, state, fx, voice, people, slotRequests),
-          hasOpen: hasOpen(state) || ho.dropoff || ho.pickup || slotRequests.some((x) => x.date === d && x.status === 'offen'),
+          segs: daySegments(d, state, fx, voice, people, slotRequests, conflicts),
+          hasOpen: hasOpen(state) || conflicts.length > 0 || ho.dropoff || ho.pickup || slotRequests.some((x) => x.date === d && x.status === 'offen'),
           tasks: myTasks.sort((a, b) => a.created_at.localeCompare(b.created_at)),
         }
       }),
