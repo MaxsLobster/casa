@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
-import { addDays, dayLabel, eventEnd, fromISO, hhmm, spanLabel, startOfWeek, uhr, weekdayLong, weekdayShort } from '../lib/dates'
+import { addDays, dayLabel, fromISO, hhmm, spanLabel, startOfWeek, uhr, timePassed, weekdayLong, weekdayShort } from '../lib/dates'
 import { dayState, name as whoName, verb, type Voice } from '../lib/week'
 import { applyEffects, awayOn, dayEffects, isEffectEvent, openChips } from '../lib/effects'
 import { sunTimes } from '../lib/daily'
@@ -196,7 +196,8 @@ export function Heute() {
   // Termine, heute nur die noch nicht vorbei sind
   for (const o of occDay) {
     if (isMultiDay(o) || isEffectEvent(o)) continue
-    if (isToday && eventEnd({ date, start_time: o.start_time, end_time: o.end_time }) <= now) continue
+    // Heute: weg, sobald die Uhrzeit vorbei ist (Ende, sonst Beginn) plus 15 Minuten Puffer
+    if (isToday && timePassed(date, o.end_time ?? o.start_time, now)) continue
     const parts = [whoEvent(o)]
     if (o.end_time) parts.push(`bis ${uhr(o.end_time)}`)
     rows.push({ key: 'e' + o.id + o.occ_date, sort: o.start_time ? toH(o.start_time, 0) : -1, time: o.start_time ? hhmm(o.start_time) : null, kind: 'event', title: o.title + (o.is_repeat || o.repeat ? ' ↻' : ''), sub: parts.join(' · '), isNew: isNew('event', o), event: o.base_id })
@@ -248,6 +249,9 @@ export function Heute() {
 
   // ---------- Tageskarte: wer hat Valerie, meine Aufgaben, ab 17 Uhr „Morgen · Fr“ ----------
   const vd = valerieDay(date, day, fx, voice, people, slotRequests)
+  // Heute: Bringen/Holen verschwinden 15 Minuten nach ihrer Uhrzeit; Ausnahmen (Überschrift) bleiben den ganzen Tag
+  // Bringen ohne Uhrzeit: Kita ab 8 (wie im Tagesband), also bis 8:15 sichtbar
+  const valRows = isToday ? vd.rows.filter((r) => !timePassed(date, r.at ?? (r.slot === 'valerie_bringen' ? '08:00' : null), now)) : vd.rows
   const myDeclined = (slot: string) => slotRequests.filter((r) => r.date === date && r.slot === slot && r.from_member_id === me?.id && r.status === 'abgelehnt').sort((a, c) => (c.answered_at ?? '').localeCompare(a.answered_at ?? ''))[0] ?? null
   const tomorrow = addDays(today, 1)
   const showTomorrow = isToday && now.getHours() >= 17
@@ -281,6 +285,8 @@ export function Heute() {
   const overdue: Task[] = isToday ? tasks.filter((t) => t.area === 'casa' && t.status !== 'erledigt' && !t.is_running && t.due_date < today && (t.owner_member_id === me?.id || isShared(t))).sort((a, c) => a.due_date.localeCompare(c.due_date)) : []
   const overdueLabel = overdue.length === 0 ? '' : `${overdue.length} ${overdue.every((t) => t.due_date < startOfWeek(today)) ? 'von letzter Woche' : overdue.length === 1 ? 'liegt noch' : 'liegen noch'}`
   const [showOverdue, setShowOverdue] = useState(false)
+  // Heute ist alles in der Karte vorbei (Bringen und Holen, keine Aufgaben, noch kein „Morgen“) → Karte weglassen
+  const cardGone = isToday && !vd.headline && vd.rows.length > 0 && valRows.length === 0 && dayTasks.length === 0 && !(showTomorrow && tomorrowLine)
   const quietDay = rows.length === 0 && chips.length === 0 && openTasks.length === 0 && dayTasks.length === 0 && overdue.length === 0 && answerCount === 0
 
   // ---------- Demnächst (nur heute) ----------
@@ -382,6 +388,7 @@ export function Heute() {
           )}
 
           {/* ---------- Tageskarte ---------- */}
+          {!cardGone && (
           <section className={'daycard' + rc} style={rs(3)} aria-label="Der Tag auf einen Blick">
             {vd.headline ? (
               <div className="daycard__row">
@@ -394,7 +401,7 @@ export function Heute() {
                 }}>{vd.headline}</button>
               </div>
             ) : (
-              vd.rows.map((r) => {
+              valRows.map((r) => {
                 const declined = !r.request && r.mine ? myDeclined(r.slot) : null
                 return (
                   <div className="daycard__row" key={r.slot}>
@@ -449,6 +456,7 @@ export function Heute() {
               </button>
             )}
           </section>
+          )}
 
           {overdue.length > 0 && (
             <section className={'heute__overdue' + rc} style={rs(4)}>

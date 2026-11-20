@@ -174,3 +174,12 @@ export function eventEnd(e: { date: ISODate; start_time: string | null; end_time
   d.setHours(0, 0, 0, 0)
   return d
 }
+
+/** Heute: Ist diese Uhrzeit (plus Puffer, Standard 15 Minuten) schon vorbei? Ohne Uhrzeit nie. */
+export function timePassed(date: ISODate, time: string | null, now: Date, bufferMin = 15): boolean {
+  if (!time) return false
+  const d = fromISO(date)
+  const [h, m] = time.split(':').map(Number)
+  d.setHours(h, m + bufferMin, 0, 0)
+  return d <= now
+}

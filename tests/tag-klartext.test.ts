@@ -72,3 +72,16 @@ describe('Essensplan: Kombo und „Was es gibt“ aus denselben Daten', () => {
     expect(d['2026-11-24'].mittag?.leftover).toBe(true)
   })
 })
+
+describe('Heute: vergangene Uhrzeiten', async () => {
+  const { timePassed } = await import('../src/lib/dates')
+  const at = (h: number, m = 0) => new Date(2026, 10, 20, h, m)
+  it('Bringen 8:00 steht bis 8:15, danach weg', () => {
+    expect(timePassed('2026-11-20', '08:00:00', at(8, 14))).toBe(false)
+    expect(timePassed('2026-11-20', '08:00:00', at(8, 15))).toBe(true)
+    expect(timePassed('2026-11-20', '08:00:00', at(13, 11))).toBe(true)
+  })
+  it('ohne Uhrzeit bleibt es stehen', () => {
+    expect(timePassed('2026-11-20', null, at(23, 59))).toBe(false)
+  })
+})
