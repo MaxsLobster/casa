@@ -7,6 +7,7 @@ import { useMila } from './MilaContext'
 import { isThermomix, minutes } from './rhythm'
 import { cookOn, dayInfo, servingsFor, shortName, workDays } from './engine'
 import { countdown } from './Wochenwahl'
+import { komboDays, type DayDish } from './wahl'
 import { weekKey } from './week-list'
 import { Sheet } from '../components/ui'
 import { SwipeRemove } from './SwipeRemove'
@@ -58,7 +59,7 @@ function Hits({ menu, plan, placed, onPick }: { menu: MilaMenu; plan: MilaPlan; 
 }
 
 function WeekView() {
-  const { recipes, weekDays, recipeById, menus, me, ctx, items, setMeal, removeMeal, weekToList, wahl } = useMila()
+  const { recipes, weekDays, recipeById, menus, me, ctx, items, setMeal, removeMeal, weekToList, wahl, markDay, moveMeal } = useMila()
   const casa = useCasa()
   const nav = useNavigate()
   // Ist die Karte für die nächste Woche aufgedeckt (oder dort schon etwas eingetragen), gleich dort öffnen
@@ -86,6 +87,32 @@ function WeekView() {
 
   const dates = weekDates(monday)
   const work = workDays(monday)
+  // Kombo und „Was es gibt“ aus denselben Daten: übernommene Kombo der gezeigten Woche auf die Tage verteilt
+  const kPlan = [wahl.currentPlan, wahl.nextPlan].find((p) => p && p.week === monday && p.adopted_at && p.status !== 'verworfen') ?? null
+  const dishes = kPlan ? komboDays(dates, wahl.itemsOf(kPlan.id), weekDays, today(), kPlan.prep_tag) : null
+  const [busyDay, setBusyDay] = useState<string | null>(null)
+  async function dayAction(date: string, what: 'Reste' | 'auswärts' | 'verschieben' | 'zurück', dd: DayDish | undefined) {
+    setBusyDay(date)
+    try {
+      if (what === 'zurück') await markDay(date, 'abend', null)
+      else if (what === 'verschieben') {
+        if (dd?.kind === 'manual') await moveMeal(date, 'abend')
+        else await markDay(date, 'abend', 'frei')
+      } else await markDay(date, 'abend', what)
+      setListed(false)
+    } finally {
+      setBusyDay(null)
+    }
+  }
+  const nextMonday = addDays(startOfWeek(today()), 7)
+  const np = wahl.nextPlan
+  const plan = !np
+    ? { text: 'Gerichte für nächste Woche wählt ihr ab Freitag', link: '/mila/gerichte?vormerken=1', cta: 'Schon mal Gerichte vormerken ›' }
+    : np.status === 'wischen'
+      ? { text: `Nächste Woche wählen · ${countdown(np.deadline).replace(/^noch /, 'noch ')}`, link: '/mila/wahl', cta: 'Zur Wahl ›' }
+      : np.status === 'kombo'
+        ? { text: 'Kombo für nächste Woche steht', link: '/mila/wahl', cta: 'Ansehen und übernehmen ›' }
+        : { text: 'Nächste Woche steht', link: monday === nextMonday ? '/mila/wahl' : null, cta: monday === nextMonday ? 'Kombo ansehen ›' : null }
   const day = (date: string, meal: MealSlot) => weekDays.find((w) => w.date === date && w.meal === meal) ?? null
 
   // Treffer der gezeigten Woche und was davon schon eingetragen ist
@@ -107,17 +134,18 @@ function WeekView() {
       <header className="m-wk">
         <button type="button" className="m-wk__arrow" aria-label="Vorige Woche" onClick={() => setMonday(addDays(monday, -7))}>‹</button>
         <div className="m-wk__mid">
-          <span className="m-title">Was es gibt</span>
+          <span className="m-title">Essensplan</span>
           <span className="m-sub">KW {isoWeek(monday)} · {weekRange(monday)}</span>
         </div>
         <button type="button" className="m-wk__arrow" aria-label="Nächste Woche" onClick={() => setMonday(addDays(monday, 7))}>›</button>
       </header>
+      {/* Woche planen und Wahl liegen hier mit drin */}
+      <div className="m-plancard">
+        <span className="m-plancard__text">{plan.text}</span>
+        {plan.link && plan.cta && <Link to={plan.link} className="m-day__link">{plan.cta}</Link>}
+      </div>
       <div className="between">
-        {wahl.nextPlan?.status === 'wischen' ? (
-          <Link to="/mila/wahl" className="m-banner">Wochenwahl läuft · {countdown(wahl.nextPlan.deadline).replace(/^noch /, '')} ›</Link>
-        ) : (
-          <span />
-        )}
+        <span className="m-hint" style={{ fontSize: 12.5 }}>{kPlan ? 'Kombo in Kochreihenfolge auf die Tage verteilt' : ''}</span>
         <Link to="/mila/gerichte" className="m-day__link">Alle Gerichte ›</Link>
       </div>
 
@@ -131,10 +159,15 @@ function WeekView() {
             <div key={date} className={'m-day' + (date === today() ? ' m-day--today' : '')}>
               {meals.map((meal, i) => {
                 const w = day(date, meal)
-                const r = recipeById(w?.recipe_id)
+                const dd = dishes?.[date]?.[meal]
+                const fromKombo = !w?.recipe_id && (dd?.kind === 'kombo' || dd?.kind === 'cooked')
+                const r = recipeById(w?.recipe_id ?? (fromKombo ? dd?.recipeId : null))
+                const mark = !w?.recipe_id && w?.free_text ? w.free_text : null
                 const cook = meal === 'abend' ? cookOn(date, ctx) : null
                 let sub = ''
-                if (meal === 'mittag' && w) sub = w.is_leftover ? 'Reste · aufwärmen' : 'aus der Box'
+                if (meal === 'mittag' && (w?.recipe_id || fromKombo)) sub = (w?.is_leftover || dd?.leftover) ? 'Reste · aufwärmen' : 'aus der Box'
+                if (fromKombo && meal === 'abend') sub = dd?.kind === 'cooked' ? 'gekocht ✓' : 'aus der Kombo'
+                if (mark) sub = ''
                 if (meal === 'abend' && cook && !cook.open && cook.value) sub = cook.member?.id === me.id ? 'du kochst' : cook.member ? `${cook.value} kocht` : `Essen ${cook.value}`
                 const body = (
                   <div className="m-meal">
@@ -146,22 +179,24 @@ function WeekView() {
                         </>
                       )}
                     </span>
-                    <button type="button" className="m-meal__row" onClick={() => (w?.recipe_id ? nav(`/mila/rezept/${w.recipe_id}?tag=${date}&m=${meal}`) : setPick({ date, meal }))}>
+                    <button type="button" className="m-meal__row" onClick={() => (w?.recipe_id ? nav(`/mila/rezept/${w.recipe_id}?tag=${date}&m=${meal}`) : r ? nav(`/mila/rezept/${r.id}`) : mark ? undefined : setPick({ date, meal }))}>
                       <span className="m-day__mid">
                         <span className={'m-day__mode m-day__mode--' + (meal === 'abend' ? 'navy' : 'gold')}>{meal === 'abend' ? 'Abend' : 'Mittag'}</span>
-                        {r ? (
-                          <span className={'m-day__dish' + (w?.is_leftover ? ' m-day__dish--left' : '')}>{w?.is_leftover ? `${shortName(r.name)} vom Vortag` : r.name}</span>
+                        {mark ? (
+                          <span className="m-day__free m-day__mark">{mark === 'frei' ? 'frei · verschoben' : mark}</span>
+                        ) : r ? (
+                          <span className={'m-day__dish' + ((w?.is_leftover || dd?.leftover) ? ' m-day__dish--left' : '')}>{(w?.is_leftover || dd?.leftover) ? `${shortName(r.name)} vom Vortag` : r.name}</span>
                         ) : (
                           <span className="m-day__free">frei</span>
                         )}
                         {sub && <span className="m-day__sub">{sub}</span>}
                       </span>
                       <span className="m-day__right">
-                        {r && !w?.is_leftover && isThermomix(r.devices) && <span className="m-tm">TM</span>}
-                        {r && !w?.is_leftover && <span className="m-day__time">{minutes(r.time_min)}</span>}
+                        {r && !mark && !(w?.is_leftover || dd?.leftover) && isThermomix(r.devices) && <span className="m-tm">TM</span>}
+                        {r && !mark && !(w?.is_leftover || dd?.leftover) && <span className="m-day__time">{minutes(r.time_min)}</span>}
                       </span>
                     </button>
-                    {r && (
+                    {r && w?.recipe_id && (
                       <button type="button" className="m-meal__x" aria-label={`${r.name} entfernen`} onClick={() => remove(date, meal)}>×</button>
                     )}
                     {meal === 'abend' && cook?.open && date >= today() && (
@@ -171,10 +206,24 @@ function WeekView() {
                     )}
                   </div>
                 )
-                return w?.recipe_id ? (
-                  <SwipeRemove key={meal} onRemove={() => remove(date, meal)}>{body}</SwipeRemove>
-                ) : (
-                  <div key={meal}>{body}</div>
+                const acts = meal === 'abend' && date >= today() && (
+                      <div className="m-dayacts" aria-label="Für diesen Tag">
+                        {mark ? (
+                          <button type="button" disabled={busyDay === date} onClick={() => void dayAction(date, 'zurück', dd)}>zurück</button>
+                        ) : (
+                          <>
+                            <button type="button" disabled={busyDay === date} onClick={() => void dayAction(date, 'Reste', dd)}>Reste</button>
+                            <button type="button" disabled={busyDay === date} onClick={() => void dayAction(date, 'auswärts', dd)}>auswärts</button>
+                            {r && <button type="button" disabled={busyDay === date} onClick={() => void dayAction(date, 'verschieben', dd)}>verschieben</button>}
+                          </>
+                        )}
+                      </div>
+                    )
+                return (
+                  <div key={meal}>
+                    {w?.recipe_id ? <SwipeRemove onRemove={() => remove(date, meal)}>{body}</SwipeRemove> : body}
+                    {acts}
+                  </div>
                 )
               })}
             </div>

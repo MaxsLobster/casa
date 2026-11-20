@@ -65,6 +65,7 @@ function MilaShell() {
 
 function MilaNav() {
   const { wahl, me } = useMila()
+  const loc = useLocation()
   const p = wahl.nextPlan
   // Punkt an „Wahl“: Wahl offen und mein Stapel ist noch nicht durch (oder noch nicht gemischt)
   const mine = p ? wahl.mySwipes.filter((s) => s.plan_id === p.id).length : 0
@@ -73,8 +74,9 @@ function MilaNav() {
   return (
     <nav className="nav" aria-label="Mila">
       <NavLink to="/mila/heute" className="nav__item">Heute</NavLink>
-      <NavLink to="/mila/wahl" className="nav__item">
-        Wahl{dot && <span className="m-navdot" aria-label="neu" />}
+      {/* Essensplan = Woche planen (Wahl, Kombo) und was es gibt, unter einem Punkt */}
+      <NavLink to="/mila/woche" className={() => 'nav__item' + (/^\/mila\/(woche|wahl|kombo)/.test(loc.pathname) ? ' active' : '')}>
+        Essensplan{dot && <span className="m-navdot" aria-label="neu" />}
       </NavLink>
       <NavLink to="/mila/einkauf" className="nav__item">Einkauf</NavLink>
       <NavLink to="/mila/prep" className="nav__item">Prep</NavLink>

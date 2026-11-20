@@ -31,6 +31,7 @@ export function Neu() {
   const [multi, setMulti] = useState(false)
   const [until, setUntil] = useState('')
   const [repeat, setRepeat] = useState<Repeat | null>(null)
+  const [more, setMore] = useState<boolean>(!!preset.anchor)
   const [effectChoice, setEffectChoice] = useState<EffectChoice>('termin')
   const [handover, setHandover] = useState<Handover>(EMPTY_HANDOVER)
   const [busy, setBusy] = useState(false)
@@ -173,13 +174,6 @@ export function Neu() {
           </div>
         )}
 
-        {kind === 'aufgabe' && anchorOptions.length > 0 && (
-          <div className="stack">
-            <span className="label">Anker</span>
-            <Chips variant="date" options={[{ value: 'keiner', label: 'keiner' }, ...anchorOptions.map((a) => ({ value: a.id, label: '⚓︎ ' + a.title }))]} value={anchor} onChange={setAnchor} />
-          </div>
-        )}
-
         {kind !== 'idee' && kind !== 'zuruf' && (
         <div className="stack">
           <span className="label">{kind === 'aufgabe' ? 'Bis wann?' : multi ? 'Von wann?' : 'Wann?'}</span>
@@ -214,10 +208,25 @@ export function Neu() {
         {kind === 'termin' && fx.effect === 'valerie_weg' && <HandoverFields value={handover} onChange={setHandover} me={casa.me} members={casa.members} people={casa.people} />}
 
         {kind !== 'idee' && kind !== 'zuruf' && (
-          <div className="stack">
-            <span className="label">Wiederholen?</span>
-            <RepeatPicker value={repeat} onChange={setRepeat} />
-          </div>
+          <>
+            {/* Anker und Wiederholung nur bei Bedarf: zuerst kommen Titel, Person, Frist */}
+            <button type="button" className="neu__more" aria-expanded={more} onClick={() => setMore((v) => !v)}>
+              Mehr{!more && (repeat || (anchor && anchor !== 'keiner')) ? ` · ${[repeat ? 'wiederholt' : null, anchor && anchor !== 'keiner' ? 'Anker' : null].filter(Boolean).join(', ')}` : ''} {more ? '▾' : '▸'}
+            </button>
+            {more && kind === 'aufgabe' && anchorOptions.length > 0 && (
+              <div className="stack">
+                <span className="label">Anker</span>
+                <Chips variant="date" options={[{ value: 'keiner', label: 'keiner' }, ...anchorOptions.map((a) => ({ value: a.id, label: '⚓︎ ' + a.title }))]} value={anchor} onChange={setAnchor} />
+              </div>
+            )}
+            {more && (
+              <div className="stack">
+                <span className="label">Wiederholen?</span>
+                <RepeatPicker value={repeat} onChange={setRepeat} />
+                {repeat && <span className="hint">Ab dem gewählten Datum{repeat === 'biweekly' ? ', alle 2 Wochen' : repeat === 'fourweekly' ? ', alle 4 Wochen' : ''}.</span>}
+              </div>
+            )}
+          </>
         )}
 
         {error && <p className="hint hint--brown">{error}</p>}

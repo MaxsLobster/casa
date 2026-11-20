@@ -23,7 +23,7 @@ import { Med } from './med/Med'
 import { Freizeit } from './freizeit/Freizeit'
 import { ManagerButton, ManagerSheet } from './screens/Manager'
 import { managerBus } from './screens/managerBus'
-import { Aufraeumen, Geschenke, Hausbuch } from './sonstiges/Sonstiges'
+import { Aufraeumen, Geschenke, Hausbuch, Zwischendurch } from './sonstiges/Sonstiges'
 import { useAreaTracking } from './sonstiges/useSonstiges'
 
 export default function App() {
@@ -143,6 +143,7 @@ function Shell() {
             <Route path="/hausbuch" element={<Hausbuch />} />
             <Route path="/geschenke" element={<Geschenke />} />
             <Route path="/aufraeumen" element={<Aufraeumen />} />
+            <Route path="/zwischendurch" element={<Zwischendurch />} />
             <Route path="/manager" element={<OpenManager />} />
             <Route path="/neu" element={wide ? <Woche /> : <Heute />} />
             <Route path="*" element={<Navigate to="/heute" replace />} />

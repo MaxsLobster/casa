@@ -1,4 +1,4 @@
-// Sonstiges (hinter dem Zahnrad): Hausbuch, Geschenk-Dose, Casa aufräumen, Einstellungen.
+// Sonstiges (hinter dem Zahnrad): Hausbuch, Geschenk-Dose, Für zwischendurch, Casa aufräumen, Einstellungen.
 import { useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Sheet, Toggle } from '../components/ui'
@@ -6,6 +6,8 @@ import { useCasa, useToday } from '../state/HouseholdContext'
 import type { GiftPerson, HouseEntry } from '../lib/types'
 import { AREAS, SECTIONS, birthdayLabel, lastOpenedText, nextBirthday, trackingDays, trackingText, unusedAreas, useSonstiges } from './useSonstiges'
 import { managerBus } from '../screens/managerBus'
+import { MoonIcon } from '../components/MoonIcon'
+import { dailyText, moonPhase, type DailyKind } from '../lib/daily'
 import './sonstiges.css'
 
 const back = { state: { sonstiges: true } }
@@ -24,6 +26,7 @@ export function SonstigesSheet({ onClose }: { onClose: () => void }) {
   const rows = [
     { key: 'hausbuch', icon: '🏠', title: 'Hausbuch', sub: 'WLAN, Handwerker, Zähler, rund ums Haus', to: '/hausbuch' },
     { key: 'geschenke', icon: '🎁', title: 'Geschenk-Dose', sub: next ? `Ideen sammeln · ${next.p.name} ${birthdayLabel(next.p, today)}` : 'Ideen sammeln für Geburtstage', to: '/geschenke' },
+    { key: 'zwischendurch', icon: '☾', title: 'Für zwischendurch', sub: `${moonPhase(today).label} · Weisheit, Wort und Heute vor Jahren`, to: '/zwischendurch' },
     { key: 'aufraeumen', icon: '🧹', title: 'Casa aufräumen', sub: unused ? `${unused} ${unused === 1 ? 'Bereich' : 'Bereiche'} seit 30 Tagen ungenutzt` : 'Ungenutztes ausblenden, Wochenputz', to: '/aufraeumen' },
     { key: 'einstellungen', icon: '⚙︎', title: 'Einstellungen', sub: 'Mitteilungen, Ruhezeiten, Bereiche', to: '/einstellungen' },
   ].filter((r) => !hidden.includes(r.key))
@@ -53,6 +56,33 @@ function Top({ title }: { title: string }) {
       <button type="button" className="so__back" onClick={() => nav('/heute', back)}>‹ Sonstiges</button>
       <h1 className="h1 so__h1">{title}</h1>
     </>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Für zwischendurch: Mondphase, Weisheit, Wort und Heute vor Jahren (früher oben auf Heute)
+// ---------------------------------------------------------------------------
+export function Zwischendurch() {
+  const today = useToday()
+  const moon = moonPhase(today)
+  const texts = (['weisheit', 'wort', 'heute'] as DailyKind[]).map((k) => dailyText(k, today)).filter((t): t is NonNullable<typeof t> => !!t)
+  return (
+    <div className="page so">
+      <Top title="Für zwischendurch" />
+      <div className="so__moon">
+        <MoonIcon fraction={moon.fraction} waxing={moon.waxing} label={moon.label} />
+        <span className="so__rowtitle">Mond {moon.label}</span>
+        <span className="so__rowsub">{Math.round(moon.fraction * 100)} % beleuchtet</span>
+      </div>
+      <div className="so__tear" />
+      {texts.map((t) => (
+        <figure key={t.label} className="so__daily">
+          <span className="so__label">{t.label}</span>
+          <blockquote className="hand" style={{ margin: 0, fontSize: 25, lineHeight: 1.2 }}>{t.text}</blockquote>
+          {t.source && <figcaption className="so__rowsub" style={{ alignSelf: 'flex-end' }}>{t.source}</figcaption>}
+        </figure>
+      ))}
+    </div>
   )
 }
 
@@ -196,6 +226,7 @@ export function Geschenke() {
     return [...withB.filter((x) => x.d).sort((a, b) => a.d!.localeCompare(b.d!)), ...withB.filter((x) => !x.d).sort((a, b) => a.p.name.localeCompare(b.p.name))]
   }, [so.people, today])
   const firstId = sorted.find((x) => x.d)?.p.id
+  const missing = sorted.filter((x) => !x.d).length
   const other = members.find((m) => m.id !== me?.id && m.role === 'partner')?.display_name ?? 'der andere'
 
   return (
@@ -210,13 +241,14 @@ export function Geschenke() {
           <button key={p.id} type="button" className={'so__gift' + (soon ? ' so__gift--soon' : '')} onClick={() => setOpen(p)}>
             <span className="so__gifttop">
               <span className="so__giftname">{p.name}</span>
-              <span className={'so__giftwhen' + (soon ? ' so__giftwhen--soon' : '')}>{birthdayLabel(p, today)}</span>
+              {nextBirthday(p, today) && <span className={'so__giftwhen' + (soon ? ' so__giftwhen--soon' : '')}>{birthdayLabel(p, today)}</span>}
             </span>
             {list.map((i) => <span key={i.id} className="so__idea">· {i.text}</span>)}
             {p.member_id && <span className="so__lock">🔒 {p.member_id === me?.id ? `Was ${other} für dich einträgt, siehst du nicht` : 'nur du siehst deine Ideen'}</span>}
           </button>
         )
       })}
+      {missing > 0 && <span className="so__empty">{missing === 1 ? '1 Geburtstag fehlt' : `${missing} Geburtstage fehlen`} · bei der Person unter „Geburtstag“ nachtragen</span>}
       <button type="button" className="so__add" onClick={() => setOpen('neu')}>+ Person</button>
       {open && <PersonSheet person={open === 'neu' ? null : open} onClose={() => setOpen(null)} />}
     </div>
@@ -251,44 +283,57 @@ function PersonSheet({ person, onClose }: { person: GiftPerson | null; onClose: 
     await so.addIdea(person.id, idea)
     setIdea('')
   }
+  const [showBday, setShowBday] = useState(!person)
+  const otherName = useCasa().members.find((m) => m.id !== me?.id && m.role === 'partner')?.display_name ?? 'Der andere'
+  const birthday = (
+    <div className="stack" style={{ gap: 6 }}>
+      {!person?.member_id && <input className="input-ui" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" aria-label="Name" />}
+      <span className="so__label">Geburtstag (freiwillig)</span>
+      <div className="so__bday">
+        <select className="input-ui" value={day} onChange={(e) => setDay(Number(e.target.value))} aria-label="Tag">
+          <option value={0}>Tag</option>
+          {Array.from({ length: 31 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}.</option>)}
+        </select>
+        <select className="input-ui" value={month} onChange={(e) => setMonth(Number(e.target.value))} aria-label="Monat">
+          <option value={0}>Monat</option>
+          {['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'].map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+        </select>
+        <input className="input-ui" inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Jahr" aria-label="Jahr (freiwillig)" />
+      </div>
+      <button type="button" className="so__ok so__ok--small" style={{ alignSelf: 'flex-start' }} onClick={() => void save()}>Speichern</button>
+    </div>
+  )
   return (
     <Sheet onClose={onClose} title={person ? person.name : 'Neue Person'}>
       <span className="so__sheettitle">{person ? person.name : 'Neue Person'}</span>
-      {!person?.member_id && <input className="input-ui" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" aria-label="Name" />}
-      <div className="stack" style={{ gap: 6 }}>
-        <span className="so__label">Geburtstag (freiwillig)</span>
-        <div className="so__bday">
-          <select className="input-ui" value={day} onChange={(e) => setDay(Number(e.target.value))} aria-label="Tag">
-            <option value={0}>Tag</option>
-            {Array.from({ length: 31 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}.</option>)}
-          </select>
-          <select className="input-ui" value={month} onChange={(e) => setMonth(Number(e.target.value))} aria-label="Monat">
-            <option value={0}>Monat</option>
-            {['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'].map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-          </select>
-          <input className="input-ui" inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Jahr" aria-label="Jahr (freiwillig)" />
-        </div>
-      </div>
-      <button type="button" className="so__ok" onClick={() => void save()}>Speichern</button>
-      {person && (
-        <section className="stack" style={{ gap: 8 }}>
-          <span className="so__label">Ideen</span>
-          {list.length === 0 && <span className="so__empty">noch keine</span>}
-          {list.map((i) => (
-            <div key={i.id} className="so__idearow">
-              <span className="so__ideatext">{i.text}</span>
-              <button type="button" className="so__ghost" onClick={() => void so.setIdeaDone(i.id, true)} aria-label={`${i.text} verschenkt`}>verschenkt</button>
-              {(i.created_by === me?.id || !person.member_id) && <button type="button" className="so__x" onClick={() => void so.removeIdea(i.id)} aria-label={`${i.text} entfernen`}>×</button>}
-            </div>
-          ))}
+      {person ? (
+        <>
+          {/* Idee zuerst: Feld oben und gleich bereit zum Tippen */}
           <form className="so__ideaform" onSubmit={add}>
-            <input className="input-ui" value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="Neue Idee" aria-label="Neue Idee" enterKeyHint="done" />
+            <input className="input-ui" value={idea} onChange={(e) => setIdea(e.target.value)} placeholder={`Idee für ${person.name}`} aria-label="Neue Idee" enterKeyHint="done" autoFocus />
             <button type="submit" className="so__ok so__ok--small" disabled={!idea.trim()}>Rein</button>
           </form>
-          {person.member_id && <span className="hint">🔒 Ideen für {person.name} sieht nur, wer sie einträgt.</span>}
-        </section>
+          <span className="so__lock">{person.member_id ? `🔒 Ideen für ${person.name} sieht nur, wer sie einträgt.` : `${otherName} sieht die Idee auch.`}</span>
+          {list.length > 0 && (
+            <section className="stack" style={{ gap: 4 }}>
+              {list.map((i) => (
+                <div key={i.id} className="so__idearow">
+                  <span className="so__ideatext">{i.text}</span>
+                  <button type="button" className="so__ghost" onClick={() => void so.setIdeaDone(i.id, true)} aria-label={`${i.text} verschenkt`}>verschenkt</button>
+                  {(i.created_by === me?.id || !person.member_id) && <button type="button" className="so__x" onClick={() => void so.removeIdea(i.id)} aria-label={`${i.text} entfernen`}>×</button>}
+                </div>
+              ))}
+            </section>
+          )}
+          <button type="button" className="so__fold" aria-expanded={showBday} onClick={() => setShowBday((v) => !v)}>
+            Geburtstag{person.birthday_day && person.birthday_month ? ` · ${person.birthday_day}.${person.birthday_month}.` : ' · fehlt'} {showBday ? '▾' : '▸'}
+          </button>
+          {showBday && birthday}
+          {!person.member_id && <button type="button" className="so__ghost" style={{ alignSelf: 'flex-start' }} onClick={() => void so.archivePerson(person.id).then(onClose)}>Aus der Dose nehmen</button>}
+        </>
+      ) : (
+        birthday
       )}
-      {person && !person.member_id && <button type="button" className="so__ghost" style={{ alignSelf: 'flex-start' }} onClick={() => void so.archivePerson(person.id).then(onClose)}>Aus der Dose nehmen</button>}
       {err && <span className="hint hint--brown">{err}</span>}
     </Sheet>
   )

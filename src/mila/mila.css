@@ -793,3 +793,20 @@ button.m-hit { width: 100%; background: transparent; border: none; border-bottom
 .ms__btn.rk-btn--main { color: #F2EDE2; }
 :root[data-theme="dark"] .ms__btn.rk-btn--main { color: #1A2340; }
 .ms__btn.rk-btn--ghost { color: var(--navy); }
+
+/* Vormerken im Fundus */
+.m-tile-wrap { position: relative; display: flex; }
+.m-tile-wrap > .m-tile { flex: 1; }
+.m-star {
+  position: absolute; top: 6px; right: 6px; z-index: 2; width: 36px; height: 36px; border-radius: 18px; border: none; cursor: pointer;
+  background: rgba(245, 241, 232, 0.92); color: var(--brown); font-size: 19px; line-height: 1;
+}
+.m-star--on { background: var(--gold); color: #fff; }
+
+/* Essensplan: Planen-Karte und Tages-Knöpfe */
+.m-plancard { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: 12px; border: 1.2px dashed var(--navy-line-strong, rgba(31, 42, 68, 0.4)); }
+.m-plancard__text { font-family: var(--font-hand); font-size: 23px; line-height: 1.1; color: var(--ink); }
+.m-dayacts { display: flex; gap: 14px; padding: 0 0 6px 62px; }
+.m-dayacts button { min-height: 30px; padding: 0; border: none; background: transparent; font-family: var(--font-ui); font-size: 13px; color: var(--grey); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.m-dayacts button:disabled { opacity: 0.5; }
+.m-day__mark { font-style: italic; color: var(--brown); }

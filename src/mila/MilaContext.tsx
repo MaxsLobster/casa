@@ -54,6 +54,10 @@ export interface Mila {
   updateMeal(id: string, patch: Partial<Pick<MilaWeekDay, 'servings' | 'variant'>>): Promise<void>
   /** Gericht aus der Woche nehmen, seine offenen Zutaten vom Zettel dazu. Gibt „Rückgängig“ zurück. */
   removeMeal(date: string, meal: MealSlot): Promise<(() => Promise<void>) | null>
+  /** Tag ohne Kochen markieren („Reste“, „auswärts“, „frei“) oder Markierung wieder weg (null) */
+  markDay(date: string, meal: MealSlot, mark: string | null): Promise<void>
+  /** Eingetragenes Gericht auf den nächsten freien Tag schieben */
+  moveMeal(date: string, meal: MealSlot): Promise<void>
 
   /** Wochenkarte */
   vote(menu: MilaMenu, recipeId: string, meal: MealSlot, vote: MilaVoteKind): Promise<void>
@@ -435,6 +439,46 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     void casa.reloadMila()
   }
 
+  const nextFree = (date: string, meal: MealSlot) => {
+    for (let k = 1; k <= 14; k++) {
+      const d = addDays(date, k)
+      if (!weekDays.some((w) => w.date === d && (w.meal ?? 'abend') === meal)) return d
+    }
+    return addDays(date, 1)
+  }
+  const moveMeal = async (date: string, meal: MealSlot) => {
+    const row = weekDays.find((w) => w.date === date && (w.meal ?? 'abend') === meal)
+    if (!row?.recipe_id) return
+    const to = nextFree(date, meal)
+    try {
+      await store.update('mila_week_days', { id: row.id }, { date: to, updated_by: me.id })
+      await rebuildList(startOfWeek(date)).catch(() => undefined)
+      if (startOfWeek(to) !== startOfWeek(date)) await rebuildList(startOfWeek(to)).catch(() => undefined)
+    } catch (err) {
+      setError((err as Error).message)
+    }
+    await loadRef.current('mila_week_days')
+    void casa.reloadMila()
+  }
+  const markDay = async (date: string, meal: MealSlot, mark: string | null) => {
+    const row = weekDays.find((w) => w.date === date && (w.meal ?? 'abend') === meal)
+    try {
+      if (!mark) {
+        if (row && !row.recipe_id) await store.remove('mila_week_days', { id: row.id })
+      } else {
+        // Ein eingetragenes Gericht rutscht vorher auf den nächsten freien Tag
+        if (row?.recipe_id) await moveMeal(date, meal)
+        const fresh = (await store.select('mila_week_days', { household_id: hid, date, meal }))[0]
+        if (fresh) await store.update('mila_week_days', { id: fresh.id }, { recipe_id: null, free_text: mark, is_leftover: false, updated_by: me.id })
+        else await store.insert('mila_week_days', { household_id: hid, date, meal, recipe_id: null, free_text: mark, is_leftover: false, servings: null, variant: 'original', added_to_list: false, created_by: me.id, updated_by: me.id })
+      }
+    } catch (err) {
+      setError((err as Error).message)
+    }
+    await loadRef.current('mila_week_days')
+    void casa.reloadMila()
+  }
+
   const updateMeal = async (id: string, patch: Partial<Pick<MilaWeekDay, 'servings' | 'variant'>>) => {
     setWeekDays((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)))
     try {
@@ -617,6 +661,8 @@ export function MilaProvider({ children }: { children: ReactNode }) {
     wahl,
     saveRecipe,
     setMeal,
+    markDay,
+    moveMeal,
     updateMeal,
     removeMeal,
     vote,

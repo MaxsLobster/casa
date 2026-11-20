@@ -13,6 +13,8 @@ export interface Occurrence extends Event {
 function shift(date: ISODate, repeat: NonNullable<Event['repeat']>, n: number): ISODate {
   const d = fromISO(date)
   if (repeat === 'weekly') d.setDate(d.getDate() + 7 * n)
+  if (repeat === 'biweekly') d.setDate(d.getDate() + 14 * n)
+  if (repeat === 'fourweekly') d.setDate(d.getDate() + 28 * n)
   if (repeat === 'monthly') {
     const day = d.getDate()
     d.setDate(1)

@@ -4,7 +4,7 @@ import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import { addDays, dayLabel, eventEnd, fromISO, hhmm, spanLabel, startOfWeek, uhr, weekdayLong, weekdayShort } from '../lib/dates'
 import { dayState, name as whoName, verb, type Voice } from '../lib/week'
 import { applyEffects, awayOn, dayEffects, isEffectEvent, openChips } from '../lib/effects'
-import { dailyText, moonPhase, readDailyChoice, sunTimes, writeDailyChoice, type DailyKind } from '../lib/daily'
+import { sunTimes } from '../lib/daily'
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import { toH } from '../lib/band'
 import { Check, Sheet } from '../components/ui'
@@ -151,25 +151,6 @@ export function Heute() {
   // ---------- Kopf ----------
   const d = fromISO(date)
   const sun = useMemo(() => sunTimes(date), [date])
-  const moon = useMemo(() => moonPhase(date), [date])
-
-  // ---------- Satz des Tages (nur heute) ----------
-  const [choice, setChoice] = useState(() => readDailyChoice(today))
-  useEffect(() => {
-    setChoice(readDailyChoice(today))
-  }, [today])
-  const texts = useMemo(
-    () => ({ weisheit: dailyText('weisheit', today), wort: dailyText('wort', today), heute: dailyText('heute', today) }),
-    [today],
-  )
-  function pick(k: DailyKind) {
-    if (!texts[k]) return
-    if (choice.chosen && choice.chosen !== k) return
-    const next = choice.chosen ? { ...choice, open: !choice.open } : { date: today, chosen: k, open: true }
-    setChoice(next)
-    writeDailyChoice(next)
-  }
-  const shown = isToday && choice.chosen && choice.open ? texts[choice.chosen] : null
 
   // ---------- Was an dem Tag gilt ----------
   const occDay = useMemo(() => occurrences(events, date, date).filter((o) => o.occ_date <= date && o.occ_end >= date), [events, date])
@@ -241,7 +222,10 @@ export function Heute() {
   } else if (dinner && nowH < 19.5) {
     rows.push({ key: 'es', sort: 18.5, time: null, kind: 'plan', title: dinner.name, sub: ['Abend', minutes(dinner.time_min), 'wer kocht? offen'].filter(Boolean).join(' · '), link: cardLink(dinner.id, 'abend') })
   }  // Wochenwahl: noch nichts für heute Abend eingetragen → Milas Vorschlag aus der Kombo
-  const suggest = !dinner && isToday && nowH < 19.5 ? heuteDran(itemsOfWeek(casa.milaPlan, casa.milaPlanItems, date), date).abend : null
+  // Abend als „Reste“, „auswärts“ oder „frei“ markiert: dann schlägt Mila nichts vor, die Zeile sagt es
+  const dayMark = casa.milaDays.find((w) => w.date === date && (w.meal ?? 'abend') === 'abend' && !w.recipe_id && w.free_text)?.free_text ?? null
+  if (dayMark && nowH < 19.5) rows.push({ key: 'mk', sort: 18.4, time: null, kind: 'plan', title: dayMark === 'Reste' ? 'Heute Abend: Reste' : dayMark === 'auswärts' ? 'Heute Abend: auswärts essen' : 'Heute Abend: nichts geplant', sub: 'Essensplan', link: '/mila/woche' })
+  const suggest = !dinner && !dayMark && isToday && nowH < 19.5 ? heuteDran(itemsOfWeek(casa.milaPlan, casa.milaPlanItems, date), date).abend : null
   const suggestR = suggest && suggest.status === 'offen' ? casa.milaRecipe(suggest.recipe_id) : null
   if (suggestR) rows.push({ key: 'ms', sort: 18.5, time: null, kind: 'plan', title: `Mila schlägt vor: ${suggestR.name}`, sub: ['Abend', minutes(suggestR.time_min)].filter(Boolean).join(' · '), link: '/mila/heute' })
 
@@ -375,35 +359,7 @@ export function Heute() {
             <SunIcon />
             {sun.sunrise}–{sun.sunset}
           </span>
-          <span className="heute__sun" title="Mondphase">
-            <MoonIcon fraction={moon.fraction} waxing={moon.waxing} label={moon.label} />
-            {moon.label}
-          </span>
-          {isToday && (
-            <span className="heute__cats">
-              {(['weisheit', 'wort', 'heute'] as DailyKind[]).map((k) => {
-                const chosen = choice.chosen === k
-                const locked = (!!choice.chosen && !chosen) || !texts[k]
-                const cls = 'heute__cat' + (chosen && choice.open ? ' heute__cat--open' : '') + (chosen && !choice.open ? ' heute__cat--chosen' : '') + (locked ? ' heute__cat--locked' : '')
-                const aria = { weisheit: 'Weisheit des Tages', wort: 'Wort des Tages', heute: 'Heute vor Jahren' }[k] + (locked ? ' (heute nicht wählbar)' : '')
-                return (
-                  <button key={k} type="button" className={cls} aria-label={aria} disabled={locked} onClick={() => pick(k)}>
-                    {k === 'weisheit' && <FeatherIcon />}
-                    {k === 'wort' && <span style={{ fontSize: 14.5, fontWeight: 600 }}>Aa</span>}
-                    {k === 'heute' && <HourglassIcon />}
-                  </button>
-                )
-              })}
-            </span>
-          )}
         </div>
-        {shown && (
-          <figure className={stagger ? 'heute__figure rise' : 'heute__figure fade-in'} style={rs(3)}>
-            <span className="label label--small">{shown.label}</span>
-            <blockquote className="hand" style={{ margin: 0, fontSize: 25, lineHeight: 1.2 }}>{shown.text}</blockquote>
-            {shown.source && <figcaption className="label" style={{ alignSelf: 'flex-end', fontSize: 12.5 }}>{shown.source}</figcaption>}
-          </figure>
-        )}
       </div>
 
       {/* ---------- Inhalt + Zeitstrahl ---------- */}
@@ -414,6 +370,14 @@ export function Heute() {
               <span className="heute__answer-dot" aria-hidden />
               <span>Das braucht deine Antwort</span>
               <span className="heute__answer-n">{answerCount}</span>
+            </button>
+          )}
+
+          {isToday && fromISO(today).getDay() === 0 && now.getHours() >= 16 && !hiddenAreas.includes('anker') && (
+            <button type="button" className={'heute__runde' + rc} style={rs(3)} onClick={() => nav('/anker/runde')}>
+              <span aria-hidden>⚓︎</span>
+              <span>Sonntagsrunde · 5 Minuten</span>
+              <span className="heute__answer-n" aria-hidden>›</span>
             </button>
           )}
 
@@ -713,43 +677,11 @@ function SunIcon() {
     </svg>
   )
 }
-/** Gezeichneter Mond in echter Phase: beleuchteter Anteil und Seite (zunehmend rechts, abnehmend links) */
-function MoonIcon({ fraction, waxing, label }: { fraction: number; waxing: boolean; label: string }) {
-  const r = 10
-  const f = Math.min(Math.max(fraction, 0), 1)
-  const rx = (r * Math.abs(2 * f - 1)).toFixed(2)
-  // Außenbogen auf der beleuchteten Seite, zurück über die Schattengrenze (Ellipse)
-  const outer = waxing ? 1 : 0
-  const back = f >= 0.5 ? outer : 1 - outer
-  const d = `M12 2 A${r} ${r} 0 0 ${outer} 12 22 A${rx} ${r} 0 0 ${back} 12 2 Z`
-  return (
-    <svg className="moon" width="22" height="22" viewBox="0 0 24 24" role="img" aria-label={`Mond ${label}, ${Math.round(f * 100)} Prozent`}>
-      <circle cx="12" cy="12" r={r} className="moon__dark" />
-      {f > 0.01 && <path d={d} className="moon__lit" />}
-      <circle cx="12" cy="12" r={r} fill="none" className="moon__rim" strokeWidth="0.8" />
-    </svg>
-  )
-}
 function GearIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <circle cx="12" cy="12" r="3.2" />
       <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
-    </svg>
-  )
-}
-function FeatherIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M20 4c-6 0-11 4-12 11l-2 5" />
-      <path d="M8 15c4 0 8-2 10-6" />
-    </svg>
-  )
-}
-function HourglassIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M6 3h12M6 21h12M7 3c0 5 10 5 10 9s-10 4-10 9M17 3c0 5-10 5-10 9s10 4 10 9" />
     </svg>
   )
 }

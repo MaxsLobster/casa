@@ -1,6 +1,6 @@
 // Mila · Wochenwahl: Anzahl wählen, Stapel wischen (rechts ja, links nö, hoch ★), Treffer-Moment, danach die Kombo.
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useMila } from './MilaContext'
 import { MilaBand, Initial } from './Band'
 import { Kombo } from './Kombo'
@@ -61,6 +61,7 @@ export function Wahl() {
     <div className="page mw">
       <MilaBand kicker="Wochenwahl" title="Noch nichts zu wählen" />
       <p className="m-hint mw__pad">{gone ? 'Die Woche ist verworfen. ' : ''}Ab Freitag stellt ihr hier die Anzahl für die nächste Woche ein und wischt euren Stapel.</p>
+      <Link to="/mila/gerichte?vormerken=1" className="m-day__link mw__pad" style={{ alignSelf: 'flex-start' }}>Schon mal Gerichte vormerken ›</Link>
     </div>
   )
 }

@@ -36,7 +36,10 @@ export function HeuteDran() {
               <Link to="/mila/wahl" className="mw__main" style={{ textDecoration: 'none' }}>Zur Kombo</Link>
             </>
           ) : (
-            <p className="mw__lead">Für diese Woche gibt es keine Kombo. Ab Freitag wählt ihr die nächste Woche.</p>
+            <>
+              <p className="mw__lead">Für diese Woche gibt es keine Kombo. Ab Freitag wählt ihr die nächste Woche.</p>
+              <Link to="/mila/gerichte?vormerken=1" className="m-day__link" style={{ alignSelf: 'flex-start' }}>Schon mal Gerichte vormerken ›</Link>
+            </>
           )}
           <div className="mh__links">
             <Link to="/mila/woche" className="m-day__link">Woche ›</Link>

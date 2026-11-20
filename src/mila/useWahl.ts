@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
-import type { MealSlot, Member, MilaIngredient, MilaMatch, MilaPlanItem, MilaRecipe, MilaShelfRule, MilaShoppingItem, MilaSwipe, MilaVariantKey, MilaWahl, MilaWeekDay, MilaWeekPlan, TableName } from '../lib/types'
+import type { MealSlot, Member, MilaIngredient, MilaMatch, MilaPlanItem, MilaRecipe, MilaShelfRule, MilaShoppingItem, MilaSwipe, MilaVariantKey, MilaVormerkung, MilaWahl, MilaWeekDay, MilaWeekPlan, TableName } from '../lib/types'
 import { addDays, startOfWeek, today as todayISO, toISO } from '../lib/dates'
 import type { Rhythm } from './engine'
 import { DEFAULT_RULES, eingangFromSwipes, freeLunches, JOKER_PRO_WOCHE, RESTE_PORTIONEN, buildDeck, buildKombo, dishDays, daysBetween, planTimes, wahlWeek, type KomboItem } from './wahl'
@@ -22,6 +22,9 @@ export interface Wahl {
   /** wie viele Karten jeder schon gewischt hat (nur Zahlen) */
   stand: Record<string, number>
   rules: MilaShelfRule[]
+  /** vorgemerkte Gerichte (für den nächsten Stapel) */
+  vorgemerkt: Set<string>
+  toggleVormerken(recipeId: string): Promise<void>
   jokerLeft(planId: string): number
   setCounts(plan: MilaWeekPlan, abend: number, mittag: number): Promise<void>
   startDeck(plan: MilaWeekPlan): Promise<void>
@@ -75,6 +78,7 @@ export function useWahl(d: Deps): Wahl {
   const [matches, setMatches] = useState<MilaMatch[]>([])
   const [mySwipes, setMySwipes] = useState<MilaSwipe[]>([])
   const [rules, setRules] = useState<MilaShelfRule[]>([])
+  const [marks, setMarks] = useState<MilaVormerkung[]>([])
   const [stand, setStand] = useState<Record<string, number>>({})
   const [loaded, setLoaded] = useState(false)
 
@@ -85,6 +89,7 @@ export function useWahl(d: Deps): Wahl {
         if (!table || table === 'mila_week_plans') setPlans(await store.select('mila_week_plans', f))
         if (!table || table === 'mila_plan_items') setPlanItems(await store.select('mila_plan_items', f))
         if (!table || table === 'mila_matches') setMatches(await store.select('mila_matches', f))
+        if (!table || table === 'mila_vormerkungen') setMarks(await store.select('mila_vormerkungen', f).catch(() => []))
         if (!table || table === 'mila_swipes') setMySwipes(await store.select('mila_swipes', { household_id: hid, member_id: me.id }))
         if (!table || table === 'mila_haltbarkeit_regeln') {
           let r = await store.select('mila_haltbarkeit_regeln', f)
@@ -107,7 +112,7 @@ export function useWahl(d: Deps): Wahl {
   loadRef.current = load
   useEffect(() => {
     void loadRef.current()
-    const off = store.onChange(['mila_week_plans', 'mila_plan_items', 'mila_matches', 'mila_swipes', 'mila_haltbarkeit_regeln'], (t) => loadRef.current(t))
+    const off = store.onChange(['mila_week_plans', 'mila_plan_items', 'mila_matches', 'mila_swipes', 'mila_haltbarkeit_regeln', 'mila_vormerkungen'], (t) => loadRef.current(t))
     const onVisible = () => document.visibilityState === 'visible' && loadRef.current()
     document.addEventListener('visibilitychange', onVisible)
     return () => {
@@ -248,6 +253,17 @@ export function useWahl(d: Deps): Wahl {
     nextPlan,
     currentPlan,
     planItems,
+    vorgemerkt: new Set(marks.map((m) => m.recipe_id)),
+    async toggleVormerken(recipeId) {
+      const cur = marks.find((m) => m.recipe_id === recipeId)
+      try {
+        if (cur) await store.remove('mila_vormerkungen', { id: cur.id })
+        else await store.insert('mila_vormerkungen', { household_id: hid, recipe_id: recipeId, member_id: me.id })
+      } catch (err) {
+        fail(err)
+      }
+      await load('mila_vormerkungen')
+    },
     itemsOf,
     matches,
     mySwipes,
@@ -269,12 +285,16 @@ export function useWahl(d: Deps): Wahl {
     async startDeck(plan) {
       if (plan.deck_built_at) return
       const frozen = planItems.filter((i) => i.status === 'eingefroren').map((i) => i.recipe_id)
-      const deck = buildDeck({ week: plan.week, abend: plan.abend_anzahl, mittag: plan.mittag_anzahl, recipes: d.recipes, ingredientsOf: d.ingredientsOf, weekDays: d.weekDays, frozen, seed: plan.id })
+      const marked = marks.map((m) => m.recipe_id)
+      const deck = buildDeck({ week: plan.week, abend: plan.abend_anzahl, mittag: plan.mittag_anzahl, recipes: d.recipes, ingredientsOf: d.ingredientsOf, weekDays: d.weekDays, frozen, marked, seed: plan.id })
       try {
-        await store.claim('mila_week_plans', { id: plan.id, deck_built_at: null }, { deck, deck_built_at: new Date().toISOString() })
+        const ok = await store.claim('mila_week_plans', { id: plan.id, deck_built_at: null }, { deck, deck_built_at: new Date().toISOString() })
+        // Was jetzt im Stapel liegt, ist nicht mehr vorgemerkt
+        if (ok) for (const m of marks.filter((x) => deck.some((c) => c.recipe_id === x.recipe_id))) await store.remove('mila_vormerkungen', { id: m.id })
       } catch (err) {
         fail(err)
       }
+      await load('mila_vormerkungen')
       await load('mila_week_plans')
     },
 

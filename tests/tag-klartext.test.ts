@@ -46,3 +46,29 @@ describe('Ein Tag, ein Wort', () => {
     expect(dayWord('2026-11-24', '2026-11-19')).toBe('Di 24.11.')
   })
 })
+
+import { komboDays } from '../src/mila/wahl'
+import type { MilaPlanItem } from '../src/lib/types'
+const pi = (id: string, p: Partial<MilaPlanItem> = {}): MilaPlanItem =>
+  ({ id, household_id: 'h', plan_id: 'p', recipe_id: 'r-' + id, slot: 'abend', gruppe: 'zuerst', position: 0, art: 'frisch', portionen: 3, variante: 'original', status: 'offen', frist_bis: null, parent_id: null, geplant_am: null, gekocht_am: null, created_at: '', updated_at: '', ...p }) as MilaPlanItem
+
+describe('Essensplan: Kombo und „Was es gibt“ aus denselben Daten', () => {
+  const dates = ['2026-11-23', '2026-11-24', '2026-11-25']
+  const items = [pi('a', { frist_bis: '2026-11-24' }), pi('b', { frist_bis: '2026-11-26' })]
+  it('verteilt die Kombo in Kochreihenfolge auf die Tage', () => {
+    const d = komboDays(dates, items, [], '2026-11-23', '2026-11-23')
+    expect([d['2026-11-23'].abend?.recipeId, d['2026-11-24'].abend?.recipeId, d['2026-11-25'].abend]).toEqual(['r-a', 'r-b', undefined])
+  })
+  it('„auswärts“ schiebt das Gericht auf den nächsten freien Tag', () => {
+    const d = komboDays(dates, items, [{ date: '2026-11-23', meal: 'abend', recipe_id: null, free_text: 'auswärts', is_leftover: false }], '2026-11-23', null)
+    expect(d['2026-11-23'].abend?.mark).toBe('auswärts')
+    expect(d['2026-11-24'].abend?.recipeId).toBe('r-a')
+    expect(d['2026-11-25'].abend?.recipeId).toBe('r-b')
+  })
+  it('Reste vom Vorabend kommen mittags am nächsten Tag', () => {
+    const withRest = [...items, pi('rest', { slot: 'reste', parent_id: 'a' })]
+    const d = komboDays(dates, withRest, [], '2026-11-23', null)
+    expect(d['2026-11-24'].mittag?.recipeId).toBe('r-rest')
+    expect(d['2026-11-24'].mittag?.leftover).toBe(true)
+  })
+})

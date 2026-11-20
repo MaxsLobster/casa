@@ -13,7 +13,7 @@ export interface Member {
 
 export type TaskStatus = 'offen' | 'zugesagt' | 'geparkt' | 'erledigt'
 
-export type Repeat = 'weekly' | 'monthly' | 'yearly'
+export type Repeat = 'weekly' | 'biweekly' | 'fourweekly' | 'monthly' | 'yearly'
 
 /** Was ein Ereignis für die Normalwoche bedeutet */
 export type EventEffect = 'termin' | 'valerie_weg' | 'kita_zu' | 'eltern_weg' | 'messe'
@@ -585,9 +585,19 @@ export interface MilaShoppingItem {
   created_at: string
 }
 
-export type MilaTableName = 'mila_recipes' | 'mila_ingredients' | 'mila_steps' | 'mila_week_days' | 'mila_shopping_items' | 'mila_prep_steps' | 'mila_settings' | 'mila_menus' | 'mila_votes' | 'mila_hausmischungen' | 'mila_week_plans' | 'mila_swipes' | 'mila_matches' | 'mila_plan_items' | 'mila_haltbarkeit_regeln'
+export type MilaTableName = 'mila_recipes' | 'mila_ingredients' | 'mila_steps' | 'mila_week_days' | 'mila_shopping_items' | 'mila_prep_steps' | 'mila_settings' | 'mila_menus' | 'mila_votes' | 'mila_hausmischungen' | 'mila_week_plans' | 'mila_swipes' | 'mila_matches' | 'mila_plan_items' | 'mila_haltbarkeit_regeln' | 'mila_vormerkungen'
+
+/** Gericht schon mal vorgemerkt: kommt in den nächsten Stapel */
+export interface MilaVormerkung {
+  id: Id
+  household_id: Id
+  recipe_id: Id
+  member_id: Id | null
+  created_at: string
+}
 
 export interface MilaTableRow {
+  mila_vormerkungen: MilaVormerkung
   mila_recipes: MilaRecipe
   mila_ingredients: MilaIngredient
   mila_steps: MilaStep

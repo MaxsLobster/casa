@@ -82,7 +82,10 @@ export function AnkerDetail() {
 
   return (
     <div className="page" style={{ gap: 18 }}>
-      <Link to={base + '/anker'} className="ank__back">‹ Alle Anker</Link>
+      <div className="between">
+        <Link to={base + '/anker'} className="ank__back">‹ Alle Anker</Link>
+        {anchor.visibility === 'shared' && !anchor.archived_at && <Link to={`${base}/anker/runde?anker=${anchor.id}`} className="ank__back">In der Sonntagsrunde ›</Link>}
+      </div>
 
       {/* ---------- Kopf ---------- */}
       <header className="stack" style={{ gap: 6 }}>

@@ -78,6 +78,7 @@ const TIME = /^\d{2}:\d{2}$/
 const P = (props: Record<string, unknown>, required: string[] = []) => ({ type: 'object', properties: props, required })
 const str = (description: string) => ({ type: 'string', description })
 const person = { type: 'string', enum: ['max', 'anna', 'offen'], description: 'Wer: max, anna oder offen' }
+const wiederholung = { type: 'string', enum: ['weekly', 'biweekly', 'fourweekly', 'monthly', 'yearly'], description: 'optional: wöchentlich, alle 2 Wochen (biweekly), alle 4 Wochen (fourweekly), monatlich, jährlich – z. B. Müll' }
 const slot = { type: 'string', enum: ['valerie_bringen', 'valerie_holen', 'valerie_tag', 'anna_arbeit', 'nachmittag', 'abend_essen', 'abend_bett', 'wochenende'] }
 
 const READ_TOOLS: Anthropic.Tool[] = [
@@ -95,9 +96,9 @@ const READ_TOOLS: Anthropic.Tool[] = [
 ]
 
 const WRITE_TOOLS: Anthropic.Tool[] = [
-  { name: 'aufgabe_anlegen', description: 'VORSCHLAG: neue Aufgabe. Wird erst nach Okay angelegt.', input_schema: P({ titel: str('kurzer Titel'), person, datum: str('fällig am, YYYY-MM-DD'), notiz: str('optional') }, ['titel', 'person', 'datum']) as never },
+  { name: 'aufgabe_anlegen', description: 'VORSCHLAG: neue Aufgabe. Wird erst nach Okay angelegt.', input_schema: P({ titel: str('kurzer Titel'), person, datum: str('fällig am, YYYY-MM-DD (bei Wiederholung: das erste Mal)'), notiz: str('optional'), wiederholung }, ['titel', 'person', 'datum']) as never },
   { name: 'aufgabe_aendern', description: 'VORSCHLAG: Aufgabe ändern, verschieben, zuweisen, erledigen oder archivieren. Nur angeben, was sich ändert.', input_schema: P({ id: str('Aufgaben-id'), titel: { type: 'string' }, person, datum: str('neues Datum YYYY-MM-DD'), notiz: { type: 'string' }, status: { type: 'string', enum: ['offen', 'zugesagt', 'geparkt', 'erledigt'] }, archivieren: { type: 'boolean' } }, ['id']) as never },
-  { name: 'termin_anlegen', description: 'VORSCHLAG: Termin oder Wochen-Eintrag. art: termin (normal), eltern_weg (Person ist weg, ihre Aufgaben werden offen), kita_zu, valerie_weg.', input_schema: P({ titel: { type: 'string' }, datum: str('YYYY-MM-DD'), bis_datum: str('letzter Tag bei mehrtägig, optional'), start: str('HH:MM, optional'), ende: str('HH:MM, optional'), person, art: { type: 'string', enum: ['termin', 'eltern_weg', 'kita_zu', 'valerie_weg'] }, notiz: { type: 'string' } }, ['titel', 'datum']) as never },
+  { name: 'termin_anlegen', description: 'VORSCHLAG: Termin oder Wochen-Eintrag. art: termin (normal), eltern_weg (Person ist weg, ihre Aufgaben werden offen), kita_zu, valerie_weg.', input_schema: P({ titel: { type: 'string' }, datum: str('YYYY-MM-DD'), bis_datum: str('letzter Tag bei mehrtägig, optional'), start: str('HH:MM, optional'), ende: str('HH:MM, optional'), person, art: { type: 'string', enum: ['termin', 'eltern_weg', 'kita_zu', 'valerie_weg'] }, notiz: { type: 'string' }, wiederholung }, ['titel', 'datum']) as never },
   { name: 'termin_aendern', description: 'VORSCHLAG: Termin ändern oder verschieben. Nur angeben, was sich ändert.', input_schema: P({ id: { type: 'string' }, titel: { type: 'string' }, datum: { type: 'string' }, bis_datum: { type: 'string' }, start: { type: 'string' }, ende: { type: 'string' }, person, notiz: { type: 'string' } }, ['id']) as never },
   { name: 'uebergabe_fragen', description: 'VORSCHLAG: den anderen fragen „Kannst du übernehmen?“ (z. B. „Frag Anna, ob sie Freitag holt“). Der Slot bleibt offen, bis der andere zusagt oder ablehnt; erst mit der Zusage wechselt die Person. Lieber als woche_abweichung, wenn der andere einspringen soll.', input_schema: P({ datum: str('YYYY-MM-DD'), slot: { type: 'string', enum: ['valerie_bringen', 'valerie_holen', 'valerie_tag', 'abend_essen', 'abend_bett'] }, uhrzeit: str('HH:MM, optional') }, ['datum', 'slot']) as never },
   { name: 'anfrage_beantworten', description: 'VORSCHLAG: eine offene Anfrage „Kannst du übernehmen?“, die an dich ging, beantworten (ja = übernehmen, nein = geht nicht). anfrage_id aus tage_lesen (anfragen).', input_schema: P({ anfrage_id: { type: 'string' }, ja: { type: 'boolean' } }, ['anfrage_id', 'ja']) as never },
@@ -122,6 +123,7 @@ interface Member { id: string; display_name: string; role: string; household_id:
 interface Ctx { db: SupabaseClient; me: Member; members: Member[]; hid: string; today: string }
 interface Proposal { id: string; tool: string; input: Record<string, unknown>; summary: string; betrifft: string[] }
 
+const REPEAT_WORD: Record<string, string> = { weekly: 'jede Woche', biweekly: 'alle 2 Wochen', fourweekly: 'alle 4 Wochen', monthly: 'jeden Monat', yearly: 'jedes Jahr' }
 const nameOf = (c: Ctx, id: string | null | undefined) => (id ? (c.members.find((m) => m.id === id)?.display_name ?? '?') : 'offen')
 function memberFor(c: Ctx, p: unknown): string | null {
   if (p === 'offen' || p === null || p === undefined) return null
@@ -305,7 +307,7 @@ async function propose(c: Ctx, name: string, input: Record<string, unknown>): Pr
       const owner = memberFor(c, input.person)
       const d = date(input.datum, 'datum')
       if (!String(input.titel ?? '').trim()) throw new Error('titel fehlt')
-      return { id, tool: name, input, summary: `Aufgabe für ${nameOf(c, owner)}: „${String(input.titel).trim()}“ bis ${nice(d)}`, betrifft: others(owner) }
+      return { id, tool: name, input, summary: `Aufgabe für ${nameOf(c, owner)}: „${String(input.titel).trim()}“ bis ${nice(d)}${input.wiederholung ? ` · ${REPEAT_WORD[String(input.wiederholung)] ?? ''}` : ''}`, betrifft: others(owner) }
     }
     case 'aufgabe_aendern': {
       const t = (must(await db.from('tasks').select('*').eq('id', String(input.id)).eq('household_id', hid), 'Aufgabe') ?? [])[0] as any
@@ -335,7 +337,7 @@ async function propose(c: Ctx, name: string, input: Record<string, unknown>): Pr
       const who = input.person ? memberFor(c, input.person) : null
       const art = String(input.art ?? 'termin')
       const label = art === 'eltern_weg' ? `${nameOf(c, who)} ist weg` : art === 'kita_zu' ? 'Kita zu' : art === 'valerie_weg' ? 'Valerie ist weg' : 'Termin'
-      return { id, tool: name, input, summary: `${label}: „${input.titel}“ am ${nice(d)}${input.bis_datum ? ` bis ${nice(String(input.bis_datum))}` : ''}${input.start ? ` um ${input.start}` : ''}${who && art === 'termin' ? ` (${nameOf(c, who)})` : ''}`, betrifft: who && art !== 'eltern_weg' ? others(who) : c.members.filter((m) => m.id !== c.me.id && m.role === 'partner').map((m) => m.display_name) }
+      return { id, tool: name, input, summary: `${label}: „${input.titel}“ am ${nice(d)}${input.bis_datum ? ` bis ${nice(String(input.bis_datum))}` : ''}${input.start ? ` um ${input.start}` : ''}${who && art === 'termin' ? ` (${nameOf(c, who)})` : ''}${input.wiederholung ? ` · ${REPEAT_WORD[String(input.wiederholung)] ?? ''}` : ''}`, betrifft: who && art !== 'eltern_weg' ? others(who) : c.members.filter((m) => m.id !== c.me.id && m.role === 'partner').map((m) => m.display_name) }
     }
     case 'termin_aendern': {
       const e = (must(await db.from('events').select('*').eq('id', String(input.id)).eq('household_id', hid), 'Termin') ?? [])[0] as any
@@ -477,7 +479,7 @@ async function execute(c: Ctx, p: Proposal): Promise<LogEntry[]> {
 
   switch (p.tool) {
     case 'aufgabe_anlegen':
-      await ins('tasks', { household_id: hid, title: String(i.titel).trim(), owner_member_id: memberFor(c, i.person), due_date: i.datum, note: i.notiz ?? null, status: 'offen', area: 'casa', created_by: me.id, updated_by: me.id })
+      await ins('tasks', { household_id: hid, title: String(i.titel).trim(), owner_member_id: memberFor(c, i.person), due_date: i.datum, note: i.notiz ?? null, repeat: i.wiederholung ?? null, status: 'offen', area: 'casa', created_by: me.id, updated_by: me.id })
       break
     case 'aufgabe_aendern': {
       const patch: Record<string, unknown> = { updated_by: me.id }
@@ -494,7 +496,7 @@ async function execute(c: Ctx, p: Proposal): Promise<LogEntry[]> {
       break
     }
     case 'termin_anlegen':
-      await ins('events', { household_id: hid, title: i.titel, date: i.datum, end_date: i.bis_datum ?? null, start_time: i.start ?? null, end_time: i.ende ?? null, member_id: i.person ? memberFor(c, i.person) : null, note: i.notiz ?? null, effect: i.art ?? 'termin', created_by: me.id, updated_by: me.id })
+      await ins('events', { household_id: hid, title: i.titel, date: i.datum, end_date: i.bis_datum ?? null, start_time: i.start ?? null, end_time: i.ende ?? null, member_id: i.person ? memberFor(c, i.person) : null, note: i.notiz ?? null, effect: i.art ?? 'termin', repeat: i.wiederholung ?? null, created_by: me.id, updated_by: me.id })
       break
     case 'termin_aendern': {
       const patch: Record<string, unknown> = { updated_by: me.id }

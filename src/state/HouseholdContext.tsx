@@ -47,6 +47,8 @@ export interface Casa {
   milaPlanItems: MilaPlanItem[]
   /** Plan, zu dem milaPlanItems gehören (laufende Woche) */
   milaPlan: MilaWeekPlan | null
+  /** Wochenwahl der nächsten Woche (für die Sonntagsrunde) */
+  milaNextPlan: MilaWeekPlan | null
   milaRecipe(id: string | null | undefined): MilaRecipe | null
   reloadMila(): Promise<void>
   /** wartende Mitteilungen gleich verschicken */
@@ -195,6 +197,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   const [milaSettings, setMilaSettings] = useState<MilaSettings | null>(null)
   const [milaPlanItems, setMilaPlanItems] = useState<MilaPlanItem[]>([])
   const [milaPlan, setMilaPlan] = useState<MilaWeekPlan | null>(null)
+  const [milaNextPlan, setMilaNextPlan] = useState<MilaWeekPlan | null>(null)
   const [freizeitRadars, setFreizeitRadars] = useState<FreizeitRadar[]>([])
   const [freizeitTipps, setFreizeitTipps] = useState<FreizeitTipp[]>([])
   const [med, setMed] = useState<MedSettings | null>(null)
@@ -380,6 +383,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       const plan = (await store.select('mila_week_plans', { household_id: hid, week: startOfWeek(today()) })).find((x) => x.status !== 'verworfen' && x.adopted_at) ?? null
       setMilaPlanItems(plan ? await store.select('mila_plan_items', { plan_id: plan.id }) : [])
       setMilaPlan(plan)
+      setMilaNextPlan((await store.select('mila_week_plans', { household_id: hid, week: addDays(startOfWeek(today()), 7) })).find((x) => x.status !== 'verworfen') ?? null)
     } catch {
       /* Mila noch nicht eingerichtet */
     }
@@ -527,6 +531,8 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   function nextDue(due: string, repeat: Repeat): string {
     const d = fromISO(due)
     if (repeat === 'weekly') d.setDate(d.getDate() + 7)
+    if (repeat === 'biweekly') d.setDate(d.getDate() + 14)
+    if (repeat === 'fourweekly') d.setDate(d.getDate() + 28)
     if (repeat === 'monthly') d.setMonth(d.getMonth() + 1)
     if (repeat === 'yearly') d.setFullYear(d.getFullYear() + 1)
     return toISO(d)
@@ -560,6 +566,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
     milaDays,
     milaPlanItems,
     milaPlan,
+    milaNextPlan,
     milaRecipe: (id) => (id ? (milaById.get(id) ?? null) : null),
     pushNow: () => flushPush(),
     async postponeTasks(ids, to) {

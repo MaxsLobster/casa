@@ -89,6 +89,8 @@ export function buildDeck(input: {
   weekDays: Pick<MilaWeekDay, 'recipe_id' | 'date' | 'is_leftover'>[]
   /** zuletzt eingefroren: kommen bevorzugt wieder */
   frozen: string[]
+  /** vorgemerkte Gerichte: kommen sicher in den Stapel (wenn sie zur Mahlzeit passen) */
+  marked?: string[]
   seed: string
 }): MilaDeckCard[] {
   const { week, recipes, weekDays, frozen, seed, ingredientsOf } = input
@@ -116,6 +118,7 @@ export function buildDeck(input: {
         if (r.prep_box) score += 1.5
         if (meal === 'abend' && r.cook_double) score += 1.2
         if (frozen.includes(r.id)) score += 6
+        if (input.marked?.includes(r.id)) score += 50
         if (recent(r)) score -= 4
         score -= (cuisines.get(c) ?? 0) * 1.4 // abwechslungsreich: gleiche Küche weniger
         score -= (proteins.get(p) ?? 0) * 0.9 // und nicht nur Fleisch oder nur Fisch
@@ -391,4 +394,65 @@ export function fridge(input: {
     }
   }
   return [...map.values()].sort((a, b) => a.until.localeCompare(b.until) || a.name.localeCompare(b.name, 'de'))
+}
+
+// ---------------------------------------------------------------------------
+// „Was es gibt“ aus denselben Daten wie die Kombo: Gerichte in Kochreihenfolge auf die Tage,
+// Tage mit „Reste“, „auswärts“ oder „frei“ (verschoben) werden übersprungen – das Gericht rutscht weiter.
+// ---------------------------------------------------------------------------
+export const DAY_MARKS = ['Reste', 'auswärts', 'frei'] as const
+export type DayMark = (typeof DAY_MARKS)[number]
+
+export interface DayDish {
+  kind: 'manual' | 'kombo' | 'cooked' | 'mark'
+  recipeId?: string
+  item?: MilaPlanItem
+  mark?: string
+  /** Mittag aus Resten vom Vorabend */
+  leftover?: boolean
+}
+
+export function komboDays(
+  dates: ISODate[],
+  items: MilaPlanItem[],
+  rows: Pick<MilaWeekDay, 'date' | 'meal' | 'recipe_id' | 'free_text' | 'is_leftover'>[],
+  today: ISODate,
+  prepTag: ISODate | null,
+): Record<string, { abend?: DayDish; mittag?: DayDish }> {
+  const out: Record<string, { abend?: DayDish; mittag?: DayDish }> = {}
+  const rowOf = (d: ISODate, meal: MealSlot) => rows.find((r) => r.date === d && (r.meal ?? 'abend') === meal) ?? null
+  const blocked = (d: ISODate, meal: MealSlot) => !!rowOf(d, meal)
+  const open = items.filter((i) => i.status === 'offen')
+  // Abend: geplant auf einen gesperrten Tag → zurück in die Reihe
+  const queueA = open.filter((i) => i.slot === 'abend' && (!i.geplant_am || blocked(i.geplant_am, 'abend') || i.geplant_am < today)).sort(byFrist)
+  const queueM = open.filter((i) => i.slot === 'mittag' && (!i.geplant_am || blocked(i.geplant_am, 'mittag') || i.geplant_am < today)).sort(byFrist)
+  const abendOn: Record<string, MilaPlanItem | undefined> = {}
+  for (const d of dates) {
+    const day: { abend?: DayDish; mittag?: DayDish } = {}
+    const r = rowOf(d, 'abend')
+    if (r?.recipe_id) day.abend = { kind: 'manual', recipeId: r.recipe_id }
+    else if (r?.free_text) day.abend = { kind: 'mark', mark: r.free_text }
+    else {
+      const cooked = items.find((i) => i.slot === 'abend' && i.status === 'gekocht' && i.gekocht_am === d)
+      const planned = open.find((i) => i.slot === 'abend' && i.geplant_am === d && d >= today)
+      const it = cooked ?? planned ?? (d >= today ? queueA.shift() : undefined)
+      if (it) {
+        day.abend = { kind: cooked ? 'cooked' : 'kombo', recipeId: it.recipe_id, item: it }
+        abendOn[d] = it
+      }
+    }
+    const m = rowOf(d, 'mittag')
+    if (m?.recipe_id) day.mittag = { kind: 'manual', recipeId: m.recipe_id, leftover: m.is_leftover }
+    else if (m?.free_text) day.mittag = { kind: 'mark', mark: m.free_text }
+    else {
+      const cooked = items.find((i) => i.slot !== 'abend' && i.status === 'gekocht' && i.gekocht_am === d)
+      const prev = abendOn[addDays(d, -1)]
+      const reste = prev ? open.find((i) => i.slot === 'reste' && i.parent_id === prev.id) : undefined
+      const box = d >= today && (!prepTag || d > prepTag) ? queueM.shift() : undefined
+      const it = cooked ?? (d >= today ? reste : undefined) ?? box
+      if (it) day.mittag = { kind: cooked ? 'cooked' : 'kombo', recipeId: it.recipe_id, item: it, leftover: it.slot === 'reste' }
+    }
+    out[d] = day
+  }
+  return out
 }

@@ -10,6 +10,8 @@ export function RepeatPicker({ value, onChange }: { value: Repeat | null; onChan
       options={[
         { value: 'nein', label: 'nein' },
         { value: 'weekly', label: 'wöchentlich' },
+        { value: 'biweekly', label: 'alle 2 Wochen' },
+        { value: 'fourweekly', label: 'alle 4 Wochen' },
         { value: 'monthly', label: 'monatlich' },
         { value: 'yearly', label: 'jährlich' },
       ]}

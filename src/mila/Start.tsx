@@ -57,14 +57,12 @@ export function Start() {
 
       <div className="ms__buttons">
         <Link to="/mila/einkauf" className="rk-btn rk-btn--ghost ms__btn">Einkaufsliste{onList ? ` · ${onList}` : ''}</Link>
-        <Link to={wahlOpen || wahl.nextPlan ? '/mila/wahl' : '/mila/woche'} className="rk-btn rk-btn--main ms__btn">Woche planen{wahlOpen ? ' · Wahl läuft' : ''}</Link>
+        <Link to="/mila/woche" className="rk-btn rk-btn--main ms__btn">Essensplan{wahlOpen ? ' · Wahl läuft' : ''}</Link>
       </div>
 
       <nav className="ms__more" aria-label="Mehr von Mila">
         <span className="ms__more-label">Mehr</span>
         <Link to="/mila/heute">Heute dran</Link>
-        <Link to="/mila/wahl">Wahl</Link>
-        <Link to="/mila/woche">Woche</Link>
         <Link to="/mila/prep">Prep</Link>
         <Link to="/mila/gerichte">Fundus</Link>
       </nav>

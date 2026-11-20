@@ -60,3 +60,9 @@
 
 /* Aufräumen */
 .so__arearow { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+
+/* Für zwischendurch */
+.so__moon { display: flex; align-items: center; gap: 12px; }
+.so__moon .moon { width: 34px; height: 34px; }
+.so__daily { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 10px; }
+.so__fold { align-self: flex-start; min-height: 40px; padding: 0; border: none; background: transparent; font-family: var(--font-ui); font-size: 14.5px; color: var(--ink-soft); cursor: pointer; }
