@@ -93,7 +93,7 @@ export function weekRange(monday: ISODate): string {
  */
 export function relativeLabel(s: ISODate, ref: ISODate = today()): string {
   if (s === ref) return 'heute'
-  if (s === addDays(ref, 1)) return 'morgen'
+  if (s === addDays(ref, 1)) return `morgen · ${weekdayShort(s)}`
   const monday = startOfWeek(ref)
   const sunday = addDays(monday, 6)
   if (s < ref) {
@@ -106,7 +106,7 @@ export function relativeLabel(s: ISODate, ref: ISODate = today()): string {
 /** Für den Stempel: „Fr" (diese Woche) oder „15.10." */
 export function stampDate(s: ISODate, ref: ISODate = today()): string {
   if (s === ref) return 'Heute'
-  if (s === addDays(ref, 1)) return 'Morgen'
+  if (s === addDays(ref, 1)) return `Morgen · ${weekdayShort(s)}`
   const monday = startOfWeek(ref)
   const sunday = addDays(monday, 6)
   if (s >= monday && s <= sunday) return weekdayShort(s)

@@ -71,7 +71,7 @@ export function stepMeta(t: Task, members: { id: string; display_name: string }[
 /** „bis Fr" (diese Woche) · „bis 15.11." · „heute" · „seit Mo" */
 export function dueLabel(due: ISODate, today: ISODate): string {
   if (due === today) return 'heute'
-  if (due === addDays(today, 1)) return 'morgen'
+  if (due === addDays(today, 1)) return `morgen · ${weekdayShort(due)}`
   const sunday = addDays(startOfWeek(today), 6)
   if (due < today) return due >= startOfWeek(today) ? `seit ${weekdayShort(due)}` : `seit ${shortDate(due)}`
   if (due <= sunday) return `bis ${weekdayShort(due)}`

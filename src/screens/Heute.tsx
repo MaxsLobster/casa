@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
-import { addDays, dayLabel, eventEnd, fromISO, hhmm, spanLabel, uhr, weekdayLong } from '../lib/dates'
+import { addDays, dayLabel, eventEnd, fromISO, hhmm, spanLabel, startOfWeek, uhr, weekdayLong, weekdayShort } from '../lib/dates'
 import { dayState, name as whoName, verb, type Voice } from '../lib/week'
-import { applyEffects, awayOn, dayEffects, isEffectEvent, openChips, personName } from '../lib/effects'
+import { applyEffects, awayOn, dayEffects, isEffectEvent, openChips } from '../lib/effects'
 import { dailyText, moonPhase, readDailyChoice, sunTimes, writeDailyChoice, type DailyKind } from '../lib/daily'
 import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import { toH } from '../lib/band'
-import { Check } from '../components/ui'
+import { Check, Sheet } from '../components/ui'
+import { dayWord, daySegments, segText, valerieDay, askText } from '../lib/day'
 import { GehtNix } from './GehtNix'
 import { SonstigesSheet } from '../sonstiges/Sonstiges'
-import type { Event, Slot, Task } from '../lib/types'
+import type { Event, Slot, SlotRequest, Task } from '../lib/types'
 import { wantsStagger } from '../state/splash'
 import { PotIcon } from '../mila/icons'
 import { Takeover } from './Takeover'
@@ -58,7 +59,7 @@ export function Heute() {
   const now = useNow()
   const nav = useNavigate()
   const location = useLocation()
-  const { me, partner, members, people, tasks: allTasks, events, normalWeek, overrides, anchors: allAnchors, pins, settings, setTaskDone, takeTask, isNew, markSeen, freizeitTipps } = casa
+  const { me, partner, members, people, tasks: allTasks, events, normalWeek, overrides, anchors: allAnchors, pins, settings, setTaskDone, takeTask, isNew, markSeen, freizeitTipps, slotRequests } = casa
   const freizeitNeu = freizeitTipps.some((t) => alarmOpen(t, today))
   // Casa zeigt nur den Bereich casa; bei Arbeitstag an zusätzlich meine heute fälligen MWF-Aufgaben
   const workday = isWorkday(settings, today)
@@ -203,18 +204,7 @@ export function Heute() {
   }
 
   const rows: Row[] = []
-  // Wirkungs-Ereignisse, die an dem Tag gelten: Valerie bei Oma, Max/Anna weg („Kita zu" ist Hintergrundwissen)
-  const vw = fx.valerieWeg
-  if (vw) {
-    const pn = personName(vw, people)
-    rows.push({ key: 'fxv', sort: -3, time: null, kind: 'valerie', title: pn ? `Valerie bei ${pn}` : vw.title, sub: spanLabel(vw.occ_date, vw.occ_end), isNew: isNew('event', vw), event: vw.base_id })
-    if (fx.isFirst && vw.dropoff_by && (!vw.dropoff_at || nowH < toH(vw.dropoff_at, 0))) {
-      rows.push({ key: 'fxd', sort: vw.dropoff_at ? toH(vw.dropoff_at, 0) : -2, time: vw.dropoff_at ? hhmm(vw.dropoff_at) : null, kind: 'valerie', title: `${cap(verb(vw.dropoff_by, voice, 'bringst', 'bringt'))} Valerie ${pn ? `zu ${pn}` : 'hin'}`, sub: 'Übergabe', event: vw.base_id })
-    }
-    if (fx.isLast && vw.pickup_by && (!vw.pickup_at || nowH < toH(vw.pickup_at, 0))) {
-      rows.push({ key: 'fxp', sort: vw.pickup_at ? toH(vw.pickup_at, 0) : -2, time: vw.pickup_at ? hhmm(vw.pickup_at) : null, kind: 'valerie', title: `${cap(verb(vw.pickup_by, voice, 'holst', 'holt'))} Valerie ${pn ? `bei ${pn} ` : ''}ab`, sub: 'Übergabe', event: vw.base_id })
-    }
-  }
+  // Valerie (Bringen, Holen, Ausnahmen) steht in der Tageskarte oben, nicht mehr in der Liste
   if (fx.messe) {
     rows.push({ key: 'fxm', sort: -1, time: null, kind: 'plan', title: 'Messe', sub: 'Munich Watch Fair · ihr seid beide weg', event: fx.messe.base_id })
   }
@@ -229,18 +219,6 @@ export function Heute() {
     const parts = [whoEvent(o)]
     if (o.end_time) parts.push(`bis ${uhr(o.end_time)}`)
     rows.push({ key: 'e' + o.id + o.occ_date, sort: o.start_time ? toH(o.start_time, 0) : -1, time: o.start_time ? hhmm(o.start_time) : null, kind: 'event', title: o.title + (o.is_repeat || o.repeat ? ' ↻' : ''), sub: parts.join(' · '), isNew: isNew('event', o), event: o.base_id })
-  }
-  // Normalwoche, heute solange es noch kommt; offene Slots nur als Chip (an anderen Tagen)
-  const b = day.valerie_bringen
-  if (b?.value && !b.is_open && nowH < 9) rows.push({ key: 'vb', sort: 8, time: b.at ? hhmm(b.at) : null, kind: 'valerie', title: `${cap(verb(b.value, voice, 'bringst', 'bringt'))} Valerie`, sub: 'Valerie', slots: present(['valerie_bringen', 'valerie_holen', 'valerie_tag']) })
-  const h = day.valerie_holen
-  if (h?.value && !h.is_open) {
-    const hh = toH(h.at, 14)
-    if (nowH < hh) rows.push({ key: 'vh', sort: hh, time: h.at ? hhmm(h.at) : null, kind: 'valerie', title: `${cap(verb(h.value, voice, 'holst', 'holt'))} Valerie`, sub: h.note && h.overridden ? h.note : 'Valerie', slots: present(['valerie_bringen', 'valerie_holen', 'valerie_tag']) })
-  }
-  const tg = day.valerie_tag
-  if (tg?.value && !tg.is_open && nowH < 18) {
-    rows.push({ key: 'vt', sort: 8.5, time: null, kind: 'valerie', title: `Valerie tagsüber bei ${/^beide$/i.test(tg.value) ? 'euch beiden' : whoName(tg.value, voice) === 'du' ? 'dir' : tg.value}`, sub: 'Valerie', slots: present(['valerie_bringen', 'valerie_holen', 'valerie_tag']) })
   }
   const nm = day.nachmittag
   if (nm?.value && nowH < 18) rows.push({ key: 'nm', sort: 15, time: null, kind: 'plan', title: nm.value, sub: 'Nachmittag', slots: ['nachmittag'] })
@@ -271,12 +249,11 @@ export function Heute() {
   if (bt?.value && !bt.is_open && nowH < 20.5) rows.push({ key: 'bt', sort: 19.5, time: null, kind: 'plan', title: cap(verb(bt.value, voice, 'bringst ins Bett', 'bringt ins Bett')), sub: 'Abend', slots: present(['abend_essen', 'abend_bett']) })
   const we = day.wochenende
   if (we?.value && !we.is_open && nowH < 20) rows.push({ key: 'we', sort: 9, time: null, kind: 'plan', title: we.value, sub: 'Wochenende', slots: ['wochenende'] })
-  // Nur meine Aufgaben, nur genau an dem Tag fällig (Überfälliges steht unter To-Dos bei „Liegt noch")
-  for (const t of tasks) {
-    if (t.status === 'erledigt' || t.due_date !== date || !(t.owner_member_id === me?.id || isShared(t))) continue
-    // Weg: in Casa zählt auch der Messetag, bei MWF-Aufgaben nur echte Abwesenheit
+  // Meine Aufgaben an dem Tag stehen in der Tageskarte oben
+  const dayTasks = tasks.filter((t) => t.status !== 'erledigt' && t.due_date === date && (t.owner_member_id === me?.id || isShared(t)))
+  const taskSub = (t: Task) => {
     const away = !!t.owner_member_id && (t.area === 'mwf' ? awayOn(events, t.owner_member_id, date, 'mwf') : fx.away.some((a) => a.member.id === t.owner_member_id))
-    rows.push({ key: 't' + t.id, sort: 99, time: null, kind: 'task', title: t.title, sub: away ? 'Du bist weg – trotzdem bei dir lassen?' : isShared(t) ? 'beide' : '', task: t, isNew: isNew('task', t), anchor: anchorName(t.anchor_id), mwf: t.area === 'mwf' })
+    return away ? 'Du bist weg – trotzdem bei dir lassen?' : isShared(t) ? 'beide' : ''
   }
   rows.sort((a, c) => a.sort - c.sort)
   const chips = isToday ? [] : openChips(day, fx)
@@ -284,6 +261,43 @@ export function Heute() {
   const openTasks = tasks.filter((t) => t.area === 'casa' && t.status !== 'erledigt' && t.owner_member_id === null && (isToday ? t.due_date <= today : t.due_date === date)).sort((a, c) => a.due_date.localeCompare(c.due_date))
   // Meine gepinnten Anker (nur heute)
   const pinned = isToday ? anchors.filter((a) => pins.has(a.id) && !a.archived_at).sort((a, c) => a.title.localeCompare(c.title)) : []
+
+  // ---------- Tageskarte: wer hat Valerie, meine Aufgaben, ab 17 Uhr „Morgen · Fr“ ----------
+  const vd = valerieDay(date, day, fx, voice, people, slotRequests)
+  const myDeclined = (slot: string) => slotRequests.filter((r) => r.date === date && r.slot === slot && r.from_member_id === me?.id && r.status === 'abgelehnt').sort((a, c) => (c.answered_at ?? '').localeCompare(a.answered_at ?? ''))[0] ?? null
+  const tomorrow = addDays(today, 1)
+  const showTomorrow = isToday && now.getHours() >= 17
+  const tomorrowLine = useMemo(() => {
+    if (!showTomorrow) return ''
+    const occT = occurrences(events, tomorrow, tomorrow).filter((o) => o.occ_date <= tomorrow && o.occ_end >= tomorrow)
+    const fxT = dayEffects(tomorrow, occT, members)
+    const stT = applyEffects(dayState(tomorrow, normalWeek, overrides), fxT)
+    const segs = daySegments(tomorrow, stT, fxT, { me, members }, people, slotRequests)
+    const termine = occT.filter((o) => !isMultiDay(o) && !isEffectEvent(o) && (o.member_id === null || o.member_id === me?.id)).sort((a, c) => (a.start_time ?? '').localeCompare(c.start_time ?? '')).slice(0, 2).map((o) => (o.start_time ? `${o.title} ${hhmm(o.start_time)}` : o.title))
+    return [segText(segs), ...termine].filter(Boolean).join(' · ')
+  }, [showTomorrow, events, tomorrow, members, normalWeek, overrides, me, people, slotRequests])
+  const [asking, setAsking] = useState<string | null>(null)
+  async function ask(slot: Slot, at: string | null) {
+    setAsking(slot)
+    try {
+      await casa.askHandover({ date, slot, at })
+    } finally {
+      setAsking(null)
+    }
+  }
+
+  // ---------- Das braucht deine Antwort (nur heute) ----------
+  const toAnswer: SlotRequest[] = isToday ? slotRequests.filter((r) => r.to_member_id === me?.id && r.status === 'offen' && r.date >= today).sort((a, c) => a.date.localeCompare(c.date)) : []
+  const weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString()
+  const toAccept: Task[] = isToday ? allTasks.filter((t) => t.area === 'casa' && t.owner_member_id === me?.id && t.status === 'offen' && !!t.created_by && t.created_by !== me?.id && t.created_at >= weekAgo && !t.is_step) : []
+  const answerCount = toAnswer.length + toAccept.length
+  const [answers, setAnswers] = useState(false)
+
+  // ---------- Überfälliges (nur heute, ruhig gesammelt) ----------
+  const overdue: Task[] = isToday ? tasks.filter((t) => t.area === 'casa' && t.status !== 'erledigt' && !t.is_running && t.due_date < today && (t.owner_member_id === me?.id || isShared(t))).sort((a, c) => a.due_date.localeCompare(c.due_date)) : []
+  const overdueLabel = overdue.length === 0 ? '' : `${overdue.length} ${overdue.every((t) => t.due_date < startOfWeek(today)) ? 'von letzter Woche' : overdue.length === 1 ? 'liegt noch' : 'liegen noch'}`
+  const [showOverdue, setShowOverdue] = useState(false)
+  const quietDay = rows.length === 0 && chips.length === 0 && openTasks.length === 0 && dayTasks.length === 0 && overdue.length === 0 && answerCount === 0
 
   // ---------- Demnächst (nur heute) ----------
   const soon = useMemo(() => {
@@ -395,6 +409,103 @@ export function Heute() {
       {/* ---------- Inhalt + Zeitstrahl ---------- */}
       <div className="heute__body">
         <div className="heute__left">
+          {answerCount > 0 && (
+            <button type="button" className={'heute__answer' + rc} style={rs(3)} onClick={() => setAnswers(true)}>
+              <span className="heute__answer-dot" aria-hidden />
+              <span>Das braucht deine Antwort</span>
+              <span className="heute__answer-n">{answerCount}</span>
+            </button>
+          )}
+
+          {/* ---------- Tageskarte ---------- */}
+          <section className={'daycard' + rc} style={rs(3)} aria-label="Der Tag auf einen Blick">
+            {vd.headline ? (
+              <div className="daycard__row">
+                <span className="daycard__k">Valerie</span>
+                <button type="button" className={'daycard__v' + (vd.needsWho ? ' daycard__v--open' : ' daycard__v--changed')} onClick={() => {
+                  const id = fx.kitaZu?.base_id ?? fx.valerieWeg?.base_id
+                  const ev = id ? events.find((x) => x.id === id) ?? null : null
+                  if (vd.needsWho) setTakeover(true)
+                  else if (ev) setEditEvent(ev)
+                }}>{vd.headline}</button>
+              </div>
+            ) : (
+              vd.rows.map((r) => {
+                const declined = !r.request && r.mine ? myDeclined(r.slot) : null
+                return (
+                  <div className="daycard__row" key={r.slot}>
+                    <span className="daycard__k">{r.label}</span>
+                    <button type="button" className={'daycard__v' + (r.open || r.request ? ' daycard__v--open' : r.changed ? ' daycard__v--changed' : '')} onClick={() => (r.open ? setTakeover(true) : setEditSlots(['valerie_bringen', 'valerie_holen'].filter((x) => day[x as Slot]) as Slot[]))}>
+                      {r.request ? `offen · ${askText(r.request, voice)}` : r.text}
+                      {r.at && !r.request && <span className="daycard__at">{hhmm(r.at)}</span>}
+                    </button>
+                    {r.mine && !r.request && date >= today && partner && (
+                      <button type="button" className="daycard__ask" disabled={asking === r.slot} onClick={() => void ask(r.slot, r.at)}>Kannst du übernehmen?</button>
+                    )}
+                    {r.request && r.request.from_member_id === me?.id && (
+                      <button type="button" className="daycard__ask daycard__ask--quiet" onClick={() => void casa.withdrawRequest(r.request!.id)}>zurückziehen</button>
+                    )}
+                    {declined && <span className="daycard__note">{partner?.display_name ?? 'Der andere'} kann nicht</span>}
+                  </div>
+                )
+              })
+            )}
+            {vd.needsWho && fx.kitaZu && partner && (
+              <div className="daycard__chips">
+                <button type="button" className="wk__chip" onClick={() => void casa.setOverride({ date, slot: 'valerie_tag', value: me?.display_name ?? null })}>Ich hab sie</button>
+                <button type="button" className="wk__chip" onClick={() => void casa.setOverride({ date, slot: 'valerie_tag', value: partner.display_name })}>{partner.display_name} hat sie</button>
+                <button type="button" className="wk__chip" onClick={() => void casa.setOverride({ date, slot: 'valerie_tag', value: 'beide' })}>beide</button>
+              </div>
+            )}
+            {!vd.headline && vd.rows.length === 0 && dayTasks.length === 0 && <span className="daycard__empty">Kein Kita-Tag</span>}
+            {dayTasks.map((t) => (
+              <div className="daycard__task" key={t.id}>
+                <Check done={false} onToggle={() => setTaskDone(t.id, true)} label={`${t.title} abhaken`} />
+                <button type="button" className="heute__tap" onClick={() => setEditTask(t)}>
+                  <span className="stack" style={{ gap: 0, minWidth: 0, flex: 1 }}>
+                    <span className="hand hand--navy" style={{ lineHeight: 1.1 }}>
+                      {t.title}
+                      {isNew('task', t) && <span className="stamp stamp--new" style={{ marginLeft: 8, verticalAlign: 'middle' }}>Neu</span>}
+                    </span>
+                    {(taskSub(t) || t.anchor_id || t.area === 'mwf') && (
+                      <span className="heute__sub">
+                        {t.area === 'mwf' && <span className="mwf__tag" style={{ marginRight: 8 }}>MWF</span>}
+                        {taskSub(t)}
+                        {anchorName(t.anchor_id) && <span className="ank__tag" style={{ marginLeft: taskSub(t) ? 8 : 0 }}>{anchorName(t.anchor_id)}</span>}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              </div>
+            ))}
+            {showTomorrow && tomorrowLine && (
+              <button type="button" className="daycard__tomorrow" onClick={() => go(1)}>
+                <span className="daycard__k">{dayWord(tomorrow, today)}</span>
+                <span className="daycard__tline">{tomorrowLine}</span>
+              </button>
+            )}
+          </section>
+
+          {overdue.length > 0 && (
+            <section className={'heute__overdue' + rc} style={rs(4)}>
+              <button type="button" className="heute__overdue-head" onClick={() => setShowOverdue((v) => !v)} aria-expanded={showOverdue}>
+                <span>{overdueLabel}</span>
+                <span className="heute__overdue-arrow" aria-hidden>{showOverdue ? '▾' : '▸'}</span>
+              </button>
+              {showOverdue && overdue.map((t) => (
+                <div className="daycard__task" key={t.id}>
+                  <Check done={false} onToggle={() => setTaskDone(t.id, true)} label={`${t.title} abhaken`} />
+                  <button type="button" className="heute__tap" onClick={() => setEditTask(t)}>
+                    <span className="stack" style={{ gap: 0, minWidth: 0, flex: 1 }}>
+                      <span className="hand hand--navy" style={{ lineHeight: 1.1 }}>{t.title}</span>
+                      <span className="heute__sub">seit {t.due_date >= startOfWeek(today) ? weekdayShort(t.due_date) : dayLabel(t.due_date)}</span>
+                    </span>
+                  </button>
+                </div>
+              ))}
+            </section>
+          )}
+
           {isToday && newCount > 0 && (
             <button type="button" className={'note heute__note' + rc} onClick={openNew} style={{ textAlign: 'left', width: '100%', cursor: 'pointer', ...rs(3) }}>
               <span className="label label--small" style={{ color: 'var(--brown)' }}>Neu von {partner?.display_name ?? 'Anna'}</span>
@@ -407,7 +518,7 @@ export function Heute() {
 
           <section className="stack" style={{ gap: 12 }}>
             <h2 className={'heute__h2' + rc} style={rs(4)}>{isToday ? 'Heute noch' : 'An diesem Tag'}</h2>
-            {rows.length === 0 && chips.length === 0 && openTasks.length === 0 && <p className={'hint' + rc} style={rs(5)}>{isToday ? 'Nichts mehr für heute. Schön.' : 'Nichts eingetragen.'}</p>}
+            {rows.length > 0 || chips.length > 0 || openTasks.length > 0 ? null : quietDay ? <p className={'hint' + rc} style={rs(5)}>{isToday ? 'Nichts mehr für heute. Schön.' : 'Nichts eingetragen.'}</p> : <p className={'hint' + rc} style={rs(5)}>{isToday ? 'Sonst nichts mehr.' : 'Sonst nichts.'}</p>}
             {rows.map((r, idx) => {
               const open = () => {
                 if (r.link) nav(r.link)
@@ -508,8 +619,8 @@ export function Heute() {
       {sonst && <SonstigesSheet onClose={() => { setSonst(false); if ((location.state as { sonstiges?: boolean } | null)?.sonstiges) nav(location.pathname, { replace: true, state: null }) }} />}
       {nix && (
         <GehtNix
-          moved={rows.filter((r) => r.task && r.task.owner_member_id === me?.id && r.task.area === 'casa' && !isShared(r.task)).map((r) => r.task!)}
-          kept={rows.filter((r) => !(r.task && r.task.owner_member_id === me?.id && r.task.area === 'casa' && !isShared(r.task))).map((r) => (r.time ? `${r.time} ${r.title}` : r.title))}
+          moved={dayTasks.filter((t) => t.owner_member_id === me?.id && t.area === 'casa' && !isShared(t))}
+          kept={[...dayTasks.filter((t) => !(t.owner_member_id === me?.id && t.area === 'casa' && !isShared(t))).map((t) => t.title), ...rows.map((r) => (r.time ? `${r.time} ${r.title}` : r.title))]}
           partner={partner?.display_name ?? null}
           onClose={() => setNix(false)}
           onDone={(n, run) => {
@@ -518,6 +629,7 @@ export function Heute() {
           }}
         />
       )}
+      {answers && <AnswerSheet requests={toAnswer} tasks={toAccept} onClose={() => setAnswers(false)} />}
       {undoNix && (
         <div className="undo-bar" role="status">
           <span className="undo-bar__text">{undoNix.n === 1 ? '1 Sache' : `${undoNix.n} Sachen`} auf morgen</span>
@@ -525,6 +637,60 @@ export function Heute() {
         </div>
       )}
     </div>
+  )
+}
+
+/** „Das braucht deine Antwort“: Anfragen „Kannst du übernehmen?“ und neue Aufgaben vom anderen */
+function AnswerSheet({ requests, tasks, onClose }: { requests: SlotRequest[]; tasks: Task[]; onClose: () => void }) {
+  const casa = useCasa()
+  const today = useToday()
+  const voice = { me: casa.me, members: casa.members }
+  const [busy, setBusy] = useState<string | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  const run = async (id: string, f: () => Promise<void>) => {
+    setBusy(id)
+    setErr(null)
+    try {
+      await f()
+    } catch (e) {
+      setErr((e as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
+  const slotWord: Record<string, string> = { valerie_bringen: 'Valerie bringen', valerie_holen: 'Valerie holen', valerie_tag: 'Valerie tagsüber', abend_essen: 'kochen', abend_bett: 'ins Bett bringen' }
+  const from = (id: string | null) => casa.members.find((m) => m.id === id)?.display_name ?? ''
+  const empty = requests.length === 0 && tasks.length === 0
+  useEffect(() => {
+    if (empty) onClose()
+  }, [empty, onClose])
+  return (
+    <Sheet onClose={onClose} title="Das braucht deine Antwort">
+      {requests.map((r) => (
+        <div className="answer" key={r.id}>
+          <span className="label label--small">{askText(r, voice)}</span>
+          <span className="hand hand--navy" style={{ fontSize: 25, lineHeight: 1.15 }}>
+            {dayWord(r.date, today)}: {slotWord[r.slot] ?? r.slot}{r.at ? ` um ${hhmm(r.at)}` : ''}?
+          </span>
+          <div className="answer__btns">
+            <button type="button" className="btn" disabled={busy === r.id} onClick={() => void run(r.id, () => casa.answerRequest(r.id, true))}>Ja, mach ich</button>
+            <button type="button" className="link" disabled={busy === r.id} onClick={() => void run(r.id, () => casa.answerRequest(r.id, false))}>Geht nicht</button>
+          </div>
+        </div>
+      ))}
+      {tasks.map((t) => (
+        <div className="answer" key={t.id}>
+          <span className="label label--small">Von {from(t.created_by)} · bis {dayWord(t.due_date, today)}</span>
+          <span className="hand hand--navy" style={{ fontSize: 25, lineHeight: 1.15 }}>{t.title}</span>
+          <div className="answer__btns">
+            <button type="button" className="btn" disabled={busy === t.id} onClick={() => void run(t.id, async () => { await casa.markSeen('task', [t.id]); await casa.acceptTask(t.id) })}>Mach ich</button>
+            <button type="button" className="link" disabled={busy === t.id} onClick={() => void run(t.id, async () => { await casa.markSeen('task', [t.id]); await casa.updateTask(t.id, { owner_member_id: null }) })}>Geht nicht · offen lassen</button>
+          </div>
+        </div>
+      ))}
+      {err && <span className="hint hint--brown">{err}</span>}
+      <span className="hint">{from(casa.partner?.id ?? null) || 'Der andere'} bekommt deine Antwort als Mitteilung.</span>
+    </Sheet>
   )
 }
 

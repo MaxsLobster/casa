@@ -48,6 +48,8 @@ Hinweise zu Casa:
 - Wer eine Mitteilung bekommt, steht im Ergebnis des Vorschlags („Betrifft …“). Sag nur das, nichts anderes.
 - Normalwoche-Felder (slot): valerie_bringen, valerie_holen, valerie_tag, anna_arbeit, nachmittag, abend_essen, abend_bett, wochenende. Eine Abweichung gilt nur für ein Datum. "wert": null heißt „offen – wer übernimmt?“.
 - Ist jemand einen Tag weg (z. B. „Ich bin Dienstag in München“), lege einen Termin mit art "eltern_weg" für diese Person an; dann werden ihre Aufgaben an dem Tag offen. Frag nach, wer Valerie bringt bzw. holt, und schlage die Abweichung erst nach der Antwort vor.
+- „Ich kann morgen nicht abholen“ oder „Frag Anna, ob sie Freitag holt“: schlage gleich uebergabe_fragen vor (der Slot bleibt offen, bis der andere zusagt). Ohne Rückfrage, außer Tag oder Slot sind unklar. Offene und abgelehnte Anfragen stehen in tage_lesen unter „anfragen“; Anfragen an dich beantwortest du mit anfrage_beantworten.
+- Aufgaben, die jemand für den anderen eingetragen hat, haben einen Stand (neu → gesehen → zugesagt → erledigt), siehe aufgaben_suchen „stand“. „Hat Anna das gesehen?“ beantwortest du damit. Zusagen = aufgabe_aendern mit status „zugesagt“ (nur für eigene Aufgaben).
 - Mila: Steht die Woche als Kombo (ohne feste Tage) im Plan, nutze mila_kombo statt einzelner Gerichte. „Nicht eingekauft“ heißt meist: Kombo auf nächste Woche schieben.
 - Hausbuch und Geschenk-Dose: erst mit hausbuch_lesen bzw. geschenke_lesen nachsehen. Geschenk-Ideen, die als privat markiert sind, gehören nur der fragenden Person: nie der anderen Person zeigen, vorlesen oder in Aufgaben/Termine schreiben, die die andere sieht.
 - Fotos (Kindergarten-Zettel, Brief, Rechnung, Einladung, kaputte Sache): lies Datum, Uhrzeit, Ort, Frist und wer betroffen ist heraus und schlage passende Termine oder Aufgaben vor (mit Person und Frist). Das Foto wird nicht gespeichert; sag das nicht extra. Ist etwas unleserlich, frag nach.
@@ -97,6 +99,8 @@ const WRITE_TOOLS: Anthropic.Tool[] = [
   { name: 'aufgabe_aendern', description: 'VORSCHLAG: Aufgabe ändern, verschieben, zuweisen, erledigen oder archivieren. Nur angeben, was sich ändert.', input_schema: P({ id: str('Aufgaben-id'), titel: { type: 'string' }, person, datum: str('neues Datum YYYY-MM-DD'), notiz: { type: 'string' }, status: { type: 'string', enum: ['offen', 'zugesagt', 'geparkt', 'erledigt'] }, archivieren: { type: 'boolean' } }, ['id']) as never },
   { name: 'termin_anlegen', description: 'VORSCHLAG: Termin oder Wochen-Eintrag. art: termin (normal), eltern_weg (Person ist weg, ihre Aufgaben werden offen), kita_zu, valerie_weg.', input_schema: P({ titel: { type: 'string' }, datum: str('YYYY-MM-DD'), bis_datum: str('letzter Tag bei mehrtägig, optional'), start: str('HH:MM, optional'), ende: str('HH:MM, optional'), person, art: { type: 'string', enum: ['termin', 'eltern_weg', 'kita_zu', 'valerie_weg'] }, notiz: { type: 'string' } }, ['titel', 'datum']) as never },
   { name: 'termin_aendern', description: 'VORSCHLAG: Termin ändern oder verschieben. Nur angeben, was sich ändert.', input_schema: P({ id: { type: 'string' }, titel: { type: 'string' }, datum: { type: 'string' }, bis_datum: { type: 'string' }, start: { type: 'string' }, ende: { type: 'string' }, person, notiz: { type: 'string' } }, ['id']) as never },
+  { name: 'uebergabe_fragen', description: 'VORSCHLAG: den anderen fragen „Kannst du übernehmen?“ (z. B. „Frag Anna, ob sie Freitag holt“). Der Slot bleibt offen, bis der andere zusagt oder ablehnt; erst mit der Zusage wechselt die Person. Lieber als woche_abweichung, wenn der andere einspringen soll.', input_schema: P({ datum: str('YYYY-MM-DD'), slot: { type: 'string', enum: ['valerie_bringen', 'valerie_holen', 'valerie_tag', 'abend_essen', 'abend_bett'] }, uhrzeit: str('HH:MM, optional') }, ['datum', 'slot']) as never },
+  { name: 'anfrage_beantworten', description: 'VORSCHLAG: eine offene Anfrage „Kannst du übernehmen?“, die an dich ging, beantworten (ja = übernehmen, nein = geht nicht). anfrage_id aus tage_lesen (anfragen).', input_schema: P({ anfrage_id: { type: 'string' }, ja: { type: 'boolean' } }, ['anfrage_id', 'ja']) as never },
   { name: 'woche_abweichung', description: 'VORSCHLAG: Abweichung von der Normalwoche für ein Datum (z. B. „ich kann nicht“ = wert null, oder wer stattdessen Valerie holt).', input_schema: P({ datum: str('YYYY-MM-DD'), slot, wert: { type: ['string', 'null'], description: 'Name (Max, Anna, Oma …) oder null = offen' }, uhrzeit: str('HH:MM, optional'), notiz: { type: 'string' } }, ['datum', 'slot', 'wert']) as never },
   { name: 'mila_gericht_setzen', description: 'VORSCHLAG: ein Gericht aus dem Fundus für einen Tag eintragen.', input_schema: P({ datum: str('YYYY-MM-DD'), mahlzeit: { type: 'string', enum: ['mittag', 'abend'] }, rezept_id: { type: 'string' }, portionen: { type: 'integer' } }, ['datum', 'mahlzeit', 'rezept_id']) as never },
   { name: 'mila_gerichte_entfernen', description: 'VORSCHLAG: eingetragene Gerichte aus einem Zeitraum entfernen.', input_schema: P({ von: { type: 'string' }, bis: { type: 'string' }, mahlzeit: { type: 'string', enum: ['mittag', 'abend', 'beide'] } }, ['von', 'bis']) as never },
@@ -145,6 +149,7 @@ async function runRead(c: Ctx, name: string, input: Record<string, unknown>): Pr
       let bis = date(input.bis, 'bis')
       if (bis < von) bis = von
       if (bis > addDays(von, 20)) bis = addDays(von, 20)
+      const rq = must(await db.from('slot_requests').select('id,date,slot,at,from_member_id,to_member_id,status').eq('household_id', hid).gte('date', von).lte('date', bis).in('status', ['offen', 'abgelehnt', 'zugesagt']), 'Anfragen') ?? []
       const [ev, ov, nw, tk, wd] = await Promise.all([
         db.from('events').select('id,title,date,end_date,start_time,end_time,member_id,effect,repeat,note').eq('household_id', hid).lte('date', bis),
         db.from('week_overrides').select('date,slot,value,at,note').eq('household_id', hid).gte('date', von).lte('date', bis),
@@ -169,6 +174,7 @@ async function runRead(c: Ctx, name: string, input: Record<string, unknown>): Pr
           termine: events.filter((e: any) => e.date <= d && (e.end_date ?? e.date) >= d).map((e: any) => ({ id: e.id, titel: e.title, zeit: e.start_time?.slice(0, 5) ?? null, wer: nameOf(c, e.member_id), art: e.effect })),
           aufgaben: (must(tk, 'Aufgaben') ?? []).filter((t: any) => t.due_date === d).map((t: any) => ({ id: t.id, titel: t.title, wer: nameOf(c, t.owner_member_id), status: t.status })),
           essen: (must(wd, 'Essen') ?? []).filter((w: any) => w.date === d).map((w: any) => `${w.meal}: ${w.is_leftover ? 'Reste ' : ''}${rname(w.recipe_id)}`),
+          anfragen: (rq as any[]).filter((r) => r.date === d).map((r) => ({ id: r.id, slot: r.slot, von: nameOf(c, r.from_member_id), an: nameOf(c, r.to_member_id), stand: r.status === 'offen' ? 'offen (wartet auf Antwort)' : r.status })),
         })
       }
       return { tage: days, wiederholende_termine: events.filter((e: any) => e.repeat).map((e: any) => ({ titel: e.title, ab: e.date, wiederholung: e.repeat })) }
@@ -183,7 +189,7 @@ async function runRead(c: Ctx, name: string, input: Record<string, unknown>): Pr
       return out
     }
     case 'aufgaben_suchen': {
-      let q = db.from('tasks').select('id,title,owner_member_id,due_date,status,note,anchor_id,archived_at,done_at').eq('household_id', hid).eq('area', 'casa').order('due_date').limit(60)
+      let q = db.from('tasks').select('id,title,owner_member_id,due_date,status,note,anchor_id,archived_at,done_at,created_by,created_at').eq('household_id', hid).eq('area', 'casa').order('due_date').limit(60)
       if (!input.mit_archiv) q = q.is('archived_at', null)
       const st = input.status as string | undefined
       if (st && st !== 'alle') q = q.eq('status', st)
@@ -195,7 +201,16 @@ async function runRead(c: Ctx, name: string, input: Record<string, unknown>): Pr
       }
       if (typeof input.text === 'string' && input.text.trim()) q = q.or(`title.ilike.%${input.text.trim().replace(/[%,()]/g, ' ')}%,note.ilike.%${input.text.trim().replace(/[%,()]/g, ' ')}%`)
       const rows = must(await q, 'Aufgaben') ?? []
-      return (rows as any[]).map((t) => ({ id: t.id, titel: t.title, wer: nameOf(c, t.owner_member_id), datum: t.due_date, status: t.status, notiz: t.note, archiviert: !!t.archived_at, anker: !!t.anchor_id }))
+      // Stand für Aufgaben, die jemand für den anderen eingetragen hat: neu → gesehen → zugesagt → erledigt
+      const ids = (rows as any[]).filter((t) => t.owner_member_id && t.created_by && t.created_by !== t.owner_member_id).map((t) => t.id)
+      const seen = ids.length ? ((must(await db.from('item_seen').select('member_id,item_id,seen_at').eq('item_type', 'task').in('item_id', ids), 'gesehen') ?? []) as any[]) : []
+      const stand = (t: any) => {
+        if (!t.owner_member_id || !t.created_by || t.created_by === t.owner_member_id) return null
+        if (t.status === 'erledigt') return 'erledigt'
+        if (t.status === 'zugesagt') return 'zugesagt'
+        return seen.some((x) => x.item_id === t.id && x.member_id === t.owner_member_id && x.seen_at >= t.created_at) ? 'gesehen' : 'neu'
+      }
+      return (rows as any[]).map((t) => ({ id: t.id, titel: t.title, wer: nameOf(c, t.owner_member_id), eingetragen_von: t.created_by ? nameOf(c, t.created_by) : null, stand: stand(t), datum: t.due_date, status: t.status, notiz: t.note, archiviert: !!t.archived_at, anker: !!t.anchor_id }))
     }
     case 'mila_plan_lesen': {
       const von = date(input.von, 'von')
@@ -308,6 +323,9 @@ async function propose(c: Ctx, name: string, input: Record<string, unknown>): Pr
       if (!parts.length) throw new Error('nichts zu ändern')
       // Erledigen und reines Archivieren lösen (wie in der App) keine Mitteilung aus
       const quiet = input.status === 'erledigt' || (input.archivieren && ['person', 'datum', 'titel', 'notiz', 'status'].every((k) => input[k] === undefined))
+      // Zusage oder Erledigt einer Aufgabe, die der andere für mich eingetragen hat: der andere bekommt eine Mitteilung
+      const toCreator = (input.status === 'zugesagt' || input.status === 'erledigt') && t.owner_member_id === c.me.id && t.created_by && t.created_by !== c.me.id && input.person === undefined
+      if (toCreator) return { id, tool: name, input, summary: `„${t.title}“: ${parts.join(', ')}`, betrifft: [nameOf(c, t.created_by)] }
       return { id, tool: name, input, summary: `„${t.title}“: ${parts.join(', ')}`, betrifft: quiet ? [] : [...new Set([...others(owner), ...(input.person !== undefined ? others(t.owner_member_id) : [])])] }
     }
     case 'termin_anlegen': {
@@ -325,6 +343,25 @@ async function propose(c: Ctx, name: string, input: Record<string, unknown>): Pr
       const parts = [input.datum ? `auf ${nice(date(input.datum, 'datum'))}` : null, input.start ? `um ${input.start}` : null, input.titel ? `Titel „${input.titel}“` : null, input.person !== undefined ? `für ${nameOf(c, memberFor(c, input.person))}` : null, input.notiz !== undefined ? 'Notiz' : null].filter(Boolean)
       if (!parts.length) throw new Error('nichts zu ändern')
       return { id, tool: name, input, summary: `Termin „${e.title}“: ${parts.join(', ')}`, betrifft: c.members.filter((m) => m.id !== c.me.id && m.role === 'partner').map((m) => m.display_name) }
+    }
+    case 'uebergabe_fragen': {
+      const d = date(input.datum, 'datum')
+      if (d < c.today) throw new Error('Das Datum liegt in der Vergangenheit')
+      const lbl: Record<string, string> = { valerie_bringen: 'Valerie bringen', valerie_holen: 'Valerie holen', valerie_tag: 'Valerie tagsüber', abend_essen: 'kochen', abend_bett: 'ins Bett bringen' }
+      if (!lbl[String(input.slot)]) throw new Error('slot unbekannt')
+      if (input.uhrzeit && !TIME.test(String(input.uhrzeit))) throw new Error('uhrzeit: HH:MM')
+      const partner = c.members.find((m) => m.id !== c.me.id && m.role === 'partner')
+      if (!partner) throw new Error('Niemand zum Fragen da')
+      const open = (must(await db.from('slot_requests').select('id').eq('household_id', hid).eq('date', d).eq('slot', String(input.slot)).eq('status', 'offen'), 'Anfragen') ?? []) as any[]
+      if (open.length) throw new Error('Dazu läuft schon eine Anfrage')
+      return { id, tool: name, input, summary: `${partner.display_name} fragen: Kannst du ${nice(d)} ${lbl[String(input.slot)]}${input.uhrzeit ? ` um ${input.uhrzeit}` : ''}? (bis zur Antwort offen)`, betrifft: [partner.display_name] }
+    }
+    case 'anfrage_beantworten': {
+      const r = (must(await db.from('slot_requests').select('*').eq('id', String(input.anfrage_id)).eq('household_id', hid), 'Anfrage') ?? [])[0] as any
+      if (!r || r.to_member_id !== c.me.id) throw new Error('Diese Anfrage ging nicht an dich')
+      if (r.status !== 'offen') throw new Error('Diese Anfrage ist schon beantwortet')
+      const lbl: Record<string, string> = { valerie_bringen: 'Valerie bringen', valerie_holen: 'Valerie holen', valerie_tag: 'Valerie tagsüber', abend_essen: 'kochen', abend_bett: 'ins Bett bringen' }
+      return { id, tool: name, input, summary: `${input.ja ? 'Zusagen' : 'Absagen'}: ${nice(r.date)} ${lbl[r.slot] ?? r.slot}${input.ja ? ' übernimmst du' : ''}`, betrifft: [nameOf(c, r.from_member_id)] }
     }
     case 'woche_abweichung': {
       const d = date(input.datum, 'datum')
@@ -469,6 +506,17 @@ async function execute(c: Ctx, p: Proposal): Promise<LogEntry[]> {
       if (i.person !== undefined) patch.member_id = memberFor(c, i.person)
       if (i.notiz !== undefined) patch.note = i.notiz || null
       await upd('events', String(i.id), patch)
+      break
+    }
+    case 'uebergabe_fragen': {
+      const partner = c.members.find((m) => m.id !== me.id && m.role === 'partner')
+      if (!partner) throw new Error('Niemand zum Fragen da')
+      await ins('slot_requests', { household_id: hid, date: i.datum, slot: i.slot, at: i.uhrzeit ?? null, from_member_id: me.id, to_member_id: partner.id, status: 'offen' })
+      break
+    }
+    case 'anfrage_beantworten': {
+      // Läuft über die Datenbank-Funktion (Zusage trägt dich für den Tag ein); nicht rückgängig zu machen
+      must(await db.rpc('answer_slot_request', { p_id: String(i.anfrage_id), p_yes: !!i.ja }), 'Antwort')
       break
     }
     case 'woche_abweichung': {

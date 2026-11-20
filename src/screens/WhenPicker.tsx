@@ -15,20 +15,22 @@ export function WhenPicker({ kind, value, onChange, today }: { kind: 'aufgabe' |
   const sa = nextWeekdayOnOrAfter(6, today)
   const so = nextWeekdayOnOrAfter(7, today)
 
-  const presets: { key: Key; label: string; date: string }[] =
+  // Ein Tag, ein Wort: „Morgen · Fr“ – und kein zweiter Chip für denselben Tag
+  const all: { key: Key; label: string; date: string }[] =
     kind === 'termin'
       ? [
           { key: 'heute', label: 'Heute', date: today },
-          { key: 'morgen', label: 'Morgen', date: morgen },
+          { key: 'morgen', label: `Morgen · ${weekdayShort(morgen)}`, date: morgen },
           { key: 'sa', label: 'Sa', date: sa },
           { key: 'so', label: 'So', date: so },
         ]
       : [
           { key: 'heute', label: 'Heute', date: today },
-          { key: 'morgen', label: 'Morgen', date: morgen },
-          { key: 'freitag', label: 'Freitag', date: freitag },
+          { key: 'morgen', label: `Morgen · ${weekdayShort(morgen)}`, date: morgen },
+          { key: 'freitag', label: freitag > addDays(today, 6) ? `Fr ${shortDate(freitag)}` : 'Freitag', date: freitag },
           { key: 'naechste', label: 'Nächste Woche', date: naechste },
         ]
+  const presets = all.filter((p, i) => all.findIndex((q) => q.date === p.date) === i)
 
   const matched = value ? presets.find((p) => p.date === value)?.key ?? null : null
   const [custom, setCustom] = useState<boolean>(!!value && !matched)
@@ -52,6 +54,7 @@ export function WhenPicker({ kind, value, onChange, today }: { kind: 'aufgabe' |
           }
         }}
       />
+      {!custom && selected && (selected === 'naechste' || selected === 'freitag') && value && <span className="hint" style={{ marginTop: -2 }}>{weekdayShort(value)} {shortDate(value)}</span>}
       {custom && (
         <input
           className="input-ui"

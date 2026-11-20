@@ -3,7 +3,7 @@ import { DemoAuth, SupabaseAuth, type Auth, type AuthUser } from '../lib/auth'
 import { LocalStore, SupabaseStore, type Store } from '../lib/store'
 import { isDemo, supabase } from '../lib/supabase'
 import type { MedSettings, MilaPlanItem, MilaRecipe, MilaSettings, MilaWeekDay, MilaWeekPlan, FreizeitRadar, FreizeitStatus, FreizeitTipp } from '../lib/types'
-import type { Anchor, AnchorLog, AnchorLogKind, AnchorPhase, AnchorPin, AnchorQuestion, AnchorVisibility, Area, Event, EventEffect, Fair, Household, Idea, ItemSeen, Member, NormalWeekRow, Person, Settings, Shout, Slot, Task, TaskStatus, TemplateRow, WeekOverride, TableName, Repeat } from '../lib/types'
+import type { Anchor, AnchorLog, AnchorLogKind, AnchorPhase, AnchorPin, AnchorQuestion, AnchorVisibility, Area, Event, EventEffect, Fair, Household, Idea, ItemSeen, Member, NormalWeekRow, Person, Settings, Shout, Slot, Task, TaskStatus, TemplateRow, WeekOverride, TableName, Repeat, SlotRequest } from '../lib/types'
 import { addDays, fromISO, startOfWeek, toISO, today } from '../lib/dates'
 import { subscribePush, unsubscribePush, type PushKeys } from '../lib/push'
 import { phaseLabel } from '../lib/anchors'
@@ -77,6 +77,16 @@ export interface Casa {
   removeTask(id: string): Promise<void>
   /** Offene Aufgabe übernehmen: ich werde Besitzer (keine Mitteilung) */
   takeTask(id: string): Promise<void>
+  /** „Mach ich“: Aufgabe vom anderen zusagen (der andere bekommt eine Mitteilung) */
+  acceptTask(id: string): Promise<void>
+  /** Stand einer Aufgabe aus Sicht dessen, der sie eingetragen hat: neu → gesehen → zugesagt → erledigt */
+  taskStage(t: Task): TaskStage
+
+  // „Kannst du übernehmen?“ (Bringen, Holen, Kochen, Bett an einem Tag)
+  slotRequests: SlotRequest[]
+  askHandover(input: { date: string; slot: Slot; at?: string | null }): Promise<void>
+  answerRequest(id: string, yes: boolean): Promise<void>
+  withdrawRequest(id: string): Promise<void>
 
   // Anker
   addAnchor(input: { title: string; why: string | null; visibility: AnchorVisibility; area?: Area }): Promise<Anchor>
@@ -140,6 +150,8 @@ export interface Casa {
   signOut(): Promise<void>
 }
 
+export type TaskStage = 'neu' | 'gesehen' | 'zugesagt' | 'erledigt'
+
 const Ctx = createContext<Casa | null>(null)
 
 export function useCasa(): Casa {
@@ -168,6 +180,8 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   const [normalWeek, setNormalWeek] = useState<NormalWeekRow[]>([])
   const [overrides, setOverrides] = useState<WeekOverride[]>([])
   const [seen, setSeen] = useState<ItemSeen[]>([])
+  const [partnerSeen, setPartnerSeen] = useState<ItemSeen[]>([])
+  const [slotRequests, setSlotRequests] = useState<SlotRequest[]>([])
   const [anchors, setAnchors] = useState<Anchor[]>([])
   const [anchorLog, setAnchorLog] = useState<AnchorLog[]>([])
   const [anchorQuestions, setAnchorQuestions] = useState<AnchorQuestion[]>([])
@@ -260,6 +274,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
           setIdeas(id)
           setShouts(sh)
           setDataReady(true)
+          void loadRequests(hid, ms.find((m) => m.household_id === hid && m.id !== mine.id && m.role === 'partner')?.id ?? null)
           void loadMila(hid)
           void loadMed(mine.id, hid)
           void loadFreizeit(hid)
@@ -280,7 +295,11 @@ export function CasaProvider({ children }: { children: ReactNode }) {
         if (table === 'week_overrides') setOverrides(await store.select('week_overrides', { household_id: householdId }))
         if (table === 'people') setPeople((await store.select('people', { household_id: householdId })).sort((a, b) => a.sort - b.sort))
         if (table === 'settings' && me) setSettings((await store.select('settings', { member_id: me.id }))[0] ?? null)
-        if (table === 'item_seen' && me) setSeen(await store.select('item_seen', { member_id: me.id }))
+        if (table === 'item_seen' && me) {
+          setSeen(await store.select('item_seen', { member_id: me.id }))
+          await loadRequests(householdId, partner?.id ?? null)
+        }
+        if (table === 'slot_requests') await loadRequests(householdId, partner?.id ?? null)
         if (table === 'anchors' && me) setAnchors(visibleAnchors(await store.select('anchors', { household_id: householdId }), me.id))
         if (table === 'anchor_log') setAnchorLog(await store.select('anchor_log', { household_id: householdId }))
         if (table === 'anchor_questions') setAnchorQuestions(await store.select('anchor_questions', { household_id: householdId }))
@@ -294,11 +313,22 @@ export function CasaProvider({ children }: { children: ReactNode }) {
         setDataReady(true)
       }
     },
-    [store, user, householdId, me],
+    [store, user, householdId, me, partner],
   )
 
   const loadRef = useRef(load)
   loadRef.current = load
+
+  /** Anfragen „Kannst du übernehmen?“ und was der andere von meinen Aufgaben schon gesehen hat */
+  async function loadRequests(hid: string, partnerId: string | null) {
+    try {
+      const since = addDays(today(), -14)
+      setSlotRequests((await store.select('slot_requests', { household_id: hid })).filter((r) => r.date >= since))
+      setPartnerSeen(partnerId ? (await store.select('item_seen', { member_id: partnerId })).filter((s) => s.item_type === 'task') : [])
+    } catch {
+      /* noch nicht eingerichtet */
+    }
+  }
 
   /** Freizeit: Radar und Tipps (fehlt die Tabelle noch, bleibt der Bereich leer) */
   async function loadFreizeit(hid: string) {
@@ -387,7 +417,7 @@ export function CasaProvider({ children }: { children: ReactNode }) {
   // Live: Änderungen (auch vom anderen) nachladen
   useEffect(() => {
     if (!user) return
-    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins', 'fairs', 'checklist_template', 'ideas', 'shouts', 'mila_week_days', 'mila_settings', 'mila_plan_items', 'mila_week_plans', 'freizeit_radar', 'freizeit_tipps'], (t) => loadRef.current(t))
+    const off = store.onChange(['tasks', 'events', 'normal_week', 'week_overrides', 'settings', 'members', 'people', 'item_seen', 'anchors', 'anchor_log', 'anchor_questions', 'anchor_pins', 'fairs', 'checklist_template', 'ideas', 'shouts', 'mila_week_days', 'mila_settings', 'mila_plan_items', 'mila_week_plans', 'freizeit_radar', 'freizeit_tipps', 'slot_requests'], (t) => loadRef.current(t))
     const onVisible = () => {
       if (document.visibilityState === 'visible') loadRef.current()
     }
@@ -702,6 +732,54 @@ export function CasaProvider({ children }: { children: ReactNode }) {
       // updated_by = ich = neuer Besitzer, darum keine Mitteilung
       await store.update('tasks', { id }, { owner_member_id: me.id, updated_by: me.id })
       await load('tasks')
+    },
+
+    async acceptTask(id) {
+      const { me } = need()
+      setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status: 'zugesagt' } : t)))
+      await store.update('tasks', { id }, { status: 'zugesagt', updated_by: me.id })
+      await load('tasks')
+      flushPush()
+    },
+    taskStage(t) {
+      if (t.status === 'erledigt') return 'erledigt'
+      if (t.status === 'zugesagt') return 'zugesagt'
+      const s = partnerSeen.find((x) => x.item_id === t.id)
+      return s && s.seen_at >= t.created_at ? 'gesehen' : 'neu'
+    },
+
+    // --- Kannst du übernehmen? ---------------------------------------------
+    slotRequests,
+    async askHandover(input) {
+      const { hid, me } = need()
+      if (!partner) throw new Error('Niemand zum Fragen da')
+      await store.insert('slot_requests', { household_id: hid, date: input.date, slot: input.slot, at: input.at ?? null, from_member_id: me.id, to_member_id: partner.id, status: 'offen', note: null, answered_at: null })
+      await loadRequests(hid, partner.id)
+      flushPush()
+    },
+    async answerRequest(id, yes) {
+      const { hid, me } = need()
+      const r = slotRequests.find((x) => x.id === id)
+      if (isDemo) {
+        if (!r || r.status !== 'offen') return
+        await store.update('slot_requests', { id }, { status: yes ? 'zugesagt' : 'abgelehnt', answered_at: new Date().toISOString() })
+        if (yes) {
+          const cur = overrides.find((o) => o.date === r.date && o.slot === r.slot)
+          if (cur) await store.update('week_overrides', { id: cur.id }, { value: me.display_name, at: r.at ?? cur.at, updated_by: me.id })
+          else await store.insert('week_overrides', { household_id: hid, date: r.date, slot: r.slot, value: me.display_name, at: r.at, note: null, created_by: me.id, updated_by: me.id })
+        }
+      } else {
+        const { error } = await supabase!.rpc('answer_slot_request', { p_id: id, p_yes: yes })
+        if (error) throw new Error(error.message)
+      }
+      await loadRequests(hid, partner?.id ?? null)
+      await load('week_overrides')
+      flushPush()
+    },
+    async withdrawRequest(id) {
+      const { hid } = need()
+      await store.update('slot_requests', { id }, { status: 'zurueckgezogen' })
+      await loadRequests(hid, partner?.id ?? null)
     },
 
     // --- Anker -------------------------------------------------------------

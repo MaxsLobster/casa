@@ -10,12 +10,13 @@ import { isShared } from '../lib/mwf'
 import { useArea } from '../state/area'
 import { IdeenGruppe } from '../mwf/Ideen'
 
-type GroupId = 'offen' | 'liegt' | 'neu' | 'heute' | 'woche' | 'spaeter' | 'geschafft'
-const GROUP_ORDER: GroupId[] = ['offen', 'liegt', 'neu', 'heute', 'woche', 'spaeter', 'geschafft']
-const GROUP_TITLE: Record<GroupId, string> = { offen: 'Offen – wer übernimmt?', liegt: 'Liegt noch', neu: 'Neu', heute: 'Heute fällig', woche: 'Diese Woche', spaeter: 'Später', geschafft: 'Geschafft diese Woche' }
+type GroupId = 'offen' | 'liegt' | 'neu' | 'heute' | 'woche' | 'spaeter' | 'beim' | 'geschafft'
+const GROUP_ORDER: GroupId[] = ['offen', 'liegt', 'neu', 'heute', 'woche', 'spaeter', 'beim', 'geschafft']
+const GROUP_TITLE: Record<GroupId, string> = { offen: 'Offen – wer übernimmt?', liegt: 'Liegt noch', neu: 'Neu', heute: 'Heute fällig', woche: 'Diese Woche', spaeter: 'Später', beim: 'Beim anderen', geschafft: 'Geschafft diese Woche' }
 // Standard: Liegt noch, Neu und Heute offen, der Rest zu. Zustand pro Gerät.
-const DEFAULT_OPEN: Record<GroupId, boolean> = { offen: true, liegt: true, neu: true, heute: true, woche: false, spaeter: false, geschafft: false }
+const DEFAULT_OPEN: Record<GroupId, boolean> = { offen: true, liegt: true, neu: true, heute: true, woche: false, spaeter: false, beim: true, geschafft: false }
 const STORAGE_KEY = 'casa.todoGroups'
+const STAGE_LABEL = { neu: 'neu', gesehen: 'gesehen', zugesagt: 'zugesagt', erledigt: 'erledigt' } as const
 
 function readOpen(): Record<GroupId, boolean> {
   try {
@@ -28,7 +29,7 @@ function readOpen(): Record<GroupId, boolean> {
 }
 
 export function ToDos() {
-  const { me, members, tasks: allTasks, events, anchors, setTaskDone, takeTask, isNew, markSeen } = useCasa()
+  const { me, partner, members, tasks: allTasks, events, anchors, setTaskDone, takeTask, isNew, markSeen, acceptTask, taskStage } = useCasa()
   const area = useArea()
   const tasks = useMemo(() => allTasks.filter((t) => t.area === area), [allTasks, area])
   const anchorName = (id: string | null) => (id ? anchors.find((a) => a.id === id)?.title ?? null : null)
@@ -68,7 +69,7 @@ export function ToDos() {
   }, [tasks, me?.id])
 
   const groups = useMemo(() => {
-    const g: Record<GroupId, Task[]> = { offen: [], liegt: [], neu: [], heute: [], woche: [], spaeter: [], geschafft: [] }
+    const g: Record<GroupId, Task[]> = { offen: [], liegt: [], neu: [], heute: [], woche: [], spaeter: [], beim: [], geschafft: [] }
     for (const t of tasks) {
       if (t.status !== 'erledigt' && t.owner_member_id === null && !isShared(t)) {
         g.offen.push(t)
@@ -79,7 +80,11 @@ export function ToDos() {
         if (!t.is_skipped && (t.done_at ?? '') >= cutoff) g.geschafft.push(t)
         continue
       }
-      if (!mine(t)) continue
+      // Was ich für den anderen eingetragen habe: mit Stand (neu → gesehen → zugesagt → erledigt)
+      if (!mine(t)) {
+        if (area === 'casa' && t.created_by === me?.id && t.owner_member_id && t.owner_member_id !== me?.id) g.beim.push(t)
+        continue
+      }
       if (t.due_date < today) g.liegt.push(t)
       else if (newIds.has(t.id)) g.neu.push(t)
       else if (t.due_date === today) g.heute.push(t)
@@ -87,7 +92,7 @@ export function ToDos() {
       else g.spaeter.push(t)
     }
     const byDue = (a: Task, b: Task) => a.due_date.localeCompare(b.due_date) || a.created_at.localeCompare(b.created_at)
-    for (const k of ['offen', 'liegt', 'neu', 'heute', 'woche', 'spaeter'] as GroupId[]) g[k].sort(byDue)
+    for (const k of ['offen', 'liegt', 'neu', 'heute', 'woche', 'spaeter', 'beim'] as GroupId[]) g[k].sort(byDue)
     g.geschafft.sort((a, b) => (b.done_at ?? '').localeCompare(a.done_at ?? ''))
     return g
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -113,7 +118,9 @@ export function ToDos() {
     }
     const parts = [relativeLabel(t.due_date, today)]
     if (isShared(t)) parts.push('beide')
-    if (t.status === 'zugesagt') parts.unshift('zugesagt')
+    // Beim anderen steht der Stand als Marke daneben, nicht doppelt im Text
+    if (t.status === 'zugesagt' && mine(t)) parts.unshift('zugesagt')
+    if (!mine(t) && t.owner_member_id) parts.unshift(nameOf(t.owner_member_id))
     if (t.status === 'geparkt') parts.unshift('geparkt')
     const actor = t.updated_by ?? t.created_by
     if (actor && actor !== t.owner_member_id && newIds.has(t.id)) parts.push(`von ${nameOf(actor)}`)
@@ -135,7 +142,7 @@ export function ToDos() {
         groups[k].length === 0 ? null : (
           <section key={k} className="stack" style={{ gap: 0 }}>
             <button type="button" className="todo-group__head" onClick={() => toggle(k)} aria-expanded={open[k]}>
-              <span className="todo-group__title">{GROUP_TITLE[k]}</span>
+              <span className="todo-group__title">{k === 'beim' && partner ? `Bei ${partner.display_name}` : GROUP_TITLE[k]}</span>
               <span className="todo-group__count">{groups[k].length}</span>
               <Chevron open={open[k]} />
             </button>
@@ -164,11 +171,15 @@ export function ToDos() {
                           {t.fair_id && <span className="mwf__tag">Runde</span>}
                           {t.is_yearly && <span className="mwf__tag">Jahr</span>}
                           {!done && newIds.has(t.id) && <span className="stamp stamp--new">Neu</span>}
+                          {k === 'beim' && <span className={'stage stage--' + taskStage(t)}>{STAGE_LABEL[taskStage(t)]}</span>}
                           {!done && t.owner_member_id && awayOn(events, t.owner_member_id, t.due_date, t.area) && (
                             <span className="hint hint--brown" style={{ width: '100%' }}>{mine(t) ? 'Du bist da weg' : `${nameOf(t.owner_member_id)} ist da weg`} – trotzdem {mine(t) ? 'bei dir' : 'dort'} lassen?</span>
                           )}
                         </span>
                       </button>
+                      {area === 'casa' && !done && mine(t) && t.status === 'offen' && !!t.created_by && t.created_by !== me?.id && !t.is_step && (
+                        <button type="button" className="daycard__ask" style={{ alignSelf: 'center' }} onClick={() => void acceptTask(t.id)}>Mach ich</button>
+                      )}
                     </div>
                   )
                 })}

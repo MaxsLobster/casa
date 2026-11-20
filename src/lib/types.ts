@@ -294,6 +294,7 @@ export type TableName =
   | 'checklist_template'
   | 'ideas'
   | 'shouts'
+  | 'slot_requests'
   | MedTableName
   | FreizeitTableName
   | MilaTableName
@@ -319,6 +320,24 @@ export interface TableRow extends MilaTableRow, MedTableRow, FreizeitTableRow, S
   checklist_template: TemplateRow
   ideas: Idea
   shouts: Shout
+  slot_requests: SlotRequest
+}
+
+/** „Kannst du übernehmen?“ – Anfrage für Bringen, Holen, Kochen, Bett an einem Tag */
+export type SlotRequestStatus = 'offen' | 'zugesagt' | 'abgelehnt' | 'zurueckgezogen'
+export interface SlotRequest {
+  id: Id
+  household_id: Id
+  date: string
+  slot: Slot
+  at: string | null
+  from_member_id: Id
+  to_member_id: Id
+  status: SlotRequestStatus
+  note: string | null
+  answered_at: string | null
+  created_at: string
+  updated_at: string
 }
 
 // ---------------------------------------------------------------------------

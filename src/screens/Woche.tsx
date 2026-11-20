@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useCasa, useNow, useToday } from '../state/HouseholdContext'
 import { addDays, eventEnd, fromISO, hhmm, isoWeek, shortDate, spanLabel, startOfWeek, weekDates, weekRange, weekday, weekdayShort, weekdayShortByIndex, type ISODate } from '../lib/dates'
@@ -7,7 +7,7 @@ import { isMultiDay, occurrences, type Occurrence } from '../lib/recur'
 import { isFairEvent } from '../lib/mwf'
 import { isMilaEvent, mealsOn } from '../mila/casa-link'
 import { shortName } from '../mila/engine'
-import { BAND_START, BAND_END, goldSegments, navySegments, pct, widthPct, type Seg } from '../lib/band'
+import { daySegments, type Seg as DaySeg } from '../lib/day'
 import { applyEffects, dayEffects, effectLines, handoverOpen, isEffectEvent, openChips, type DayEffects, type EffectLine } from '../lib/effects'
 import type { Event, Slot, Task } from '../lib/types'
 import { Check, Chevron, Collapse, Sheet } from '../components/ui'
@@ -28,8 +28,7 @@ interface DayRow {
   events: Occurrence[]
   isToday: boolean
   isPast: boolean
-  gold: Seg[]
-  navy: Seg[]
+  segs: DaySeg[]
   hasOpen: boolean
   tasks: Task[]
 }
@@ -45,7 +44,6 @@ interface Strip {
   lanes: number
 }
 
-const SCALE = [6, 10, 14, 18, 22]
 
 /** Wochenoffset eines Datums gegenüber heute */
 function weekOffset(date: ISODate, today: ISODate): number {
@@ -53,7 +51,7 @@ function weekOffset(date: ISODate, today: ISODate): number {
 }
 
 export function Woche() {
-  const { me, members, people, normalWeek, overrides, events, tasks: allTasks, settings, isNew, markSeen, setTaskDone, updateSettings, milaDays, milaRecipe, freizeitTipps } = useCasa()
+  const { me, members, people, normalWeek, overrides, events, tasks: allTasks, settings, isNew, markSeen, setTaskDone, updateSettings, milaDays, milaRecipe, freizeitTipps, slotRequests } = useCasa()
   const tasks = useMemo(() => allTasks.filter((t) => t.area === 'casa'), [allTasks])
   const today = useToday()
   const now = useNow()
@@ -88,7 +86,6 @@ export function Woche() {
   const dates = useMemo(() => weekDates(monday), [monday])
   const sunday = dates[6]
   const occ = useMemo(() => occurrences(events, monday, sunday), [events, monday, sunday])
-  const nowH = now.getHours() + now.getMinutes() / 60
 
   const rows: DayRow[] = useMemo(
     () =>
@@ -109,14 +106,13 @@ export function Woche() {
           events: dayOcc,
           isToday: d === today,
           isPast: d < today,
-          gold: goldSegments(d, state, dayOcc, members),
-          navy: navySegments(dayOcc, me?.id ?? null),
-          hasOpen: hasOpen(state) || ho.dropoff || ho.pickup,
+          segs: daySegments(d, state, fx, voice, people, slotRequests),
+          hasOpen: hasOpen(state) || ho.dropoff || ho.pickup || slotRequests.some((x) => x.date === d && x.status === 'offen'),
           tasks: myTasks.sort((a, b) => a.created_at.localeCompare(b.created_at)),
         }
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dates, normalWeek, overrides, occ, today, tasks, me?.id, members, people],
+    [dates, normalWeek, overrides, occ, today, tasks, me?.id, members, people, slotRequests],
   )
 
   const templateRows = useMemo(
@@ -210,7 +206,7 @@ export function Woche() {
     return members.find((m) => m.id === o.member_id)?.display_name ?? ''
   }
 
-  const fillPct = pct(Math.min(Math.max(nowH, BAND_START), BAND_END))
+  const termineCount = (r: DayRow) => r.events.filter((e) => !isEffectEvent(e) && !isMultiDay(e)).length
 
   // ---------- Normalwoche (Bearbeiten) ----------
   if (view === 'normal') {
@@ -281,20 +277,6 @@ export function Woche() {
         </button>
       </header>
 
-      {/* Stundenskala, exakt über dem Band */}
-      <div className="wk__scale" aria-hidden>
-        <span style={{ flex: 'none', width: 'var(--wk-wd)' }} />
-        <div className="wk__scale-band">
-          {SCALE.map((h, i) => (
-            <span key={h} className={'wk__scale-num' + (i === 0 ? ' wk__scale-num--first' : i === SCALE.length - 1 ? ' wk__scale-num--last' : '')} style={{ left: pct(h) }}>
-              {h}
-            </span>
-          ))}
-        </div>
-        <span style={{ flex: 'none', width: 'var(--wk-icons)' }} />
-        <span className="wk__gap" />
-      </div>
-
       <div className="wk__list" ref={listRef}>
         {strips.length > 0 && (
           <div className="wk__strips" aria-hidden>
@@ -317,14 +299,15 @@ export function Woche() {
                   <span className={'wk__wd-name' + (r.isToday ? ' wk__wd-name--today' : '')}>{r.wd}</span>
                   <span className="wk__wd-date">{r.dateLabel}</span>
                 </span>
-                <span className="wk__band" aria-label="Tagesverlauf 6 bis 22 Uhr">
-                  {r.gold.map((s, i) => (
-                    <span key={'g' + i} className="wk__seg wk__seg--gold" style={{ left: pct(s.from), width: widthPct(s) }} />
+                <span className="wk__line">
+                  {r.segs.length === 0 && <span className="wk__seg-t wk__seg-t--plain">—</span>}
+                  {r.segs.map((sg, i) => (
+                    <Fragment key={i}>
+                      {i > 0 && <span className="wk__sep" aria-hidden> · </span>}
+                      <span className={'wk__seg-t wk__seg-t--' + sg.kind}>{sg.text}</span>
+                    </Fragment>
                   ))}
-                  {r.navy.map((s, i) => (
-                    <span key={'n' + i} className="wk__seg wk__seg--navy" style={{ left: pct(s.from), width: widthPct(s) }} />
-                  ))}
-                  {r.isToday && nowH >= BAND_START && <span className="wk__fill" style={{ width: fillPct }} />}
+                  {termineCount(r) > 0 && <span className="wk__terms">{termineCount(r)} {termineCount(r) === 1 ? 'Termin' : 'Termine'}</span>}
                 </span>
                 <span className="wk__icons">
                   {r.hasOpen && <span className="wk__open" role="img" aria-label="Etwas offen" />}
@@ -437,7 +420,7 @@ export function Woche() {
 
       {(settings?.show_legend ?? true) && (
         <div className="wk__legend-row">
-          <p className="wk__legend">Gold: Valerie versorgt · Navy: Termin · Kreis mit Zahl: deine Aufgaben · gestrichelt: noch offen · Streifen rechts: mehrere Tage</p>
+          <p className="wk__legend">Braun: anders als sonst · gestrichelt: noch offen · Kreis mit Zahl: deine Aufgaben · Streifen rechts: mehrere Tage</p>
           <button type="button" className="wk__legend-x" aria-label="Legende ausblenden" onClick={() => setAskLegend(true)}>×</button>
         </div>
       )}
